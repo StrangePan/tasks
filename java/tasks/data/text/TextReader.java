@@ -1,5 +1,6 @@
 package tasks.data.text;
 
+import static java.util.Objects.requireNonNull;
 import static omnia.data.stream.Collectors.toImmutableSet;
 
 import java.io.IOException;
@@ -8,8 +9,6 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Optional;
 import omnia.data.structure.Collection;
-import omnia.data.structure.Graph;
-import omnia.data.structure.immutable.ImmutableGraph;
 import omnia.data.structure.mutable.HashMap;
 import omnia.data.structure.mutable.MutableMap;
 import tasks.Task;
@@ -21,33 +20,15 @@ public final class TextReader implements TaskReader {
   private final Path path;
 
   public TextReader(Path path) {
-    this.path = path;
+    this.path = requireNonNull(path);
   }
 
   @Override
-  public Graph<Task> read() throws IOException {
+  public Collection<Task> read() throws IOException {
     MutableMap<Id, Task> taskMap = new HashMap<>();
-    Collection<Task> parsedTasks =
-        Files.lines(path)
-            .map(taskString -> parseTaskString(taskString, taskMap))
-            .collect(toImmutableSet());
-
-    ImmutableGraph.Builder<Task> graphBuilder = ImmutableGraph.builder();
-
-    // Add individual tasks to graph
-    for (Task task : parsedTasks) {
-      graphBuilder.addNode(task);
-    }
-
-    // Add task dependencies to graph
-    for (Task task : parsedTasks) {
-      for (Task dependency : task.dependencies()) {
-        graphBuilder.addEdge(task, dependency);
-      }
-    }
-
-    // Return the built graph!
-    return graphBuilder.build();
+    return Files.lines(path)
+        .map(taskString -> parseTaskString(taskString, taskMap))
+        .collect(toImmutableSet());
   }
 
   @Override
@@ -60,7 +41,7 @@ public final class TextReader implements TaskReader {
     Task parsedTask =
         Task.builder()
             .id(Id.from(Long.parseLong(parts[0])))
-            .name(parts[1])
+            .label(parts[1])
             .dependencies(
                 Arrays.stream(parts[2].split(","))
                     .map(Long::parseLong)

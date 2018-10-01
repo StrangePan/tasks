@@ -2,6 +2,7 @@ package tasks;
 
 import static omnia.data.stream.Collectors.toImmutableSet;
 
+import java.util.Objects;
 import omnia.data.structure.Collection;
 import omnia.data.structure.immutable.ImmutableSet;
 
@@ -9,7 +10,7 @@ public interface Task {
 
   Id id();
 
-  String name();
+  String label();
 
   Collection<Task> dependencies();
 
@@ -29,13 +30,23 @@ public interface Task {
     public static Id from(long id) {
       return new Id(id);
     }
+
+    @Override
+    public boolean equals(Object other) {
+      return other instanceof Id && ((Id) other).id == id;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(id);
+    }
   }
 
   interface Builder {
 
     Builder id(Id id);
 
-    Builder name(String name);
+    Builder label(String name);
 
     Builder dependencies(Collection<Task> dependencies);
 
@@ -47,13 +58,13 @@ public interface Task {
   static Builder builder() {
     class DefaultTask implements Task {
       private final Id id;
-      private final String name;
+      private final String label;
       private final ImmutableSet<Task> dependencies;
       private final boolean isCompleted;
 
-      DefaultTask(Id id, String name, ImmutableSet<Task> dependencies, boolean isCompleted) {
+      DefaultTask(Id id, String label, ImmutableSet<Task> dependencies, boolean isCompleted) {
         this.id = id;
-        this.name = name;
+        this.label = label;
         this.dependencies = dependencies;
         this.isCompleted = isCompleted;
       }
@@ -64,8 +75,8 @@ public interface Task {
       }
 
       @Override
-      public String name() {
-        return name;
+      public String label() {
+        return label;
       }
 
       @Override
@@ -80,10 +91,10 @@ public interface Task {
     }
 
     class DefaultBuilder implements Builder {
-      Id id;
-      String name;
-      ImmutableSet<Task> dependencies;
-      boolean isCompleted;
+      private Id id;
+      private String label;
+      private ImmutableSet<Task> dependencies;
+      private boolean isCompleted;
 
       @Override
       public DefaultBuilder id(Id id) {
@@ -92,8 +103,8 @@ public interface Task {
       }
 
       @Override
-      public DefaultBuilder name(String name) {
-        this.name = name;
+      public DefaultBuilder label(String label) {
+        this.label = label;
         return this;
       }
 
@@ -111,7 +122,7 @@ public interface Task {
 
       @Override
       public DefaultTask build() {
-        return new DefaultTask(id, name, dependencies, isCompleted);
+        return new DefaultTask(id, label, dependencies, isCompleted);
       }
     }
 
