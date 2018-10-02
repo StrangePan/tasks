@@ -33,7 +33,7 @@ public final class TextWriter implements TaskWriter {
   }
 
   @Override
-  public void close() throws Exception {
+  public void close() {
     // no-op since file is opened and closed in read()
   }
 
@@ -62,7 +62,7 @@ public final class TextWriter implements TaskWriter {
     return new StringBuilder()
         .append(task.id())
         .append(';')
-        .append(task.label())
+        .append(Utils.escapist().escape(task.label()))
         .append(';')
         .append(
             task.dependencies()

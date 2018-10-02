@@ -41,7 +41,7 @@ public final class TextReader implements TaskReader {
     Task parsedTask =
         Task.builder()
             .id(Id.from(Long.parseLong(parts[0])))
-            .label(parts[1])
+            .label(Utils.escapist().unescape(parts[1]))
             .dependencies(
                 Arrays.stream(parts[2].split(","))
                     .map(Long::parseLong)
