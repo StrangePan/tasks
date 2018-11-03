@@ -1,8 +1,10 @@
 package tasks;
 
+import static java.util.Objects.requireNonNull;
 import static omnia.data.stream.Collectors.toImmutableSet;
 
 import java.util.Objects;
+import java.util.Optional;
 import omnia.data.structure.Collection;
 import omnia.data.structure.immutable.ImmutableSet;
 
@@ -63,9 +65,9 @@ public interface Task {
       private final boolean isCompleted;
 
       DefaultTask(Id id, String label, ImmutableSet<Task> dependencies, boolean isCompleted) {
-        this.id = id;
-        this.label = label;
-        this.dependencies = dependencies;
+        this.id = requireNonNull(id);
+        this.label = requireNonNull(label);
+        this.dependencies = requireNonNull(dependencies);
         this.isCompleted = isCompleted;
       }
 
@@ -87,6 +89,23 @@ public interface Task {
       @Override
       public boolean isCompleted() {
         return isCompleted;
+      }
+
+      @Override
+      public boolean equals(Object other) {
+        if (!(other instanceof DefaultTask)) {
+          return false;
+        }
+        DefaultTask otherTask = (DefaultTask) other;
+        return Objects.equals(otherTask.id, id)
+            && Objects.equals(otherTask.label, label)
+            && Objects.equals(otherTask.dependencies, dependencies)
+            && Objects.equals(otherTask.isCompleted, isCompleted);
+      }
+
+      @Override
+      public int hashCode() {
+        return Objects.hash(id, label, dependencies, isCompleted);
       }
     }
 
@@ -110,7 +129,8 @@ public interface Task {
 
       @Override
       public DefaultBuilder dependencies(Collection<Task> dependencies) {
-        this.dependencies = dependencies.stream().collect(toImmutableSet());
+        this.dependencies =
+            ImmutableSet.<Task>builder().addAll(requireNonNull(dependencies)).build();
         return this;
       }
 
@@ -122,7 +142,11 @@ public interface Task {
 
       @Override
       public DefaultTask build() {
-        return new DefaultTask(id, label, dependencies, isCompleted);
+        return new DefaultTask(
+            id,
+            label,
+            dependencies != null ? dependencies : ImmutableSet.<Task>builder().build(),
+            isCompleted);
       }
     }
 
