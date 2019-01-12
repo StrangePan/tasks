@@ -33,14 +33,14 @@ public final class FakeFileTest {
   public void read_didMatchSetContents() throws IOException {
     underTest.setContents(testContents);
 
-    try (InputStream inputStream = underTest.openForRead()) {
+    try (InputStream inputStream = underTest.openInputStream()) {
       assertArrayEquals(testContents, inputStream.readAllBytes());
     }
   }
 
   @Test
   public void write_didSetContents() throws IOException {
-    try (OutputStream outputStream = underTest.openForWrite()) {
+    try (OutputStream outputStream = underTest.openOutputStream()) {
       outputStream.write(testContents);
     }
 
@@ -49,11 +49,11 @@ public final class FakeFileTest {
 
   @Test
   public void write_thenRead_didMatchContents() throws IOException {
-    try (OutputStream outputStream = underTest.openForWrite()) {
+    try (OutputStream outputStream = underTest.openOutputStream()) {
       outputStream.write(testContents);
     }
 
-    try (InputStream inputStream = underTest.openForRead()) {
+    try (InputStream inputStream = underTest.openInputStream()) {
       assertArrayEquals(testContents, inputStream.readAllBytes());
     }
   }

@@ -32,7 +32,7 @@ public class TaskStore implements Store<Collection<Task>> {
 
   @Override
   public synchronized Collection<Task> retrieveBlocking() {
-    try (TextReader reader = new TextReader(file.openForRead())) {
+    try (TextReader reader = new TextReader(file.openInputStream())) {
       return reader.read();
     }
   }
@@ -40,7 +40,7 @@ public class TaskStore implements Store<Collection<Task>> {
   @Override
   public synchronized void storeBlocking(Collection<Task> data) {
     requireNonNull(data);
-    try (TextWriter writer = new TextWriter(file.openForWrite())) {
+    try (TextWriter writer = new TextWriter(file.openOutputStream())) {
       writer.write(data);
     }
   }
