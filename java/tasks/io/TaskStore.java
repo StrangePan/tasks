@@ -26,7 +26,7 @@ public class TaskStore implements Store<Collection<Task>> {
 
   private final File file;
 
-  TaskStore(File file) {
+  public TaskStore(File file) {
     this.file = requireNonNull(file);
   }
 
