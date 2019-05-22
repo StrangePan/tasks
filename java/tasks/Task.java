@@ -1,10 +1,8 @@
 package tasks;
 
 import static java.util.Objects.requireNonNull;
-import static omnia.data.stream.Collectors.toImmutableSet;
 
 import java.util.Objects;
-import java.util.Optional;
 import omnia.data.structure.Collection;
 import omnia.data.structure.immutable.ImmutableSet;
 
