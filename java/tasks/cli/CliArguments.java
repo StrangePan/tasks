@@ -1,24 +1,28 @@
 package tasks.cli;
 
 import static java.util.Objects.requireNonNull;
+import static omnia.data.stream.Collectors.toList;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import omnia.data.structure.List;
 import omnia.data.structure.Map;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableMap;
+import omnia.data.structure.mutable.ArrayList;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import tasks.Task;
 
 /** Data structure for arguments passed into the command line. */
 public final class CliArguments {
 
-  public static final Map<Mode, Function<String[], CommandLine>> MODE_TO_PARSER_MAP =
+  public static final Map<Mode, Function<String[], CommandLine>> MODE_TO_PARSER =
       ImmutableMap.<Mode, Function<String[], CommandLine>>builder()
           .put(Mode.HELP, CliArguments::parseHelp)
           .put(Mode.LIST, CliArguments::parseList)
@@ -30,10 +34,26 @@ public final class CliArguments {
           .put(Mode.UNCOMPLETE, CliArguments::parseUncomplete)
           .build();
 
-  private final Mode mode;
+  public static final Map<Mode, Function<CommandLine, Object>> COMMAND_LINE_TO_MODE_ARGUMENTS =
+      ImmutableMap.<Mode, Function<CommandLine, Object>>builder()
+          .put(Mode.ADD, AddArguments::parseFrom)
+          .build();
 
-  private CliArguments(Mode mode) {
+  private final Mode mode;
+  private final Object arguments;
+
+  private CliArguments(Mode mode, Object arguments) {
     this.mode = requireNonNull(mode);
+    this.arguments = requireNonNull(arguments);
+  }
+
+  /**
+   * Get the mode-specific arguments.
+   *
+   * <p>Will be one of {@link AddArguments}.
+   */
+  public Object getArguments() {
+    return arguments;
   }
 
   @Override
@@ -65,11 +85,13 @@ public final class CliArguments {
     // Determine what mode we're in. This will affect what flags are available and what they mean.
     Mode mode = modeFromArgument(argsList.isPopulated() ? argsList.itemAt(0) : "");
 
-    CommandLine commandLine = MODE_TO_PARSER_MAP.valueOf(mode).map(f -> f.apply(args)).orElse(null);
+    CommandLine commandLine = MODE_TO_PARSER.valueOf(mode).map(f -> f.apply(args)).orElse(null);
+    Object modeArguments =
+        COMMAND_LINE_TO_MODE_ARGUMENTS.valueOf(mode).map(f -> f.apply(commandLine)).orElse(null);
 
     System.out.println(stringify(commandLine));
 
-    return new CliArguments(mode);
+    return new CliArguments(mode, modeArguments);
   }
 
   private static CommandLine parseHelp(String[] args) {
@@ -214,5 +236,73 @@ public final class CliArguments {
         .map(o -> o.getOpt() + " = " + commandLine.getOptionValue(o.getOpt()) + "\n")
         .forEachOrdered(string::append);
     return string.toString();
+  }
+
+  public static final class AddArguments {
+    private final String description;
+    private final List<Task.Id> blockingTasks;
+    private final List<Task.Id> blockedTasks;
+
+    private AddArguments(
+        String description, List<Task.Id> blockingTasks, List<Task.Id> blockedTasks) {
+      this.description = description;
+      this.blockingTasks = blockingTasks;
+      this.blockedTasks = blockedTasks;
+    }
+
+    /** The description of the task. */
+    public String description() {
+      return description;
+    }
+
+    /** List of task IDs that are blocking this new task in the order specified in the CLI. */
+    public List<Task.Id> blockingTasks() {
+      return blockingTasks;
+    }
+
+    /** List of task IDs that are blocked by this new task in the order specified in the CLI. */
+    public List<Task.Id> blockedTasks() {
+      return blockedTasks;
+    }
+
+    private static AddArguments parseFrom(CommandLine commandLine) {
+      // 1st param assumed to be "add" or an alias for it
+      // 2nd param must be description
+      // 3+ params not supported
+      // optional befores
+      // optional afters
+
+      List<String> argsList = List.masking(commandLine.getArgList());
+      if (argsList.count() < 2) {
+        throw new ArgumentFormatException("Task description not defined");
+      }
+      if (argsList.count() > 2) {
+        throw new ArgumentFormatException("Unexpected extra arguments");
+      }
+
+      List<Task.Id> afterTasks = parseTaskIds(getOptionValues(commandLine, "a"));
+      List<Task.Id> beforeTasks = parseTaskIds(getOptionValues(commandLine, "b"));
+
+      return new AddArguments(argsList.itemAt(1), afterTasks, beforeTasks);
+    }
+  }
+
+  private static List<Task.Id> parseTaskIds(List<String> taskStrings) {
+    List<Task.Id> taskIds;
+    try {
+      taskIds = taskStrings.stream().map(Long::parseLong).map(Task.Id::from).collect(toList());
+    } catch (NumberFormatException ex) {
+      throw new ArgumentFormatException("Invalid task ID", ex);
+    }
+    if (taskIds.stream().anyMatch(id -> id.asLong() < 0)) {
+      throw new ArgumentFormatException("Invalid task ID");
+    }
+    return taskIds;
+  }
+
+  private static List<String> getOptionValues(CommandLine commandLine, String opt) {
+    return ArrayList.of(
+        Optional.ofNullable(requireNonNull(commandLine).getOptionValues(requireNonNull(opt)))
+            .orElse(new String[0]));
   }
 }
