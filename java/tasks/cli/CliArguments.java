@@ -40,6 +40,7 @@ public final class CliArguments {
           .put(Mode.ADD, AddArguments::parseFrom)
           .put(Mode.REMOVE, RemoveArguments::parseFrom)
           .put(Mode.COMPLETE, CompleteArguments::parseFrom)
+          .put(Mode.REOPEN, ReopenArguments::parseFrom)
           .build();
 
   private final Mode mode;
@@ -336,6 +337,16 @@ public final class CliArguments {
 
     public static CompleteArguments parseFrom(CommandLine commandLine) {
       return SimpleArguments.parseFrom(commandLine, CompleteArguments::new);
+    }
+  }
+
+  public static final class ReopenArguments extends SimpleArguments {
+    private ReopenArguments(List<Task.Id> tasks) {
+      super(tasks);
+    }
+
+    public static ReopenArguments parseFrom(CommandLine commandLine) {
+      return SimpleArguments.parseFrom(commandLine, ReopenArguments::new);
     }
   }
 
