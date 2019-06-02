@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import omnia.data.stream.Collectors;
 import omnia.data.structure.List;
 import omnia.data.structure.Map;
 import omnia.data.structure.immutable.ImmutableList;
@@ -37,6 +38,7 @@ public final class CliArguments {
   public static final Map<Mode, Function<CommandLine, Object>> COMMAND_LINE_TO_MODE_ARGUMENTS =
       ImmutableMap.<Mode, Function<CommandLine, Object>>builder()
           .put(Mode.ADD, AddArguments::parseFrom)
+          .put(Mode.REMOVE, RemoveArguments::parseFrom)
           .build();
 
   private final Mode mode;
@@ -284,6 +286,34 @@ public final class CliArguments {
       List<Task.Id> beforeTasks = parseTaskIds(getOptionValues(commandLine, "b"));
 
       return new AddArguments(argsList.itemAt(1), afterTasks, beforeTasks);
+    }
+  }
+
+  public static final class RemoveArguments {
+    private final List<Task.Id> tasks;
+
+    private RemoveArguments(List<Task.Id> tasks) {
+      this.tasks = tasks;
+    }
+
+    public List<Task.Id> tasks() {
+      return this.tasks;
+    }
+
+    public static RemoveArguments parseFrom(CommandLine commandLine) {
+      /*
+      1st param assumed to be "remove" or an alias for it.
+      2nd+ params must be task IDs
+      */
+
+      List<String> argsList = List.masking(commandLine.getArgList());
+      if (argsList.count() < 2) {
+        throw new ArgumentFormatException("No task IDs specified");
+      }
+
+      List<Task.Id> taskIds = parseTaskIds(argsList.stream().skip(1).collect(toList()));
+
+      return new RemoveArguments(taskIds);
     }
   }
 
