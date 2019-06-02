@@ -24,28 +24,16 @@ import tasks.Task.Id.IdFormatException;
 /** Data structure for arguments passed into the command line. */
 public final class CliArguments {
 
-  public static final Map<Mode, Function<String[], CommandLine>> MODE_TO_PARSER =
-      ImmutableMap.<Mode, Function<String[], CommandLine>>builder()
-          .put(Mode.HELP, CliArguments::parseHelp)
-          .put(Mode.LIST, CliArguments::parseList)
-          .put(Mode.INFO, CliArguments::parseInfo)
-          .put(Mode.ADD, CliArguments::parseAdd)
-          .put(Mode.REMOVE, CliArguments::parseRemove)
-          .put(Mode.AMEND, CliArguments::parseAmend)
-          .put(Mode.COMPLETE, CliArguments::parseComplete)
-          .put(Mode.REOPEN, CliArguments::parseReopen)
-          .build();
-
-  public static final Map<Mode, Function<CommandLine, Object>> COMMAND_LINE_TO_MODE_ARGUMENTS =
-      ImmutableMap.<Mode, Function<CommandLine, Object>>builder()
-          .put(Mode.HELP, HelpArguments::parseFrom)
-          .put(Mode.LIST, ListArguments::parseFrom)
-          .put(Mode.INFO, InfoArguments::parseFrom)
-          .put(Mode.ADD, AddArguments::parseFrom)
-          .put(Mode.REMOVE, RemoveArguments::parseFrom)
-          .put(Mode.AMEND, AmendArguments::parseFrom)
-          .put(Mode.COMPLETE, CompleteArguments::parseFrom)
-          .put(Mode.REOPEN, ReopenArguments::parseFrom)
+  private static final Map<Mode, Function<String[], Object>> ARGS_TO_MODEL =
+  ImmutableMap.<Mode, Function<String[], Object>>builder()
+          .put(Mode.HELP, HelpArguments::parse)
+          .put(Mode.LIST, ListArguments::parse)
+          .put(Mode.INFO, InfoArguments::parse)
+          .put(Mode.ADD, AddArguments::parse)
+          .put(Mode.REMOVE, RemoveArguments::parse)
+          .put(Mode.AMEND, AmendArguments::parse)
+          .put(Mode.COMPLETE, CompleteArguments::parse)
+          .put(Mode.REOPEN, ReopenArguments::parse)
           .build();
 
   private final Mode mode;
@@ -94,121 +82,9 @@ public final class CliArguments {
     // Determine what mode we're in. This will affect what flags are available and what they mean.
     Mode mode = modeFromArgument(argsList.isPopulated() ? argsList.itemAt(0) : "");
 
-    CommandLine commandLine = MODE_TO_PARSER.valueOf(mode).map(f -> f.apply(args)).orElse(null);
-    Object modeArguments =
-        COMMAND_LINE_TO_MODE_ARGUMENTS.valueOf(mode).map(f -> f.apply(commandLine)).orElse(null);
-
-    System.out.println(stringify(commandLine));
+    Object modeArguments = ARGS_TO_MODEL.valueOf(mode).map(f -> f.apply(args)).orElse(null);
 
     return new CliArguments(mode, modeArguments);
-  }
-
-  private static CommandLine parseHelp(String[] args) {
-    return tryParse(args, new Options());
-  }
-
-  private static CommandLine parseList(String[] args) {
-    Options options = new Options();
-    options.addOption(
-        Option.builder("a")
-            .longOpt("all")
-            .desc("Setting this flag lists all tasks, including blocked tasks and completed tasks.")
-            .numberOfArgs(0)
-            .build());
-
-    return tryParse(args, options);
-  }
-
-  private static CommandLine parseInfo(String[] args) {
-    return tryParse(args, new Options());
-  }
-
-  private static CommandLine parseAdd(String[] args) {
-    Options options = new Options();
-    options.addOption(
-        Option.builder("a")
-            .longOpt("after")
-            .desc("The tasks this one comes after. This list of tasks will be blocking this task.")
-            .optionalArg(false)
-            .numberOfArgs(1)
-            .build());
-    options.addOption(
-        Option.builder("b")
-            .longOpt("before")
-            .desc("The tasks this one comes before. This list of tasks will be unblocked by this " +
-                "task.")
-            .optionalArg(false)
-            .numberOfArgs(1)
-            .build());
-
-    return tryParse(args, options);
-  }
-
-  private static CommandLine parseRemove(String[] args) {
-    return tryParse(args, new Options());
-  }
-
-  private static CommandLine parseComplete(String[] args) {
-    return tryParse(args, new Options());
-  }
-
-  private static CommandLine parseReopen(String[] args) {
-    return tryParse(args, new Options());
-  }
-
-  private static CommandLine parseAmend(String[] args) {
-    Options options = new Options();
-    options.addOption(
-        Option.builder("m")
-            .longOpt("description")
-            .desc("Edit the description of the task. Leave blank to open in an editor")
-            .numberOfArgs(1)
-            .optionalArg(false)
-            .build());
-    options.addOption(
-        Option.builder("a")
-            .longOpt("after")
-            .desc("Sets this task as blocked by another task. Clears the previous blocking tasks.")
-            .numberOfArgs(1)
-            .optionalArg(false)
-            .build());
-    options.addOption(
-        Option.builder("aa")
-            .longOpt("addafter")
-            .desc("Adds another task as blocking this one.")
-            .numberOfArgs(1)
-            .optionalArg(false)
-            .build());
-    options.addOption(
-        Option.builder("ra")
-            .longOpt("rmafter")
-            .desc("Removes another task as blocking this one.")
-            .numberOfArgs(1)
-            .optionalArg(false)
-            .build());
-    options.addOption(
-        Option.builder("b")
-            .longOpt("before")
-            .desc("Sets this task as blocking another task. Clears the previous blocked tasks.")
-            .numberOfArgs(1)
-            .optionalArg(false)
-            .build());
-    options.addOption(
-        Option.builder("ab")
-            .longOpt("addbefore")
-            .desc("Adds another task as being blocked by this one.")
-            .numberOfArgs(1)
-            .optionalArg(false)
-            .build());
-    options.addOption(
-        Option.builder("rb")
-            .longOpt("rmbefore")
-            .desc("Removes another task as being blocked by this one.")
-            .numberOfArgs(1)
-            .optionalArg(false)
-            .build());
-
-    return tryParse(args, options);
   }
 
   private static CommandLine tryParse(String[] args, Options options) {
@@ -251,16 +127,6 @@ public final class CliArguments {
     }
   }
 
-  private static String stringify(CommandLine commandLine) {
-    StringBuilder string = new StringBuilder();
-    commandLine.getArgList().stream().map(s -> s + "\n").forEachOrdered(string::append);
-    Arrays.stream(commandLine.getOptions())
-        .filter(o -> commandLine.hasOption(o.getOpt()))
-        .map(o -> o.getOpt() + " = " + commandLine.getOptionValue(o.getOpt()) + "\n")
-        .forEachOrdered(string::append);
-    return string.toString();
-  }
-
   private static abstract class SimpleArguments {
     private final List<Task.Id> tasks;
 
@@ -269,7 +135,12 @@ public final class CliArguments {
     }
 
     public List<Task.Id> tasks() {
-      return this.tasks;
+      return tasks;
+    }
+
+    private static <T extends SimpleArguments> T parse(
+        String[] args, Function<List<Task.Id>, T> constructor) {
+      return parseFrom(tryParse(args, new Options()), constructor);
     }
 
     private static <T extends SimpleArguments> T parseFrom(
@@ -293,11 +164,13 @@ public final class CliArguments {
   public static final class HelpArguments {
     private HelpArguments() {}
 
-    private static HelpArguments parseFrom(CommandLine commandLine) {
+    private static HelpArguments parse(String[] args) {
       /*
       First arg is assumed to be "help" or an alias thereof
       No other unclassified args allowed
       */
+      CommandLine commandLine = tryParse(args, new Options());
+
       assertNoExtraArgs(commandLine);
 
       return new HelpArguments();
@@ -315,12 +188,21 @@ public final class CliArguments {
       return isAllSet;
     }
 
-    private static ListArguments parseFrom(CommandLine commandLine) {
+    private static ListArguments parse(String[] args) {
       /*
       First arg is assumed to be "ls" or an alias thereof
       No other unclassified args allowed
       optional --all flag
       */
+      Options options = new Options();
+      options.addOption(
+          Option.builder("a")
+              .longOpt("all")
+              .desc("Setting this flag lists all tasks, including blocked tasks and completed tasks.")
+              .numberOfArgs(0)
+              .build());
+
+      CommandLine commandLine = tryParse(args, options);
       assertNoExtraArgs(commandLine);
 
       boolean isAllSet = commandLine.hasOption("a");
@@ -334,8 +216,8 @@ public final class CliArguments {
       super(taskIds);
     }
 
-    private static InfoArguments parseFrom(CommandLine commandLine) {
-      return SimpleArguments.parseFrom(commandLine, InfoArguments::new);
+    private static InfoArguments parse(String[] args) {
+      return SimpleArguments.parse(args, InfoArguments::new);
     }
   }
 
@@ -366,12 +248,33 @@ public final class CliArguments {
       return blockedTasks;
     }
 
-    private static AddArguments parseFrom(CommandLine commandLine) {
-      // 1st param assumed to be "add" or an alias for it
-      // 2nd param must be description
-      // 3+ params not supported
-      // optional befores
-      // optional afters
+    private static AddArguments parse(String[] args) {
+      /*
+      1st param assumed to be "add" or an alias for it
+      2nd param must be description
+      3+ params not supported
+      optional befores
+      optional afters
+      */
+
+      Options options = new Options();
+      options.addOption(
+          Option.builder("a")
+              .longOpt("after")
+              .desc("The tasks this one comes after. This list of tasks will be blocking this task.")
+              .optionalArg(false)
+              .numberOfArgs(1)
+              .build());
+      options.addOption(
+          Option.builder("b")
+              .longOpt("before")
+              .desc("The tasks this one comes before. This list of tasks will be unblocked by this " +
+                  "task.")
+              .optionalArg(false)
+              .numberOfArgs(1)
+              .build());
+
+      CommandLine commandLine = tryParse(args, options);
 
       List<String> argsList = List.masking(commandLine.getArgList());
       if (argsList.count() < 2) {
@@ -393,8 +296,8 @@ public final class CliArguments {
       super(tasks);
     }
 
-    public static RemoveArguments parseFrom(CommandLine commandLine) {
-      return SimpleArguments.parseFrom(commandLine, RemoveArguments::new);
+    private static RemoveArguments parse(String[] args) {
+      return SimpleArguments.parse(args, RemoveArguments::new);
     }
   }
 
@@ -435,20 +338,24 @@ public final class CliArguments {
     public List<Task.Id> blockingTasksToAdd() {
       return blockingTasksToAdd;
     }
+
     public List<Task.Id> blockingTasksToRemove() {
       return blockingTasksToRemove;
     }
+
     public List<Task.Id> blockedTasks() {
       return blockedTasks;
     }
+
     public List<Task.Id> blockedTasksToAdd() {
       return blockedTasksToAdd;
     }
+
     public List<Task.Id> blockedTasksToRemove() {
       return blockedTasksToRemove;
     }
 
-    private static AmendArguments parseFrom(CommandLine commandLine) {
+    private static AmendArguments parse(String[] args) {
       /*
       1st param assumed to be "amend" or an alias for it
       2nd param must a task ID
@@ -457,6 +364,58 @@ public final class CliArguments {
       optional after=, after+=, and after-=. after= cannot be used with after+= and after-=.
       optional before=, before+=, and before-=. before= cannot be used with before+= and before-=.
       */
+      Options options = new Options();
+      options.addOption(
+          Option.builder("m")
+              .longOpt("description")
+              .desc("Edit the description of the task. Leave blank to open in an editor")
+              .numberOfArgs(1)
+              .optionalArg(false)
+              .build());
+      options.addOption(
+          Option.builder("a")
+              .longOpt("after")
+              .desc("Sets this task as blocked by another task. Clears the previous blocking tasks.")
+              .numberOfArgs(1)
+              .optionalArg(false)
+              .build());
+      options.addOption(
+          Option.builder("aa")
+              .longOpt("addafter")
+              .desc("Adds another task as blocking this one.")
+              .numberOfArgs(1)
+              .optionalArg(false)
+              .build());
+      options.addOption(
+          Option.builder("ra")
+              .longOpt("rmafter")
+              .desc("Removes another task as blocking this one.")
+              .numberOfArgs(1)
+              .optionalArg(false)
+              .build());
+      options.addOption(
+          Option.builder("b")
+              .longOpt("before")
+              .desc("Sets this task as blocking another task. Clears the previous blocked tasks.")
+              .numberOfArgs(1)
+              .optionalArg(false)
+              .build());
+      options.addOption(
+          Option.builder("ab")
+              .longOpt("addbefore")
+              .desc("Adds another task as being blocked by this one.")
+              .numberOfArgs(1)
+              .optionalArg(false)
+              .build());
+      options.addOption(
+          Option.builder("rb")
+              .longOpt("rmbefore")
+              .desc("Removes another task as being blocked by this one.")
+              .numberOfArgs(1)
+              .optionalArg(false)
+              .build());
+
+      CommandLine commandLine = tryParse(args, options);
 
       List<String> argsList = List.masking(commandLine.getArgList());
       if (argsList.count() < 2) {
@@ -466,7 +425,7 @@ public final class CliArguments {
         throw new ArgumentFormatException("Unexpected extra arguments");
       }
 
-      Optional<String> description = getSingleOptionValue(commandLine, "m");
+      Optional<String> description1 = getSingleOptionValue(commandLine, "m");
       List<Task.Id> afterTasks = parseTaskIds(getOptionValues(commandLine, "a"));
       List<Task.Id> afterTasksToAdd = parseTaskIds(getOptionValues(commandLine, "aa"));
       List<Task.Id> afterTasksToRemove = parseTaskIds(getOptionValues(commandLine, "ra"));
@@ -486,7 +445,7 @@ public final class CliArguments {
             "--before cannot be use with --addbefore or --rmbefore");
       }
 
-      if (!description.isPresent()
+      if (!description1.isPresent()
           && !afterTasks.isPopulated()
           && !afterTasksToAdd.isPopulated()
           && !afterTasksToRemove.isPopulated()
@@ -497,7 +456,7 @@ public final class CliArguments {
       }
 
       return new AmendArguments(
-          description,
+          description1,
           afterTasks,
           afterTasksToAdd,
           afterTasksToRemove,
@@ -512,8 +471,8 @@ public final class CliArguments {
       super(tasks);
     }
 
-    public static CompleteArguments parseFrom(CommandLine commandLine) {
-      return SimpleArguments.parseFrom(commandLine, CompleteArguments::new);
+    private static CompleteArguments parse(String[] args) {
+      return SimpleArguments.parse(args, CompleteArguments::new);
     }
   }
 
@@ -522,8 +481,8 @@ public final class CliArguments {
       super(tasks);
     }
 
-    public static ReopenArguments parseFrom(CommandLine commandLine) {
-      return SimpleArguments.parseFrom(commandLine, ReopenArguments::new);
+    private static ReopenArguments parse(String[] args) {
+      return SimpleArguments.parse(args, ReopenArguments::new);
     }
   }
 
