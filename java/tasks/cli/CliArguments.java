@@ -32,7 +32,7 @@ public final class CliArguments {
           .put(Mode.REMOVE, CliArguments::parseRemove)
           .put(Mode.AMEND, CliArguments::parseAmend)
           .put(Mode.COMPLETE, CliArguments::parseComplete)
-          .put(Mode.UNCOMPLETE, CliArguments::parseUncomplete)
+          .put(Mode.REOPEN, CliArguments::parseReopen)
           .build();
 
   public static final Map<Mode, Function<CommandLine, Object>> COMMAND_LINE_TO_MODE_ARGUMENTS =
@@ -72,7 +72,7 @@ public final class CliArguments {
     REMOVE,
     AMEND,
     COMPLETE,
-    UNCOMPLETE,
+    REOPEN,
   }
 
   public static CliArguments parse(String[] args) {
@@ -146,7 +146,7 @@ public final class CliArguments {
     return tryParse(args, new Options());
   }
 
-  private static CommandLine parseUncomplete(String[] args) {
+  private static CommandLine parseReopen(String[] args) {
     return tryParse(args, new Options());
   }
 
@@ -214,8 +214,8 @@ public final class CliArguments {
         return Mode.REMOVE;
       case "complete":
         return Mode.COMPLETE;
-      case "uncomplete":
-        return Mode.UNCOMPLETE;
+      case "reopen":
+        return Mode.REOPEN;
       default:
         throw new ArgumentFormatException("unrecognized mode " + arg);
     }
