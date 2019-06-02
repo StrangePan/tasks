@@ -1,6 +1,7 @@
 package tasks.cli;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 import static omnia.data.stream.Collectors.toList;
 
 import java.util.Arrays;
@@ -37,6 +38,8 @@ public final class CliArguments {
 
   public static final Map<Mode, Function<CommandLine, Object>> COMMAND_LINE_TO_MODE_ARGUMENTS =
       ImmutableMap.<Mode, Function<CommandLine, Object>>builder()
+          .put(Mode.HELP, HelpArguments::parseFrom)
+          .put(Mode.LIST, ListArguments::parseFrom)
           .put(Mode.ADD, AddArguments::parseFrom)
           .put(Mode.REMOVE, RemoveArguments::parseFrom)
           .put(Mode.AMEND, AmendArguments::parseFrom)
@@ -255,6 +258,45 @@ public final class CliArguments {
         .map(o -> o.getOpt() + " = " + commandLine.getOptionValue(o.getOpt()) + "\n")
         .forEachOrdered(string::append);
     return string.toString();
+  }
+
+  public static final class HelpArguments {
+    private HelpArguments() {}
+
+    private static HelpArguments parseFrom(CommandLine commandLine) {
+      /*
+      First arg is assumed to be "help" or an alias thereof
+      No other unclassified args allowed
+      */
+      assertNoExtraArgs(commandLine);
+
+      return new HelpArguments();
+    }
+  }
+
+  public static final class ListArguments {
+    private final boolean isAllSet;
+
+    private ListArguments(boolean isAllSet) {
+      this.isAllSet = isAllSet;
+    }
+
+    public boolean isAllSet() {
+      return isAllSet;
+    }
+
+    private static ListArguments parseFrom(CommandLine commandLine) {
+      /*
+      First arg is assumed to be "ls" or an alias thereof
+      No other unclassified args allowed
+      optional --all flag
+      */
+      assertNoExtraArgs(commandLine);
+
+      boolean isAllSet = commandLine.hasOption("a");
+
+      return new ListArguments(isAllSet);
+    }
   }
 
   public static final class AddArguments {
@@ -495,5 +537,18 @@ public final class CliArguments {
       throw new ArgumentFormatException("Too many values provided for parameter '" + opt + "'");
     }
     return Optional.ofNullable(commandLine.getOptionValue(opt));
+  }
+
+  private static void assertNoExtraArgs(CommandLine commandLine) {
+    if (commandLine.getArgList().size() > 1) {
+      String unexpectedArgs =
+          commandLine.getArgList()
+              .stream()
+              .skip(1)
+              .map(s -> "\"" + s + "\"")
+              .collect(joining(", "));
+
+      throw new ArgumentFormatException("Unexpected arguments given: " + unexpectedArgs);
+    }
   }
 }
