@@ -39,6 +39,7 @@ public final class CliArguments {
       ImmutableMap.<Mode, Function<CommandLine, Object>>builder()
           .put(Mode.ADD, AddArguments::parseFrom)
           .put(Mode.REMOVE, RemoveArguments::parseFrom)
+          .put(Mode.COMPLETE, CompleteArguments::parseFrom)
           .build();
 
   private final Mode mode;
@@ -325,6 +326,16 @@ public final class CliArguments {
 
     public static RemoveArguments parseFrom(CommandLine commandLine) {
       return SimpleArguments.parseFrom(commandLine, RemoveArguments::new);
+    }
+  }
+
+  public static final class CompleteArguments extends SimpleArguments {
+    private CompleteArguments(List<Task.Id> tasks) {
+      super(tasks);
+    }
+
+    public static CompleteArguments parseFrom(CommandLine commandLine) {
+      return SimpleArguments.parseFrom(commandLine, CompleteArguments::new);
     }
   }
 
