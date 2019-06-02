@@ -40,6 +40,7 @@ public final class CliArguments {
       ImmutableMap.<Mode, Function<CommandLine, Object>>builder()
           .put(Mode.HELP, HelpArguments::parseFrom)
           .put(Mode.LIST, ListArguments::parseFrom)
+          .put(Mode.INFO, InfoArguments::parseFrom)
           .put(Mode.ADD, AddArguments::parseFrom)
           .put(Mode.REMOVE, RemoveArguments::parseFrom)
           .put(Mode.AMEND, AmendArguments::parseFrom)
@@ -260,6 +261,35 @@ public final class CliArguments {
     return string.toString();
   }
 
+  private static abstract class SimpleArguments {
+    private final List<Task.Id> tasks;
+
+    private SimpleArguments(List<Task.Id> tasks) {
+      this.tasks = tasks;
+    }
+
+    public List<Task.Id> tasks() {
+      return this.tasks;
+    }
+
+    private static <T extends SimpleArguments> T parseFrom(
+        CommandLine commandLine, Function<List<Task.Id>, T> constructor) {
+      /*
+      1st param assumed to be "remove" or an alias for it.
+      2nd+ params must be task IDs
+      */
+
+      List<String> argsList = List.masking(commandLine.getArgList());
+      if (argsList.count() < 2) {
+        throw new ArgumentFormatException("No task IDs specified");
+      }
+
+      List<Task.Id> taskIds = parseTaskIds(argsList.stream().skip(1).collect(toList()));
+
+      return constructor.apply(taskIds);
+    }
+  }
+
   public static final class HelpArguments {
     private HelpArguments() {}
 
@@ -296,6 +326,16 @@ public final class CliArguments {
       boolean isAllSet = commandLine.hasOption("a");
 
       return new ListArguments(isAllSet);
+    }
+  }
+
+  public static final class InfoArguments extends SimpleArguments {
+    private InfoArguments(List<Task.Id> taskIds) {
+      super(taskIds);
+    }
+
+    private static InfoArguments parseFrom(CommandLine commandLine) {
+      return SimpleArguments.parseFrom(commandLine, InfoArguments::new);
     }
   }
 
@@ -345,35 +385,6 @@ public final class CliArguments {
       List<Task.Id> beforeTasks = parseTaskIds(getOptionValues(commandLine, "b"));
 
       return new AddArguments(argsList.itemAt(1), afterTasks, beforeTasks);
-    }
-  }
-
-  private static abstract class SimpleArguments {
-    private final List<Task.Id> tasks;
-
-    private SimpleArguments(List<Task.Id> tasks) {
-      this.tasks = tasks;
-    }
-
-    public List<Task.Id> tasks() {
-      return this.tasks;
-    }
-
-    private static <T extends SimpleArguments> T parseFrom(
-        CommandLine commandLine, Function<List<Task.Id>, T> constructor) {
-      /*
-      1st param assumed to be "remove" or an alias for it.
-      2nd+ params must be task IDs
-      */
-
-      List<String> argsList = List.masking(commandLine.getArgList());
-      if (argsList.count() < 2) {
-        throw new ArgumentFormatException("No task IDs specified");
-      }
-
-      List<Task.Id> taskIds = parseTaskIds(argsList.stream().skip(1).collect(toList()));
-
-      return constructor.apply(taskIds);
     }
   }
 
