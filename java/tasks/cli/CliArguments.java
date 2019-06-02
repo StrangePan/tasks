@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import omnia.data.stream.Collectors;
 import omnia.data.structure.List;
 import omnia.data.structure.Map;
 import omnia.data.structure.immutable.ImmutableList;
@@ -290,10 +289,10 @@ public final class CliArguments {
     }
   }
 
-  public static final class RemoveArguments {
+  private static abstract class SimpleArguments {
     private final List<Task.Id> tasks;
 
-    private RemoveArguments(List<Task.Id> tasks) {
+    private SimpleArguments(List<Task.Id> tasks) {
       this.tasks = tasks;
     }
 
@@ -301,7 +300,8 @@ public final class CliArguments {
       return this.tasks;
     }
 
-    public static RemoveArguments parseFrom(CommandLine commandLine) {
+    private static <T extends SimpleArguments> T parseFrom(
+        CommandLine commandLine, Function<List<Task.Id>, T> constructor) {
       /*
       1st param assumed to be "remove" or an alias for it.
       2nd+ params must be task IDs
@@ -314,7 +314,17 @@ public final class CliArguments {
 
       List<Task.Id> taskIds = parseTaskIds(argsList.stream().skip(1).collect(toList()));
 
-      return new RemoveArguments(taskIds);
+      return constructor.apply(taskIds);
+    }
+  }
+
+  public static final class RemoveArguments extends SimpleArguments {
+    private RemoveArguments(List<Task.Id> tasks) {
+      super(tasks);
+    }
+
+    public static RemoveArguments parseFrom(CommandLine commandLine) {
+      return SimpleArguments.parseFrom(commandLine, RemoveArguments::new);
     }
   }
 
