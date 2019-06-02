@@ -1,10 +1,8 @@
 package tasks;
 
 import static java.util.Objects.requireNonNull;
-import static omnia.data.stream.Collectors.toImmutableSet;
 
 import java.util.Objects;
-import java.util.Optional;
 import omnia.data.structure.Collection;
 import omnia.data.structure.immutable.ImmutableSet;
 
@@ -25,12 +23,8 @@ public interface Task {
       this.id = id;
     }
 
-    public long asLong() {
-      return id;
-    }
-
-    public static Id from(long id) {
-      return new Id(id);
+    public String serialize() {
+      return Long.toString(id);
     }
 
     @Override
@@ -41,6 +35,24 @@ public interface Task {
     @Override
     public int hashCode() {
       return Objects.hash(id);
+    }
+
+    public static Id from(long id) {
+      return new Id(id);
+    }
+
+    public static Id parse(String serializedId) throws IdFormatException {
+      try {
+        return Id.from(Long.parseLong(serializedId));
+      } catch (NumberFormatException ex) {
+        throw new IdFormatException("Unable to parse numerical representation of ID", ex);
+      }
+    }
+
+    public static final class IdFormatException extends RuntimeException {
+      private IdFormatException(String message, Throwable cause) {
+        super(message, cause);
+      }
     }
   }
 

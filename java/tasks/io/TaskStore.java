@@ -83,13 +83,12 @@ public class TaskStore implements Store<Collection<Task>> {
       String[] parts = taskString.split(";");
       Task parsedTask =
           Task.builder()
-              .id(Task.Id.from(Long.parseLong(parts[0])))
+              .id(Task.Id.parse(parts[0]))
               .label(escapist().unescape(parts[1]))
               .dependencies(
                   Arrays.stream(parts[2].split(","))
                       .filter(s -> !s.isEmpty())
-                      .map(Long::parseLong)
-                      .map(Task.Id::from)
+                      .map(Task.Id::parse)
                       .map(taskMap::valueOf)
                       .map(Optional::get)
                       .collect(toImmutableSet()))
@@ -154,7 +153,7 @@ public class TaskStore implements Store<Collection<Task>> {
 
     private static String createTaskString(Task task) {
       return new StringBuilder()
-          .append(task.id().asLong())
+          .append(task.id().serialize())
           .append(';')
           .append(escapist().escape(task.label()))
           .append(';')
@@ -162,8 +161,7 @@ public class TaskStore implements Store<Collection<Task>> {
               task.dependencies()
                   .stream()
                   .map(Task::id)
-                  .map(Task.Id::asLong)
-                  .map(l -> Long.toString(l))
+                  .map(Task.Id::serialize)
                   .collect(Collectors.joining(",")))
           .append(';')
           .append(Boolean.toString(task.isCompleted()))

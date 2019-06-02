@@ -19,6 +19,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import tasks.Task;
+import tasks.Task.Id.IdFormatException;
 
 /** Data structure for arguments passed into the command line. */
 public final class CliArguments {
@@ -320,12 +321,9 @@ public final class CliArguments {
   private static List<Task.Id> parseTaskIds(List<String> taskStrings) {
     List<Task.Id> taskIds;
     try {
-      taskIds = taskStrings.stream().map(Long::parseLong).map(Task.Id::from).collect(toList());
-    } catch (NumberFormatException ex) {
+      taskIds = taskStrings.stream().map(Task.Id::parse).collect(toList());
+    } catch (IdFormatException ex) {
       throw new ArgumentFormatException("Invalid task ID", ex);
-    }
-    if (taskIds.stream().anyMatch(id -> id.asLong() < 0)) {
-      throw new ArgumentFormatException("Invalid task ID");
     }
     return taskIds;
   }
