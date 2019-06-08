@@ -128,7 +128,7 @@ public class TaskStore implements Store<Collection<Task>> {
 
     @Override
     public void close() {
-      // no-op since file is opened and closed in read()
+      // no-op since file is opened and closed in write
     }
 
     private static List<Task> sortTasks(Collection<Task> tasks) {
