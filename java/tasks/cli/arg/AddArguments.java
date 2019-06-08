@@ -1,8 +1,8 @@
-package tasks.cli;
+package tasks.cli.arg;
 
-import static tasks.cli.CliUtils.getOptionValues;
-import static tasks.cli.CliUtils.parseTaskIds;
-import static tasks.cli.CliUtils.tryParse;
+import static tasks.cli.arg.CliUtils.getOptionValues;
+import static tasks.cli.arg.CliUtils.parseTaskIds;
+import static tasks.cli.arg.CliUtils.tryParse;
 
 import omnia.data.structure.List;
 import org.apache.commons.cli.CommandLine;

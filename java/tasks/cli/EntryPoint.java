@@ -1,5 +1,6 @@
 package tasks.cli;
 
+import tasks.cli.arg.CliArguments;
 /** CLI entry point into the Tasks application. */
 public final class EntryPoint {
 

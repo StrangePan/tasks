@@ -1,4 +1,4 @@
-package tasks.cli;
+package tasks.cli.arg;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -12,7 +12,7 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import tasks.Task;
-public class CliUtils {
+class CliUtils {
   static CommandLine tryParse(String[] args, Options options) {
     try {
       return new DefaultParser().parse(options, args, /* stopAtNonOption= */ false);

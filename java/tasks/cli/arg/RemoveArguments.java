@@ -1,4 +1,4 @@
-package tasks.cli;
+package tasks.cli.arg;
 
 import omnia.data.structure.List;
 import tasks.Task;

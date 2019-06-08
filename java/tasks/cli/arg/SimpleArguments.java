@@ -1,8 +1,8 @@
-package tasks.cli;
+package tasks.cli.arg;
 
 import static omnia.data.stream.Collectors.toList;
-import static tasks.cli.CliUtils.parseTaskIds;
-import static tasks.cli.CliUtils.tryParse;
+import static tasks.cli.arg.CliUtils.parseTaskIds;
+import static tasks.cli.arg.CliUtils.tryParse;
 
 import java.util.function.Function;
 import omnia.data.structure.List;

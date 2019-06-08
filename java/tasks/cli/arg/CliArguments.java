@@ -1,4 +1,4 @@
-package tasks.cli;
+package tasks.cli.arg;
 
 import static java.util.Objects.requireNonNull;
 
@@ -50,7 +50,7 @@ public final class CliArguments {
     // Parameter validation
     requireNonNull(args);
     if (Arrays.stream(args).anyMatch(Objects::isNull)) {
-      throw new IllegalArgumentException("args cannot contain null");
+      throw new IllegalArgumentException("arg cannot contain null");
     }
 
     List<String> argsList = ImmutableList.of(args);

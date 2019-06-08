@@ -1,4 +1,4 @@
-package tasks.cli;
+package tasks.cli.arg;
 
 enum CliMode {
   HELP,
