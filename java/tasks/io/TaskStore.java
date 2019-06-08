@@ -111,7 +111,7 @@ public class TaskStore implements Store<Collection<Task>> {
 
     void write(Collection<Task> tasks) {
       // Flatten graph to a list of tasks sorted by tasks with no dependencies at the front
-      List<Task> sortedTasks = sortTasks(tasks);
+      List<Task> sortedTasks = generateTasks(tasks);
 
       sortedTasks.stream()
           .map(TextWriter::createTaskString)
@@ -131,21 +131,25 @@ public class TaskStore implements Store<Collection<Task>> {
       // no-op since file is opened and closed in write
     }
 
-    private static List<Task> sortTasks(Collection<Task> tasks) {
+    private static List<Task> generateTasks(Collection<Task> tasks) {
       ImmutableList.Builder<Task> sortedTasks = ImmutableList.builder();
       MutableSet<Task.Id> seenIds = new HashSet<>();
       for (Task task : tasks) {
-        sortedTasks.addAll(generateTaskList(task, seenIds));
+        sortedTasks.addAll(generateSortedTasks(task, seenIds));
       }
       return sortedTasks.build();
     }
 
-    private static List<Task> generateTaskList(Task task, MutableSet<Task.Id> seenIds) {
+    /**
+     * Recursively traverses the acyclic task graph depth-first such that dependencies always
+     * precede their dependents.
+     */
+    private static List<Task> generateSortedTasks(Task task, MutableSet<Task.Id> seenIds) {
       ImmutableList.Builder<Task> taskList = ImmutableList.builder();
       if (!seenIds.contains(task.id())) {
         seenIds.add(task.id());
         for (Task dependency : task.dependencies()) {
-          taskList.addAll(generateTaskList(dependency, seenIds));
+          taskList.addAll(generateSortedTasks(dependency, seenIds));
         }
         taskList.add(task);
       }
