@@ -28,6 +28,11 @@ public interface Task {
     }
 
     @Override
+    public String toString() {
+      return "Id" + id;
+    }
+
+    @Override
     public boolean equals(Object other) {
       return other instanceof Id && ((Id) other).id == id;
     }
@@ -47,6 +52,24 @@ public interface Task {
       } catch (NumberFormatException ex) {
         throw new IdFormatException("Unable to parse numerical representation of ID", ex);
       }
+    }
+
+    public static Id initial() {
+      return new Id(0);
+    }
+
+    public static Id after(Id previousId) {
+      requireNonNull(previousId);
+      return new Id(previousId.id + 1);
+    }
+
+    public static Id after(Collection<Id> previousIds) {
+      return previousIds.stream()
+          .map(id -> id.id)
+          .reduce(Math::max)
+          .map(l -> l + 1)
+          .map(Id::new)
+          .orElseGet(Id::initial);
     }
 
     public static final class IdFormatException extends RuntimeException {
