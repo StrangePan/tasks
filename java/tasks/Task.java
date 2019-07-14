@@ -142,6 +142,14 @@ public interface Task {
       public int hashCode() {
         return Objects.hash(id, label, dependencies, isCompleted);
       }
+
+      @Override
+      public String toString() {
+        return id().toString()
+            + ": "
+            + label()
+            + (dependencies().isPopulated() ? "[" + dependencies().count() + "]" : "");
+      }
     }
 
     class DefaultBuilder implements Builder {
