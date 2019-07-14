@@ -148,7 +148,8 @@ public interface Task {
         return id().toString()
             + ": "
             + label()
-            + (dependencies().isPopulated() ? "[" + dependencies().count() + "]" : "");
+            + (dependencies().isPopulated() ? " [" + dependencies().count() + "]" : "")
+            + (isCompleted() ? " (completed)" : "");
       }
     }
 
