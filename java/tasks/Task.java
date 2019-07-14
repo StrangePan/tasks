@@ -187,4 +187,12 @@ public interface Task {
 
     return new DefaultBuilder();
   }
+
+  static Builder buildUpon(Task other) {
+    return builder()
+        .id(other.id())
+        .label(other.label())
+        .dependencies(other.dependencies())
+        .isCompleted(other.isCompleted());
+  }
 }
