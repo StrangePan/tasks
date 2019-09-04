@@ -50,9 +50,8 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
         ImmutableDirectedGraph.buildUpon(taskGraph);
 
     // remove all edges from the removed tasks
-    Stream.concat(
-        targetTaskNodes.stream().flatMap(node -> node.outgoingEdges().stream()),
-        targetTaskNodes.stream().flatMap(node -> node.incomingEdges().stream()))
+    targetTaskNodes.stream()
+        .flatMap(node -> node.edges().stream())
         .forEach(edge -> newTaskBuilder.removeEdge(edge.start().element(), edge.end().element()));
 
     // finally, remove the target tasks from the graph
