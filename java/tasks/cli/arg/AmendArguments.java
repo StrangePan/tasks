@@ -13,6 +13,7 @@ import org.apache.commons.cli.Options;
 import tasks.Task;
 
 public final class AmendArguments {
+  private final Task.Id targetTask;
   private final Optional<String> description;
   private final List<Task.Id> blockingTasks;
   private final List<Task.Id> blockingTasksToAdd;
@@ -22,6 +23,7 @@ public final class AmendArguments {
   private final List<Task.Id> blockedTasksToRemove;
 
   private AmendArguments(
+      Task.Id targetTask,
       Optional<String> description,
       List<Task.Id> blockingTasks,
       List<Task.Id> blockingTasksToAdd,
@@ -29,6 +31,7 @@ public final class AmendArguments {
       List<Task.Id> blockedTasks,
       List<Task.Id> blockedTasksToAdd,
       List<Task.Id> blockedTasksToRemove) {
+    this.targetTask = targetTask;
     this.description = description;
     this.blockingTasks = blockingTasks;
     this.blockingTasksToAdd = blockingTasksToAdd;
@@ -36,6 +39,10 @@ public final class AmendArguments {
     this.blockedTasks = blockedTasks;
     this.blockedTasksToAdd = blockedTasksToAdd;
     this.blockedTasksToRemove = blockedTasksToRemove;
+  }
+
+  public Task.Id targetTask() {
+    return targetTask;
   }
 
   public Optional<String> description() {
@@ -136,6 +143,8 @@ public final class AmendArguments {
       throw new CliArguments.ArgumentFormatException("Unexpected extra arguments");
     }
 
+    Task.Id targetTask = Task.Id.parse(argsList.itemAt(1));
+
     Optional<String> description1 = getSingleOptionValue(commandLine, "m");
     List<Task.Id> afterTasks = parseTaskIds(getOptionValues(commandLine, "a"));
     List<Task.Id> afterTasksToAdd = parseTaskIds(getOptionValues(commandLine, "aa"));
@@ -167,6 +176,7 @@ public final class AmendArguments {
     }
 
     return new AmendArguments(
+        targetTask,
         description1,
         afterTasks,
         afterTasksToAdd,
