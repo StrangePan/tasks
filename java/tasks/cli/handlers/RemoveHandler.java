@@ -4,7 +4,6 @@ import static java.util.stream.Collectors.joining;
 import static omnia.algorithm.SetAlgorithms.differenceBetween;
 import static omnia.data.stream.Collectors.toSet;
 
-import java.util.stream.Stream;
 import omnia.data.structure.DirectedGraph;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableDirectedGraph;

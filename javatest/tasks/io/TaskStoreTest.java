@@ -1,9 +1,9 @@
 package tasks.io;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import omnia.data.structure.Collection;
-import omnia.data.structure.immutable.ImmutableSet;
+import omnia.data.structure.DirectedGraph;
+import omnia.data.structure.immutable.ImmutableDirectedGraph;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -23,12 +23,12 @@ public final class TaskStoreTest {
             .label("this was a triumph")
             .isCompleted(false)
             .build();
+    DirectedGraph<Task> tasks = ImmutableDirectedGraph.<Task>builder().addNode(task).build();
 
-    underTest.storeBlocking(ImmutableSet.<Task>builder().add(task).build());
-    Collection<Task> retrievedTasks = underTest.retrieveBlocking();
+    underTest.storeBlocking(tasks);
+    DirectedGraph<Task> retrievedTasks = underTest.retrieveBlocking();
 
-    assertEquals(1, retrievedTasks.count());
-    assertEquals(task, retrievedTasks.iterator().next());
+    assertTrue(DirectedGraph.areEqual(tasks, retrievedTasks));
   }
 
   @Test
@@ -43,19 +43,18 @@ public final class TaskStoreTest {
         Task.builder()
             .id(Task.Id.from(2))
             .label("i'm making a note here: huge success")
-            .dependencies(
-                ImmutableSet.<Task>builder().add(task1).build())
             .build();
 
-    ImmutableSet<Task> tasks =
-        ImmutableSet.<Task>builder()
-            .add(task1)
-            .add(task2)
+    ImmutableDirectedGraph<Task> tasks =
+        ImmutableDirectedGraph.<Task>builder()
+            .addNode(task1)
+            .addNode(task2)
+            .addEdge(task2, task1)
             .build();
 
     underTest.storeBlocking(tasks);
-    Collection<Task> retrievedTasks = underTest.retrieveBlocking();
+    DirectedGraph<Task> retrievedTasks = underTest.retrieveBlocking();
 
-    assertEquals(tasks, ImmutableSet.<Task>builder().addAll(retrievedTasks).build());
+    assertTrue(DirectedGraph.areEqual(tasks, retrievedTasks));
   }
 }

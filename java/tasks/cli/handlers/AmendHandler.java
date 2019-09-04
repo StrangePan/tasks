@@ -130,7 +130,6 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
     Task newTask =
         Task.buildUpon(targetTask)
             .label(label)
-            .dependencies(blockingTasks)
             .build();
 
     // build mutated graph

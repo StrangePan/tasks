@@ -49,7 +49,7 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
     // Construct the new task
     Task.Id nextId = Task.Id.after(taskIds);
     String label = arguments.description();
-    Task nextTask = Task.builder().id(nextId).label(label).dependencies(nextDependencies).build();
+    Task nextTask = Task.builder().id(nextId).label(label).isCompleted(false).build();
 
     // Construct a new task graph with the new task inserted and the new edges assembled
     ImmutableDirectedGraph.Builder<Task> newTasksBuilder =
