@@ -40,7 +40,7 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
           "unrecognized tasks specified: " + stringifyContents(invalidTaskIds));
     }
 
-    // Collect the set of dependencies and dependents
+    // Collect the set empty dependencies and dependents
     Set<Task> nextDependencies =
         tasks.stream().filter(task -> blockingIds.contains(task.id())).collect(toSet());
     Set<Task> nextDependents =

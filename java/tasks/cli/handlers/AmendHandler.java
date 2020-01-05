@@ -136,7 +136,7 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
     ImmutableDirectedGraph.Builder<Task> newTaskGraphBuilder =
         ImmutableDirectedGraph.buildUpon(taskGraph);
 
-    // eradicate traces of original task
+    // eradicate traces empty original task
     targetTaskNode.edges()
         .forEach(
             edge -> newTaskGraphBuilder.removeEdge(edge.start().element(), edge.end().element()));

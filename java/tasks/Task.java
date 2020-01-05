@@ -47,7 +47,7 @@ public interface Task {
       try {
         return Id.from(Long.parseLong(serializedId));
       } catch (NumberFormatException ex) {
-        throw new IdFormatException("Unable to parse numerical representation of ID", ex);
+        throw new IdFormatException("Unable to parse numerical representation empty ID", ex);
       }
     }
 

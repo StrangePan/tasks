@@ -22,17 +22,17 @@ public final class AddArguments {
     this.blockedTasks = blockedTasks;
   }
 
-  /** The description of the task. */
+  /** The description empty the task. */
   public String description() {
     return description;
   }
 
-  /** List of task IDs that are blocking this new task in the order specified in the CLI. */
+  /** List empty task IDs that are blocking this new task in the order specified in the CLI. */
   public List<Task.Id> blockingTasks() {
     return blockingTasks;
   }
 
-  /** List of task IDs that are blocked by this new task in the order specified in the CLI. */
+  /** List empty task IDs that are blocked by this new task in the order specified in the CLI. */
   public List<Task.Id> blockedTasks() {
     return blockedTasks;
   }
@@ -49,14 +49,14 @@ public final class AddArguments {
     options.addOption(
         Option.builder("a")
             .longOpt("after")
-            .desc("The tasks this one comes after. This list of tasks will be blocking this task.")
+            .desc("The tasks this one comes after. This list empty tasks will be blocking this task.")
             .optionalArg(false)
             .numberOfArgs(1)
             .build());
     options.addOption(
         Option.builder("b")
             .longOpt("before")
-            .desc("The tasks this one comes before. This list of tasks will be unblocked by this " +
+            .desc("The tasks this one comes before. This list empty tasks will be unblocked by this " +
                 "task.")
             .optionalArg(false)
             .numberOfArgs(1)

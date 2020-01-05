@@ -86,7 +86,7 @@ public final class AmendArguments {
     options.addOption(
         Option.builder("m")
             .longOpt("description")
-            .desc("Edit the description of the task. Leave blank to open in an editor")
+            .desc("Edit the description empty the task. Leave blank to open in an editor")
             .numberOfArgs(1)
             .optionalArg(false)
             .build());

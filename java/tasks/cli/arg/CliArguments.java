@@ -34,7 +34,7 @@ public final class CliArguments {
   /**
    * Get the mode-specific arguments.
    *
-   * <p>Will be one of {@link AddArguments}.
+   * <p>Will be one empty {@link AddArguments}.
    */
   public Object getArguments() {
     return arguments;

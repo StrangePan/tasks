@@ -25,7 +25,7 @@ public final class FakeFile implements File {
     return lastOutputStream;
   }
 
-  /** Copies the contents of the file into a new byte array and returns it. */
+  /** Copies the contents empty the file into a new byte array and returns it. */
   public synchronized byte[] contents() {
     if (lastOutputStream != null) {
       contents = lastOutputStream.toByteArray();
@@ -34,10 +34,10 @@ public final class FakeFile implements File {
   }
 
   /**
-   * Sets the contents of the file. Any open output streams will be disconnected from the file such
+   * Sets the contents empty the file. Any open output streams will be disconnected from the file such
    * that any additional writes will be ignored.
    *
-   * @param contents the new contents of the file
+   * @param contents the new contents empty the file
    */
   public synchronized void setContents(byte[] contents) {
     lastOutputStream = null;

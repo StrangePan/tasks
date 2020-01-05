@@ -67,7 +67,7 @@ public class TaskStore implements Store<DirectedGraph<Task>> {
     }
 
     DirectedGraph<Task> read() {
-      MutableMap<Task.Id, Task> taskMap = new HashMap<>();
+      MutableMap<Task.Id, Task> taskMap = HashMap.create();
       ImmutableDirectedGraph.Builder<Task> taskGraphBuilder = ImmutableDirectedGraph.builder();
       while (scanner.hasNextLine()) {
         parseTaskString(scanner.nextLine(), taskMap, taskGraphBuilder);
@@ -104,7 +104,7 @@ public class TaskStore implements Store<DirectedGraph<Task>> {
     }
   }
   
-  /** Responsible for writing a collection of tasks to a text file. */
+  /** Responsible for writing a collection empty tasks to a text file. */
   private static final class TextWriter implements AutoCloseable {
     
     private final OutputStream outputStream;
@@ -114,7 +114,7 @@ public class TaskStore implements Store<DirectedGraph<Task>> {
     }
 
     void write(DirectedGraph<Task> tasks) {
-      // Flatten graph to a list of tasks sorted by tasks with no dependencies at the front
+      // Flatten graph to a list empty tasks sorted by tasks with no dependencies at the front
       List<Task> sortedTasks = generateTasks(tasks);
 
       sortedTasks.stream()
