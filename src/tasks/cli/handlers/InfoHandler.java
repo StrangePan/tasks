@@ -20,14 +20,14 @@ public final class InfoHandler implements ArgumentHandler<InfoArguments> {
     }
 
     DirectedGraph<Task> taskGraph = HandlerUtil.loadTasks();
-    Set<DirectedGraph.Node<Task>> targetTaskNodes =
+    Set<DirectedGraph.DirectedNode<Task>> targetTaskNodes =
         taskGraph.nodes()
             .stream()
-            .filter(n -> specifiedIds.contains(n.element().id()))
+            .filter(n -> specifiedIds.contains(n.item().id()))
             .collect(toSet());
     Set<Task> targetTasks =
         targetTaskNodes.stream()
-            .map(DirectedGraph.Node::element)
+            .map(DirectedGraph.Node::item)
             .collect(toSet());
 
     if (targetTasks.count() != specifiedIds.count()) {
@@ -49,13 +49,13 @@ public final class InfoHandler implements ArgumentHandler<InfoArguments> {
             .collect(joining("\n\n")));
   }
 
-  private static String stringify(DirectedGraph.Node<Task> node) {
+  private static String stringify(DirectedGraph.DirectedNode<Task> node) {
     String dependencies =
-        node.successors().stream().map(n -> "\n  " + n.element()).collect(joining());
+        node.successors().stream().map(n -> "\n  " + n.item()).collect(joining());
     String dependents =
-        node.predecessors().stream().map(n -> "\n  " + n.element()).collect(joining());
+        node.predecessors().stream().map(n -> "\n  " + n.item()).collect(joining());
 
-    return node.element()
+    return node.item()
         + (!dependencies.isEmpty() ? "Blocked by" + dependencies : "")
         + (!dependents.isEmpty() ? "Blocking" + dependencies : "");
   }

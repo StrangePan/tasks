@@ -53,7 +53,7 @@ public final class CliArguments {
       throw new IllegalArgumentException("arg cannot contain null");
     }
 
-    List<String> argsList = ImmutableList.of(args);
+    List<String> argsList = ImmutableList.<String>builder().addAll(args).build();
 
     // Determine what mode we're in. This will affect what flags are available and what they mean.
     CliMode mode = modeFromArgument(argsList.isPopulated() ? argsList.itemAt(0) : "");

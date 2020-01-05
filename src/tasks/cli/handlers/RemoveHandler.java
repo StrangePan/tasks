@@ -22,14 +22,14 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
     }
 
     DirectedGraph<Task> taskGraph = HandlerUtil.loadTasks();
-    Set<DirectedGraph.Node<Task>> targetTaskNodes =
+    Set<DirectedGraph.DirectedNode<Task>> targetTaskNodes =
         taskGraph.nodes()
             .stream()
-            .filter(n -> specifiedIds.contains(n.element().id()))
+            .filter(n -> specifiedIds.contains(n.item().id()))
             .collect(toSet());
     Set<Task> targetTasks =
         targetTaskNodes.stream()
-            .map(DirectedGraph.Node::element)
+            .map(DirectedGraph.Node::item)
             .collect(toSet());
 
     if (targetTasks.count() != specifiedIds.count()) {
@@ -51,7 +51,7 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
     // remove all edges from the removed tasks
     targetTaskNodes.stream()
         .flatMap(node -> node.edges().stream())
-        .forEach(edge -> newTaskBuilder.removeEdge(edge.start().element(), edge.end().element()));
+        .forEach(edge -> newTaskBuilder.removeEdge(edge.start().item(), edge.end().item()));
 
     // finally, remove the target tasks from the graph
     targetTasks.forEach(newTaskBuilder::removeNode);

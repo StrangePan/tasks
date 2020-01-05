@@ -138,7 +138,7 @@ public class TaskStore implements Store<DirectedGraph<Task>> {
     private static List<Task> generateTasks(DirectedGraph<Task> tasks) {
       ImmutableList.Builder<Task> sortedTasks = ImmutableList.builder();
       MutableSet<Task.Id> seenIds = new HashSet<>();
-      for (DirectedGraph.Node<Task> task : tasks.nodes()) {
+      for (DirectedGraph.DirectedNode<Task> task : tasks.nodes()) {
         sortedTasks.addAll(generateSortedTasks(task, seenIds));
       }
       return sortedTasks.build();
@@ -149,14 +149,14 @@ public class TaskStore implements Store<DirectedGraph<Task>> {
      * precede their dependents.
      */
     private static List<Task> generateSortedTasks(
-        DirectedGraph.Node<Task> task, MutableSet<Task.Id> seenIds) {
+        DirectedGraph.DirectedNode<Task> task, MutableSet<Task.Id> seenIds) {
       ImmutableList.Builder<Task> taskList = ImmutableList.builder();
-      if (!seenIds.contains(task.element().id())) {
-        seenIds.add(task.element().id());
-        for (DirectedGraph.Node<Task> dependency : task.successors()) {
+      if (!seenIds.contains(task.item().id())) {
+        seenIds.add(task.item().id());
+        for (DirectedGraph.DirectedNode<Task> dependency : task.successors()) {
           taskList.addAll(generateSortedTasks(dependency, seenIds));
         }
-        taskList.add(task.element());
+        taskList.add(task.item());
       }
       return taskList.build();
     }
@@ -169,12 +169,12 @@ public class TaskStore implements Store<DirectedGraph<Task>> {
           .append(';')
           .append(
               taskGraph.nodeOf(task).orElseThrow(AssertionError::new).successors().stream()
-                  .map(DirectedGraph.Node::element)
+                  .map(DirectedGraph.Node::item)
                   .map(Task::id)
                   .map(Task.Id::serialize)
                   .collect(Collectors.joining(",")))
           .append(';')
-          .append(Boolean.toString(task.isCompleted()))
+          .append(task.isCompleted())
           .toString();
     }
   }

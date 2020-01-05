@@ -19,20 +19,20 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
   public void handle(AmendArguments arguments) {
     DirectedGraph<Task> taskGraph = HandlerUtil.loadTasks();
 
-    Optional<? extends DirectedGraph.Node<Task>> targetTaskOptional =
+    Optional<? extends DirectedGraph.DirectedNode<Task>> targetTaskOptional =
         taskGraph.nodes().stream()
-            .filter(n -> n.element().id().equals(arguments.targetTask()))
+            .filter(n -> n.item().id().equals(arguments.targetTask()))
             .findFirst();
 
-    DirectedGraph.Node<Task> targetTaskNode =
+    DirectedGraph.DirectedNode<Task> targetTaskNode =
         targetTaskOptional.orElseThrow(
             () -> new HandlerException("unknown task id specified: " + arguments.targetTask()));
 
-    Task targetTask = targetTaskNode.element();
+    Task targetTask = targetTaskNode.item();
 
     Set<Task.Id> existingTaskIds =
         taskGraph.nodes().stream()
-            .map(DirectedGraph.Node::element)
+            .map(DirectedGraph.Node::item)
             .map(Task::id)
             .collect(toSet());
 
@@ -95,8 +95,8 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
                 ImmutableSet.copyOf(arguments.blockingTasksToAdd()),
                 SetAlgorithms.differenceBetween(
                     targetTaskNode.outgoingEdges().stream()
-                        .map(DirectedGraph.Edge::end)
-                        .map(DirectedGraph.Node::element)
+                        .map(DirectedGraph.DirectedEdge::end)
+                        .map(DirectedGraph.DirectedNode::item)
                         .map(Task::id)
                         .collect(toSet()),
                     ImmutableSet.copyOf(arguments.blockingTasksToRemove())));
@@ -108,8 +108,8 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
             ImmutableSet.copyOf(arguments.blockedTasksToAdd()),
             SetAlgorithms.differenceBetween(
                 targetTaskNode.incomingEdges().stream()
-                    .map(DirectedGraph.Edge::start)
-                    .map(DirectedGraph.Node::element)
+                    .map(DirectedGraph.DirectedEdge::start)
+                    .map(DirectedGraph.DirectedNode::item)
                     .map(Task::id)
                     .collect(toSet()),
                 ImmutableSet.copyOf(arguments.blockedTasksToRemove())));
@@ -118,12 +118,12 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
 
     Set<Task> blockingTasks =
         taskGraph.nodes().stream()
-            .map(DirectedGraph.Node::element)
+            .map(DirectedGraph.DirectedNode::item)
             .filter(task -> blockingTaskIds.contains(task.id()))
             .collect(toSet());
     Set<Task> blockedTasks =
         taskGraph.nodes().stream()
-            .map(DirectedGraph.Node::element)
+            .map(DirectedGraph.DirectedNode::item)
             .filter(task -> blockedTaskIds.contains(task.id()))
             .collect(toSet());
 
@@ -139,7 +139,7 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
     // eradicate traces empty original task
     targetTaskNode.edges()
         .forEach(
-            edge -> newTaskGraphBuilder.removeEdge(edge.start().element(), edge.end().element()));
+            edge -> newTaskGraphBuilder.removeEdge(edge.start().item(), edge.end().item()));
     newTaskGraphBuilder.removeNode(targetTask);
 
     // insert new task into graph

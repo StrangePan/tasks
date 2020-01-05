@@ -8,7 +8,7 @@ import static tasks.cli.handlers.HandlerUtil.stringifyContents;
 import java.util.stream.Stream;
 import omnia.algorithm.GraphAlgorithms;
 import omnia.data.structure.DirectedGraph;
-import omnia.data.structure.DirectedGraph.Node;
+import omnia.data.structure.DirectedGraph.DirectedNode;
 import omnia.data.structure.Pair;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableDirectedGraph;
@@ -26,7 +26,7 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
     }
 
     DirectedGraph<Task> taskGraph = HandlerUtil.loadTasks();
-    Set<Task> tasks = taskGraph.nodes().stream().map(Node::element).collect(toSet());
+    Set<Task> tasks = taskGraph.nodes().stream().map(DirectedNode::item).collect(toSet());
     Set<Task.Id> taskIds =
        tasks.stream().map(Task::id).collect(toSet());
     Set<Task.Id> blockedIds =

@@ -25,14 +25,14 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
     }
 
     DirectedGraph<Task> taskGraph = HandlerUtil.loadTasks();
-    Set<DirectedGraph.Node<Task>> targetTaskNodes =
+    Set<DirectedGraph.DirectedNode<Task>> targetTaskNodes =
         taskGraph.nodes()
             .stream()
-            .filter(n -> specifiedIds.contains(n.element().id()))
+            .filter(n -> specifiedIds.contains(n.item().id()))
             .collect(toSet());
     Set<Task> targetTasks =
         targetTaskNodes.stream()
-            .map(DirectedGraph.Node::element)
+            .map(DirectedGraph.DirectedNode::item)
             .collect(toSet());
 
     if (targetTasks.count() != specifiedIds.count()) {
@@ -50,10 +50,10 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
 
     Set<Task> alreadyCompletedTasks =
         targetTasks.stream().filter(Task::isCompleted).collect(toSet());
-    Set<DirectedGraph.Node<Task>> uncompletedTaskNodes =
-        targetTaskNodes.stream().filter(n -> !n.element().isCompleted()).collect(toSet());
+    Set<DirectedGraph.DirectedNode<Task>> uncompletedTaskNodes =
+        targetTaskNodes.stream().filter(n -> !n.item().isCompleted()).collect(toSet());
     Set<Task> uncompletedTasks =
-        uncompletedTaskNodes.stream().map(DirectedGraph.Node::element).collect(toSet());
+        uncompletedTaskNodes.stream().map(DirectedGraph.Node::item).collect(toSet());
     Set<Task> newlyCompletedTasks =
         uncompletedTasks.stream()
             .map(t -> Task.buildUpon(t).isCompleted(true).build())
@@ -83,18 +83,18 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
         newlyCompletedTasks.stream()
             .flatMap(
                 newTask -> uncompletedTaskNodes.stream()
-                    .filter(on -> on.element().id().equals(newTask.id()))
-                    .map(DirectedGraph.Node::successors)
+                    .filter(on -> on.item().id().equals(newTask.id()))
+                    .map(DirectedGraph.DirectedNode::successors)
                     .flatMap(Collection::stream)
-                    .map(DirectedGraph.Node::element)
+                    .map(DirectedGraph.Node::item)
                     .map(dependency -> HomogeneousPair.of(newTask, dependency))),
         newlyCompletedTasks.stream()
             .flatMap(
                 newTask -> uncompletedTaskNodes.stream()
-                    .filter(on -> on.element().id().equals(newTask.id()))
-                    .map(DirectedGraph.Node::predecessors)
+                    .filter(on -> on.item().id().equals(newTask.id()))
+                    .map(DirectedGraph.DirectedNode::predecessors)
                     .flatMap(Collection::stream)
-                    .map(DirectedGraph.Node::element)
+                    .map(DirectedGraph.Node::item)
                     .map(dependant -> HomogeneousPair.of(dependant, newTask))))
         .forEach(p -> newTaskBuilder.addEdge(p.first(), p.second()));
 

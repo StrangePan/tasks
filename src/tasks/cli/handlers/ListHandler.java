@@ -33,21 +33,21 @@ public final class ListHandler implements ArgumentHandler<ListArguments> {
 
   private static Set<Task> findUnblockedTasksIn(DirectedGraph<Task> taskGraph) {
     return taskGraph.nodes().stream()
-        .filter(n -> n.predecessors().stream().allMatch(m -> m.element().isCompleted()))
-        .map(DirectedGraph.Node::element)
+        .filter(n -> n.predecessors().stream().allMatch(m -> m.item().isCompleted()))
+        .map(DirectedGraph.Node::item)
         .collect(toSet());
   }
 
   private static Set<Task> findBlockedIncompleteTasksIn(DirectedGraph<Task> taskGraph) {
     return taskGraph.nodes().stream()
-        .filter(n -> n.predecessors().stream().anyMatch(m -> !m.element().isCompleted()))
-        .map(DirectedGraph.Node::element)
+        .filter(n -> n.predecessors().stream().anyMatch(m -> !m.item().isCompleted()))
+        .map(DirectedGraph.Node::item)
         .collect(toSet());
   }
 
   private static Set<Task> findCompletedTasksIn(DirectedGraph<Task> taskGraph) {
     return taskGraph.nodes().stream()
-        .map(DirectedGraph.Node::element)
+        .map(DirectedGraph.Node::item)
         .filter(Task::isCompleted)
         .collect(toSet());
   }

@@ -2,46 +2,15 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="934adf3a-600a-4d60-9bfa-e61cdba98635" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitmodules" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/omnia" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/META-INF/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/src/META-INF/MANIFEST.MF" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/Task.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/Task.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/EntryPoint.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/EntryPoint.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/arg/AddArguments.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/arg/AddArguments.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/arg/AmendArguments.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/arg/AmendArguments.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/arg/CliArguments.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/arg/CliArguments.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/arg/CliMode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/arg/CliMode.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/arg/CliUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/arg/CliUtils.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/arg/CompleteArguments.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/arg/CompleteArguments.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/arg/HelpArguments.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/arg/HelpArguments.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/arg/InfoArguments.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/arg/InfoArguments.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/arg/ListArguments.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/arg/ListArguments.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/arg/RemoveArguments.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/arg/RemoveArguments.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/arg/ReopenArguments.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/arg/ReopenArguments.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/arg/SimpleArguments.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/arg/SimpleArguments.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/handlers/AddHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/AddHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/handlers/AmendHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/AmendHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/handlers/ArgumentHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/ArgumentHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/handlers/CompleteHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/CompleteHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/handlers/HandlerException.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/HandlerException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/handlers/HandlerUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/HandlerUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/handlers/HelpHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/HelpHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/handlers/InfoHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/InfoHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/handlers/ListHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/ListHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/handlers/RemoveHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/RemoveHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/cli/handlers/ReopenHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/ReopenHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/io/File.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/io/File.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/io/Store.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/io/Store.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/io/TaskStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/io/TaskStore.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/tasks/io/testing/FakeFile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/io/testing/FakeFile.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/javatest/tasks/io/TaskStoreTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/tests/tasks/io/TaskStoreTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/javatest/tasks/io/testing/FakeFileTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/tests/tasks/io/testing/FakeFileTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tasks.iml" beforeDir="false" afterPath="$PROJECT_DIR$/src/java.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/taskstest.iml" beforeDir="false" afterPath="$PROJECT_DIR$/tests/javatest.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tasks/cli/arg/CliArguments.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/arg/CliArguments.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tasks/cli/handlers/AddHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/AddHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tasks/cli/handlers/AmendHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/AmendHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tasks/cli/handlers/CompleteHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/CompleteHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tasks/cli/handlers/InfoHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/InfoHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tasks/cli/handlers/ListHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/ListHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tasks/cli/handlers/RemoveHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/RemoveHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tasks/cli/handlers/ReopenHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/ReopenHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tasks/io/TaskStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/io/TaskStore.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
