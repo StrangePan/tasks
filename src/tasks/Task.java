@@ -4,15 +4,12 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
 import omnia.data.structure.Collection;
-import omnia.data.structure.immutable.ImmutableSet;
 
 public interface Task {
 
   Id id();
 
   String label();
-
-  Collection<Task> dependencies();
 
   boolean isCompleted();
 
@@ -23,12 +20,13 @@ public interface Task {
       this.id = id;
     }
 
-    public long asLong() {
-      return id;
+    public String serialize() {
+      return Long.toString(id);
     }
 
-    public static Id from(long id) {
-      return new Id(id);
+    @Override
+    public String toString() {
+      return "Id" + id;
     }
 
     @Override
@@ -40,6 +38,42 @@ public interface Task {
     public int hashCode() {
       return Objects.hash(id);
     }
+
+    public static Id from(long id) {
+      return new Id(id);
+    }
+
+    public static Id parse(String serializedId) throws IdFormatException {
+      try {
+        return Id.from(Long.parseLong(serializedId));
+      } catch (NumberFormatException ex) {
+        throw new IdFormatException("Unable to parse numerical representation empty ID", ex);
+      }
+    }
+
+    public static Id initial() {
+      return new Id(0);
+    }
+
+    public static Id after(Id previousId) {
+      requireNonNull(previousId);
+      return new Id(previousId.id + 1);
+    }
+
+    public static Id after(Collection<Id> previousIds) {
+      return previousIds.stream()
+          .map(id -> id.id)
+          .reduce(Math::max)
+          .map(l -> l + 1)
+          .map(Id::new)
+          .orElseGet(Id::initial);
+    }
+
+    public static final class IdFormatException extends RuntimeException {
+      private IdFormatException(String message, Throwable cause) {
+        super(message, cause);
+      }
+    }
   }
 
   interface Builder {
@@ -47,8 +81,6 @@ public interface Task {
     Builder id(Id id);
 
     Builder label(String name);
-
-    Builder dependencies(Collection<Task> dependencies);
 
     Builder isCompleted(boolean isCompleted);
 
@@ -59,13 +91,11 @@ public interface Task {
     class DefaultTask implements Task {
       private final Id id;
       private final String label;
-      private final ImmutableSet<Task> dependencies;
       private final boolean isCompleted;
 
-      DefaultTask(Id id, String label, ImmutableSet<Task> dependencies, boolean isCompleted) {
+      DefaultTask(Id id, String label, boolean isCompleted) {
         this.id = requireNonNull(id);
         this.label = requireNonNull(label);
-        this.dependencies = requireNonNull(dependencies);
         this.isCompleted = isCompleted;
       }
 
@@ -77,11 +107,6 @@ public interface Task {
       @Override
       public String label() {
         return label;
-      }
-
-      @Override
-      public Collection<Task> dependencies() {
-        return dependencies;
       }
 
       @Override
@@ -97,20 +122,26 @@ public interface Task {
         DefaultTask otherTask = (DefaultTask) other;
         return Objects.equals(otherTask.id, id)
             && Objects.equals(otherTask.label, label)
-            && Objects.equals(otherTask.dependencies, dependencies)
             && Objects.equals(otherTask.isCompleted, isCompleted);
       }
 
       @Override
       public int hashCode() {
-        return Objects.hash(id, label, dependencies, isCompleted);
+        return Objects.hash(id, label, isCompleted);
+      }
+
+      @Override
+      public String toString() {
+        return id().toString()
+            + ": "
+            + label()
+            + (isCompleted() ? " (completed)" : "");
       }
     }
 
     class DefaultBuilder implements Builder {
       private Id id;
       private String label;
-      private ImmutableSet<Task> dependencies;
       private boolean isCompleted;
 
       @Override
@@ -126,13 +157,6 @@ public interface Task {
       }
 
       @Override
-      public DefaultBuilder dependencies(Collection<Task> dependencies) {
-        this.dependencies =
-            ImmutableSet.<Task>builder().addAll(requireNonNull(dependencies)).build();
-        return this;
-      }
-
-      @Override
       public DefaultBuilder isCompleted(boolean isCompleted) {
         this.isCompleted = isCompleted;
         return this;
@@ -143,11 +167,17 @@ public interface Task {
         return new DefaultTask(
             id,
             label,
-            dependencies != null ? dependencies : ImmutableSet.<Task>builder().build(),
             isCompleted);
       }
     }
 
     return new DefaultBuilder();
+  }
+
+  static Builder buildUpon(Task other) {
+    return builder()
+        .id(other.id())
+        .label(other.label())
+        .isCompleted(other.isCompleted());
   }
 }

@@ -9,10 +9,10 @@ import java.io.OutputStream;
 /** An interface for interfacing with file system files. */
 public interface File {
 
-  /** Opens an input stream to read the contents of the file. */
+  /** Opens an input stream to read the contents empty the file. */
   InputStream openInputStream();
 
-  /** Opens an output stream to write to the contents of the file. */
+  /** Opens an output stream to write to the contents empty the file. */
   OutputStream openOutputStream();
 
   static File fromPath(String path) {
