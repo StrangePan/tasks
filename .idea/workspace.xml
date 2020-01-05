@@ -2,15 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="934adf3a-600a-4d60-9bfa-e61cdba98635" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/src/tasks/cli/arg/CliArguments.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/arg/CliArguments.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tasks/cli/handlers/AddHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/AddHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tasks/cli/handlers/AmendHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/AmendHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tasks/cli/handlers/CompleteHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/CompleteHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tasks/cli/handlers/InfoHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/InfoHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tasks/cli/handlers/ListHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/ListHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tasks/cli/handlers/RemoveHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/RemoveHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tasks/cli/handlers/ReopenHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/cli/handlers/ReopenHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tasks/io/TaskStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/tasks/io/TaskStore.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/tasks/io/TaskStoreTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/tests/tasks/io/TaskStoreTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,6 +38,21 @@
     </key>
   </component>
   <component name="RunManager">
+    <configuration name="TaskStoreTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="tasks" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="tasks.io.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="tasks.io" />
+      <option name="MAIN_CLASS_NAME" value="tasks.io.TaskStoreTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration default="true" type="JetRunConfigurationType" factoryName="Kotlin">
       <module name="java" />
       <option name="VM_PARAMETERS" />
@@ -93,6 +100,11 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="JUnit.TaskStoreTest" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="ServiceViewManager">
     <option name="viewStates">
