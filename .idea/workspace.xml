@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="934adf3a-600a-4d60-9bfa-e61cdba98635" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/tests/tasks/io/TaskStoreTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/tests/tasks/io/TaskStoreTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -10,7 +10,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/lib/omnia" />
   </component>
   <component name="ProjectId" id="1VyxX0H3zWpZOWBkWCj8DuOKZGC" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
@@ -144,6 +144,22 @@
       <screen x="0" y="0" width="3440" height="1400" />
     </state>
     <state x="2000" y="441" key="FileChooserDialogImpl/0.0.3440.1400@0.0.3440.1400" timestamp="1578239578376" />
+    <state width="1688" height="360" key="GridCell.Tab.0.bottom" timestamp="1578247390381">
+      <screen x="0" y="0" width="3440" height="1400" />
+    </state>
+    <state width="1688" height="360" key="GridCell.Tab.0.bottom/0.0.3440.1400@0.0.3440.1400" timestamp="1578247390381" />
+    <state width="1688" height="360" key="GridCell.Tab.0.center" timestamp="1578247390380">
+      <screen x="0" y="0" width="3440" height="1400" />
+    </state>
+    <state width="1688" height="360" key="GridCell.Tab.0.center/0.0.3440.1400@0.0.3440.1400" timestamp="1578247390380" />
+    <state width="1688" height="360" key="GridCell.Tab.0.left" timestamp="1578247390380">
+      <screen x="0" y="0" width="3440" height="1400" />
+    </state>
+    <state width="1688" height="360" key="GridCell.Tab.0.left/0.0.3440.1400@0.0.3440.1400" timestamp="1578247390380" />
+    <state width="1688" height="360" key="GridCell.Tab.0.right" timestamp="1578247390380">
+      <screen x="0" y="0" width="3440" height="1400" />
+    </state>
+    <state width="1688" height="360" key="GridCell.Tab.0.right/0.0.3440.1400@0.0.3440.1400" timestamp="1578247390380" />
     <state x="1885" y="431" key="NewModule_or_Project.wizard" timestamp="1578239223620">
       <screen x="0" y="0" width="3440" height="1400" />
     </state>
@@ -156,9 +172,9 @@
       <screen x="0" y="0" width="3440" height="1400" />
     </state>
     <state x="368" y="456" key="new project wizard/0.0.3440.1400@0.0.3440.1400" timestamp="1578240479471" />
-    <state x="1883" y="374" width="672" height="678" key="search.everywhere.popup" timestamp="1578240512382">
+    <state x="1883" y="374" width="672" height="678" key="search.everywhere.popup" timestamp="1578280591411">
       <screen x="0" y="0" width="3440" height="1400" />
     </state>
-    <state x="1883" y="374" width="672" height="678" key="search.everywhere.popup/0.0.3440.1400@0.0.3440.1400" timestamp="1578240512382" />
+    <state x="1883" y="374" width="672" height="678" key="search.everywhere.popup/0.0.3440.1400@0.0.3440.1400" timestamp="1578280591411" />
   </component>
 </project>
