@@ -8,7 +8,6 @@ import static tasks.cli.handlers.HandlerUtil.stringifyContents;
 import java.util.stream.Stream;
 import omnia.algorithm.GraphAlgorithms;
 import omnia.data.structure.DirectedGraph;
-import omnia.data.structure.DirectedGraph.DirectedNode;
 import omnia.data.structure.Pair;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableDirectedGraph;
@@ -21,18 +20,16 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
   @Override
   public void handle(AddArguments arguments) {
     // Validate arguments
-    if (arguments.description().trim().isEmpty()) {
+    String label = arguments.description().trim();
+    if (label.isEmpty()) {
       throw new HandlerException("description cannot be empty or whitespace only");
     }
 
     DirectedGraph<Task> taskGraph = HandlerUtil.loadTasks();
-    Set<Task> tasks = taskGraph.nodes().stream().map(DirectedNode::item).collect(toSet());
-    Set<Task.Id> taskIds =
-       tasks.stream().map(Task::id).collect(toSet());
-    Set<Task.Id> blockedIds =
-        ImmutableSet.<Task.Id>builder().addAll(arguments.blockedTasks()).build();
-    Set<Task.Id> blockingIds =
-        ImmutableSet.<Task.Id>builder().addAll(arguments.blockingTasks()).build();
+    Set<Task> tasks = taskGraph.contents();
+    Set<Task.Id> taskIds = tasks.stream().map(Task::id).collect(toSet());
+    Set<Task.Id> blockedIds = ImmutableSet.copyOf(arguments.blockedTasks());
+    Set<Task.Id> blockingIds = ImmutableSet.copyOf(arguments.blockingTasks());
 
     Set<Task.Id> invalidTaskIds = differenceBetween(unionOf(blockedIds, blockingIds), taskIds);
     if (invalidTaskIds.isPopulated()) {
@@ -40,7 +37,7 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
           "unrecognized tasks specified: " + stringifyContents(invalidTaskIds));
     }
 
-    // Collect the set empty dependencies and dependents
+    // Collect the dependencies and dependents
     Set<Task> nextDependencies =
         tasks.stream().filter(task -> blockingIds.contains(task.id())).collect(toSet());
     Set<Task> nextDependents =
@@ -48,7 +45,6 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
 
     // Construct the new task
     Task.Id nextId = Task.Id.after(taskIds);
-    String label = arguments.description();
     Task nextTask = Task.builder().id(nextId).label(label).isCompleted(false).build();
 
     // Construct a new task graph with the new task inserted and the new edges assembled
