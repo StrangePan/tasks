@@ -128,7 +128,7 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
             .collect(toSet());
 
     Task newTask =
-        Task.buildUpon(targetTask)
+        targetTask.toBuilder()
             .label(label)
             .build();
 

@@ -56,7 +56,7 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
         uncompletedTaskNodes.stream().map(DirectedGraph.Node::item).collect(toSet());
     Set<Task> newlyCompletedTasks =
         uncompletedTasks.stream()
-            .map(t -> Task.buildUpon(t).isCompleted(true).build())
+            .map(t -> t.toBuilder().isCompleted(true).build())
             .collect(toSet());
 
     if (alreadyCompletedTasks.isPopulated()) {

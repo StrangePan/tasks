@@ -56,7 +56,7 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
         completedTaskNodes.stream().map(DirectedGraph.Node::item).collect(toSet());
     Set<Task> newlyCompletedTasks =
         completedTasks.stream()
-            .map(t -> Task.buildUpon(t).isCompleted(false).build())
+            .map(t -> t.toBuilder().isCompleted(false).build())
             .collect(toSet());
 
     if (alreadyOpenTasks.isPopulated()) {

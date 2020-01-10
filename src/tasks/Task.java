@@ -5,39 +5,91 @@ import static java.util.Objects.requireNonNull;
 import java.util.Objects;
 import omnia.data.structure.Collection;
 
-public interface Task {
+public final class Task {
+  private final Id id;
+  private final String label;
+  private final boolean isCompleted;
 
-  Id id();
+  public static Builder builder() {
+    return new Builder();
+  }
 
-  String label();
+  public Builder toBuilder() {
+    return builder()
+        .id(id())
+        .label(label())
+        .isCompleted(isCompleted());
+  }
 
-  boolean isCompleted();
+  public static final class Builder {
+    private Id id;
+    private String label;
+    private boolean isCompleted;
 
-  final class Id {
-    private final long id;
-
-    private Id(long id) {
+    public Builder id(Id id) {
       this.id = id;
+      return this;
     }
 
-    public String serialize() {
-      return Long.toString(id);
+    public Builder label(String label) {
+      this.label = label;
+      return this;
     }
 
-    @Override
-    public String toString() {
-      return "Id" + id;
+    public Builder isCompleted(boolean isCompleted) {
+      this.isCompleted = isCompleted;
+      return this;
     }
 
-    @Override
-    public boolean equals(Object other) {
-      return other instanceof Id && ((Id) other).id == id;
+    public Task build() {
+      return new Task(id, label, isCompleted);
     }
+  }
 
-    @Override
-    public int hashCode() {
-      return Objects.hash(id);
+  Task(Id id, String label, boolean isCompleted) {
+    this.id = requireNonNull(id);
+    this.label = requireNonNull(label);
+    this.isCompleted = isCompleted;
+  }
+
+  public Id id() {
+    return id;
+  }
+
+  public String label() {
+    return label;
+  }
+
+  public boolean isCompleted() {
+    return isCompleted;
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if (!(other instanceof Task)) {
+      return false;
     }
+    Task otherTask = (Task) other;
+    return Objects.equals(otherTask.id, id)
+        && Objects.equals(otherTask.label, label)
+        && Objects.equals(otherTask.isCompleted, isCompleted);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, label, isCompleted);
+  }
+
+  @Override
+  public String toString() {
+    return id().toString()
+        + ": "
+        + label()
+        + (isCompleted() ? " (completed)" : "");
+  }
+
+  public static final class Id {
+    private final long id;
 
     public static Id from(long id) {
       return new Id(id);
@@ -69,115 +121,33 @@ public interface Task {
           .orElseGet(Id::initial);
     }
 
+    private Id(long id) {
+      this.id = id;
+    }
+
+    public String serialize() {
+      return Long.toString(id);
+    }
+
+    @Override
+    public String toString() {
+      return "Id" + id;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      return other instanceof Id && ((Id) other).id == id;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(id);
+    }
+
     public static final class IdFormatException extends RuntimeException {
       private IdFormatException(String message, Throwable cause) {
         super(message, cause);
       }
     }
-  }
-
-  interface Builder {
-
-    Builder id(Id id);
-
-    Builder label(String name);
-
-    Builder isCompleted(boolean isCompleted);
-
-    Task build();
-  }
-
-  static Builder builder() {
-    class DefaultTask implements Task {
-      private final Id id;
-      private final String label;
-      private final boolean isCompleted;
-
-      DefaultTask(Id id, String label, boolean isCompleted) {
-        this.id = requireNonNull(id);
-        this.label = requireNonNull(label);
-        this.isCompleted = isCompleted;
-      }
-
-      @Override
-      public Id id() {
-        return id;
-      }
-
-      @Override
-      public String label() {
-        return label;
-      }
-
-      @Override
-      public boolean isCompleted() {
-        return isCompleted;
-      }
-
-      @Override
-      public boolean equals(Object other) {
-        if (!(other instanceof DefaultTask)) {
-          return false;
-        }
-        DefaultTask otherTask = (DefaultTask) other;
-        return Objects.equals(otherTask.id, id)
-            && Objects.equals(otherTask.label, label)
-            && Objects.equals(otherTask.isCompleted, isCompleted);
-      }
-
-      @Override
-      public int hashCode() {
-        return Objects.hash(id, label, isCompleted);
-      }
-
-      @Override
-      public String toString() {
-        return id().toString()
-            + ": "
-            + label()
-            + (isCompleted() ? " (completed)" : "");
-      }
-    }
-
-    class DefaultBuilder implements Builder {
-      private Id id;
-      private String label;
-      private boolean isCompleted;
-
-      @Override
-      public DefaultBuilder id(Id id) {
-        this.id = id;
-        return this;
-      }
-
-      @Override
-      public DefaultBuilder label(String label) {
-        this.label = label;
-        return this;
-      }
-
-      @Override
-      public DefaultBuilder isCompleted(boolean isCompleted) {
-        this.isCompleted = isCompleted;
-        return this;
-      }
-
-      @Override
-      public DefaultTask build() {
-        return new DefaultTask(
-            id,
-            label,
-            isCompleted);
-      }
-    }
-
-    return new DefaultBuilder();
-  }
-
-  static Builder buildUpon(Task other) {
-    return builder()
-        .id(other.id())
-        .label(other.label())
-        .isCompleted(other.isCompleted());
   }
 }
