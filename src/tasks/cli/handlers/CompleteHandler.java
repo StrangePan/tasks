@@ -4,10 +4,8 @@ import static java.util.stream.Collectors.joining;
 import static omnia.algorithm.SetAlgorithms.differenceBetween;
 import static omnia.data.stream.Collectors.toSet;
 
-import java.util.stream.Stream;
-import omnia.data.structure.Collection;
 import omnia.data.structure.DirectedGraph;
-import omnia.data.structure.HomogeneousPair;
+import omnia.data.structure.Pair;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableDirectedGraph;
 import omnia.data.structure.immutable.ImmutableSet;
@@ -54,10 +52,7 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
         targetTaskNodes.stream().filter(n -> !n.item().isCompleted()).collect(toSet());
     Set<Task> uncompletedTasks =
         uncompletedTaskNodes.stream().map(DirectedGraph.Node::item).collect(toSet());
-    Set<Task> newlyCompletedTasks =
-        uncompletedTasks.stream()
-            .map(t -> t.toBuilder().isCompleted(true).build())
-            .collect(toSet());
+    Set<Task.Id> uncompletedTaskIds = uncompletedTasks.stream().map(Task::id).collect(toSet());
 
     if (alreadyCompletedTasks.isPopulated()) {
       System.out.println(
@@ -72,42 +67,18 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
       return;
     }
 
-    ImmutableDirectedGraph.Builder<Task> newTaskBuilder =
+    ImmutableDirectedGraph.Builder<Task> newTaskGraphBuilder =
         ImmutableDirectedGraph.buildUpon(taskGraph);
 
-    // add new nodes to graph
-    newlyCompletedTasks.forEach(newTaskBuilder::addNode);
+    // replace existing nodes with new nodes
+    uncompletedTasks.stream()
+        .map(task -> Pair.of(task, task.toBuilder().isCompleted(true).build()))
+        .forEach(pair -> newTaskGraphBuilder.replaceNode(pair.first(), pair.second()));
 
-    // copy over dependencies and dependants
-    Stream.concat(
-        newlyCompletedTasks.stream()
-            .flatMap(
-                newTask -> uncompletedTaskNodes.stream()
-                    .filter(on -> on.item().id().equals(newTask.id()))
-                    .map(DirectedGraph.DirectedNode::successors)
-                    .flatMap(Collection::stream)
-                    .map(DirectedGraph.Node::item)
-                    .map(dependency -> HomogeneousPair.of(newTask, dependency))),
-        newlyCompletedTasks.stream()
-            .flatMap(
-                newTask -> uncompletedTaskNodes.stream()
-                    .filter(on -> on.item().id().equals(newTask.id()))
-                    .map(DirectedGraph.DirectedNode::predecessors)
-                    .flatMap(Collection::stream)
-                    .map(DirectedGraph.Node::item)
-                    .map(dependant -> HomogeneousPair.of(dependant, newTask))))
-        .forEach(p -> newTaskBuilder.addEdge(p.first(), p.second()));
-
-    // remove old nodes
-    uncompletedTasks.forEach(newTaskBuilder::removeNode);
-
-    HandlerUtil.writeTasks(newTaskBuilder.build());
+    HandlerUtil.writeTasks(newTaskGraphBuilder.build());
 
     System.out.println(
         "task(s) marked as completed: "
-            + newlyCompletedTasks.stream()
-                .map(Task::id)
-                .map(Object::toString)
-                .collect(joining(", ")));
+            + uncompletedTaskIds.stream().map(Object::toString).collect(joining(", ")));
   }
 }

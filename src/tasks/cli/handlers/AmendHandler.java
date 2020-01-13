@@ -5,6 +5,7 @@ import static omnia.data.stream.Collectors.toSet;
 
 import java.util.Optional;
 import java.util.stream.Stream;
+import omnia.algorithm.GraphAlgorithms;
 import omnia.algorithm.SetAlgorithms;
 import omnia.data.structure.DirectedGraph;
 import omnia.data.structure.Pair;
@@ -30,13 +31,9 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
 
     Task targetTask = targetTaskNode.item();
 
-    Set<Task.Id> existingTaskIds =
-        taskGraph.nodes().stream()
-            .map(DirectedGraph.Node::item)
-            .map(Task::id)
-            .collect(toSet());
+    Set<Task.Id> existingTaskIds = taskGraph.contents().stream().map(Task::id).collect(toSet());
 
-    Set<Task.Id> allParameterizedIds =
+    Set<Task.Id> allSpecifiedIds =
         ImmutableSet.<Task.Id>builder()
             .addAll(arguments.blockedTasks())
             .addAll(arguments.blockedTasksToAdd())
@@ -46,9 +43,9 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
             .addAll(arguments.blockingTasksToRemove())
             .build();
 
-    // validate that all parameters refer to valid tasks
+    // validate that all parameters refer to existing tasks
     Set<Task.Id> undefinedTasks =
-        SetAlgorithms.differenceBetween(allParameterizedIds, existingTaskIds);
+        SetAlgorithms.differenceBetween(allSpecifiedIds, existingTaskIds);
 
     if (undefinedTasks.isPopulated()) {
       String listOfUnknownIds =
@@ -59,7 +56,9 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
     }
 
     // ensure task isn't connected to itself
-    if (allParameterizedIds.contains(arguments.targetTask())) {
+    // this is a convenience but is not strictly required because we still need to check if the
+    // graph is cyclical
+    if (allSpecifiedIds.contains(arguments.targetTask())) {
       throw new HandlerException("target task cannot block or be blocked by itself");
     }
 
@@ -148,6 +147,12 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
         blockedTasks.stream().map(blocked -> Pair.of(blocked, newTask)),
         blockingTasks.stream().map(blocking -> Pair.of(newTask, blocking)))
         .forEach(pair -> newTaskGraphBuilder.addEdge(pair.first(), pair.second()));
+
+    DirectedGraph<Task> newTaskGraph = newTaskGraphBuilder.build();
+
+    if (GraphAlgorithms.isCyclical(newTaskGraph)) {
+      throw new HandlerException("amend failed: circular dependency introduced");
+    }
 
     HandlerUtil.writeTasks(newTaskGraphBuilder.build());
 
