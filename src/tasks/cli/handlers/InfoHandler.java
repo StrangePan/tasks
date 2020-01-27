@@ -20,7 +20,7 @@ public final class InfoHandler implements ArgumentHandler<InfoArguments> {
     }
 
     DirectedGraph<Task> taskGraph = HandlerUtil.loadTasks();
-    Set<DirectedGraph.DirectedNode<Task>> targetTaskNodes =
+    Set<DirectedGraph.Node<Task>> targetTaskNodes =
         taskGraph.nodes()
             .stream()
             .filter(n -> specifiedIds.contains(n.item().id()))
@@ -49,7 +49,7 @@ public final class InfoHandler implements ArgumentHandler<InfoArguments> {
             .collect(joining("\n\n")));
   }
 
-  private static String stringify(DirectedGraph.DirectedNode<Task> node) {
+  private static String stringify(DirectedGraph.Node<Task> node) {
     String dependencies =
         node.successors().stream().map(n -> "\n  " + n.item()).collect(joining());
     String dependents =

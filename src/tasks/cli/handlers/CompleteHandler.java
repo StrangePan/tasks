@@ -23,14 +23,14 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
     }
 
     DirectedGraph<Task> taskGraph = HandlerUtil.loadTasks();
-    Set<DirectedGraph.DirectedNode<Task>> targetTaskNodes =
+    Set<DirectedGraph.Node<Task>> targetTaskNodes =
         taskGraph.nodes()
             .stream()
             .filter(n -> specifiedIds.contains(n.item().id()))
             .collect(toSet());
     Set<Task> targetTasks =
         targetTaskNodes.stream()
-            .map(DirectedGraph.DirectedNode::item)
+            .map(DirectedGraph.Node::item)
             .collect(toSet());
 
     if (targetTasks.count() != specifiedIds.count()) {
@@ -48,7 +48,7 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
 
     Set<Task> alreadyCompletedTasks =
         targetTasks.stream().filter(Task::isCompleted).collect(toSet());
-    Set<DirectedGraph.DirectedNode<Task>> uncompletedTaskNodes =
+    Set<DirectedGraph.Node<Task>> uncompletedTaskNodes =
         targetTaskNodes.stream().filter(n -> !n.item().isCompleted()).collect(toSet());
     Set<Task> uncompletedTasks =
         uncompletedTaskNodes.stream().map(DirectedGraph.Node::item).collect(toSet());

@@ -26,7 +26,7 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
     }
 
     DirectedGraph<Task> taskGraph = HandlerUtil.loadTasks();
-    Set<DirectedGraph.DirectedNode<Task>> targetTaskNodes =
+    Set<DirectedGraph.Node<Task>> targetTaskNodes =
         taskGraph.nodes()
             .stream()
             .filter(n -> specifiedIds.contains(n.item().id()))
@@ -51,7 +51,7 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
 
     Set<Task> alreadyOpenTasks =
         targetTasks.stream().filter(t -> !t.isCompleted()).collect(toSet());
-    Set<DirectedGraph.DirectedNode<Task>> completedTaskNodes =
+    Set<DirectedGraph.Node<Task>> completedTaskNodes =
         targetTaskNodes.stream().filter(n -> n.item().isCompleted()).collect(toSet());
     Set<Task> completedTasks =
         completedTaskNodes.stream().map(DirectedGraph.Node::item).collect(toSet());

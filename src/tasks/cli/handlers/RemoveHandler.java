@@ -22,7 +22,7 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
     }
 
     DirectedGraph<Task> taskGraph = HandlerUtil.loadTasks();
-    Set<DirectedGraph.DirectedNode<Task>> targetTaskNodes =
+    Set<DirectedGraph.Node<Task>> targetTaskNodes =
         taskGraph.nodes()
             .stream()
             .filter(n -> specifiedIds.contains(n.item().id()))
