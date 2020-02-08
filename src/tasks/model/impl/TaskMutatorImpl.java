@@ -19,6 +19,8 @@ public final class TaskMutatorImpl implements TaskMutator {
   private Optional<Boolean> completed = Optional.empty();
   private final MutableSet<TaskId> blockingTasksToAdd = HashSet.create();
   private final MutableSet<TaskId> blockingTasksToRemove = HashSet.create();
+  private final MutableSet<TaskId> blockedTasksToAdd = HashSet.create();
+  private final MutableSet<TaskId> blockedTasksToRemove = HashSet.create();
 
   TaskMutatorImpl(TaskStoreImpl taskStore, TaskId taskId) {
     this.taskStore = requireNonNull(taskStore);
@@ -53,6 +55,22 @@ public final class TaskMutatorImpl implements TaskMutator {
     return this;
   }
 
+  @Override
+  public TaskMutatorImpl addBlockedTask(Task task) {
+    TaskImpl taskImpl = store().validateTask(task);
+    blockedTasksToAdd.add(taskImpl.id());
+    blockedTasksToRemove.remove(taskImpl.id());
+    return this;
+  }
+
+  @Override
+  public TaskMutatorImpl removeBlockedTask(Task task) {
+    TaskImpl taskImpl = store().validateTask(task);
+    blockedTasksToRemove.add(taskImpl.id());
+    blockedTasksToAdd.remove(taskImpl.id());
+    return this;
+  }
+
   TaskStoreImpl store() {
     return taskStore;
   }
@@ -75,5 +93,13 @@ public final class TaskMutatorImpl implements TaskMutator {
 
   Set<TaskId> blockingTasksToRemove() {
     return ImmutableSet.copyOf(blockingTasksToRemove);
+  }
+
+  Set<TaskId> blockedTasksToAdd() {
+    return ImmutableSet.copyOf(blockedTasksToAdd);
+  }
+
+  Set<TaskId> blockedTasksToRemove() {
+    return ImmutableSet.copyOf(blockedTasksToRemove);
   }
 }

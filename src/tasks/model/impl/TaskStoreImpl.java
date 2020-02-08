@@ -128,6 +128,10 @@ final class TaskStoreImpl implements TaskStore {
         .forEach(blockingId -> taskGraph.addEdge(blockingId, id));
     mutatorImpl.blockingTasksToRemove()
         .forEach(blockingId -> taskGraph.removeEdge(blockingId, id));
+    mutatorImpl.blockedTasksToAdd()
+        .forEach(blockedId -> taskGraph.addEdge(id, blockedId));
+    mutatorImpl.blockedTasksToRemove()
+        .forEach(blockedId -> taskGraph.removeEdge(id, blockedId));
   }
 
   TaskMutatorImpl validateMutator(TaskMutator mutator) {

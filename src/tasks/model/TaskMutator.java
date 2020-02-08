@@ -9,4 +9,8 @@ public interface TaskMutator {
   TaskMutator addBlockingTask(Task task);
 
   TaskMutator removeBlockingTask(Task task);
+
+  TaskMutator addBlockedTask(Task task);
+
+  TaskMutator removeBlockedTask(Task task);
 }
