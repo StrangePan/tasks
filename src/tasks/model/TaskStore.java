@@ -1,6 +1,8 @@
 package tasks.model;
 
-import omnia.data.structure.observable.ObservableSet;
+import io.reactivex.Completable;
+import io.reactivex.Flowable;
+import omnia.data.structure.Set;
 
 /**
  * A queryable, observable collection of task objects. Contains the canonical data, or knows how to
@@ -8,9 +10,11 @@ import omnia.data.structure.observable.ObservableSet;
  */
 public interface TaskStore {
 
-  ObservableSet<Task> allTasks();
+  Flowable<Set<Task>> allTasks();
 
-  ObservableSet<Task> tasksBlocking(Task blockedTask);
+  Flowable<Set<Task>> tasksBlocking(Task blockedTask);
 
-  ObservableSet<Task> tasksBlockedBy(Task blockingTask);
+  Flowable<Set<Task>> tasksBlockedBy(Task blockingTask);
+
+  Completable writeToDisk();
 }
