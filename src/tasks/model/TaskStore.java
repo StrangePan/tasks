@@ -17,6 +17,8 @@ public interface TaskStore {
 
   Flowable<Set<Task>> tasksBlockedBy(Task blockingTask);
 
+  Completable createTask(String label, Function<? super TaskBuilder, ? extends TaskBuilder> builder);
+
   Completable mutateTask(Task task, Function<? super TaskMutator, ? extends TaskMutator> mutation);
 
   Completable writeToDisk();

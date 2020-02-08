@@ -28,14 +28,14 @@ public final class TaskMutatorImpl implements TaskMutator {
   }
 
   @Override
-  public TaskMutatorImpl setLabel(String label) {
-    this.label = Optional.of(label);
+  public TaskMutatorImpl setCompleted(boolean completed) {
+    this.completed = Optional.of(completed);
     return this;
   }
 
   @Override
-  public TaskMutatorImpl setCompleted(boolean completed) {
-    this.completed = Optional.of(completed);
+  public TaskMutatorImpl setLabel(String label) {
+    this.label = Optional.of(label);
     return this;
   }
 

@@ -20,6 +20,7 @@ import omnia.data.structure.mutable.MutableMap;
 import omnia.data.structure.observable.writable.WritableObservableDirectedGraph;
 import tasks.io.Store;
 import tasks.model.Task;
+import tasks.model.TaskBuilder;
 import tasks.model.TaskMutator;
 import tasks.model.TaskStore;
 
@@ -66,6 +67,31 @@ final class TaskStoreImpl implements TaskStore {
             optionalNode.map(DirectedGraph.DirectedNode::successors).orElse(Set.empty()))
         .map(predecessors ->
             predecessors.stream().map(Graph.Node::item).map(this::toTask).collect(toSet()));
+  }
+
+  @Override
+  public Completable createTask(String label, Function<? super TaskBuilder, ? extends TaskBuilder> builder) {
+    return Single.just(new TaskBuilderImpl(this, label))
+        .<TaskBuilder>map(builder::apply)
+        .flatMapCompletable(taskBuilder -> Completable.fromAction(() -> applyBuilder(taskBuilder)));
+  }
+
+  private void applyBuilder(TaskBuilder builder) {
+    TaskBuilderImpl builderImpl = validateBuilder(builder);
+    TaskData data = new TaskData(builderImpl.completed(), builderImpl.label());
+    TaskId id = generateId();
+    taskData.putMapping(id, data);
+    builderImpl.blockingTasks().forEach(blockingTask -> taskGraph.addEdge(blockingTask, id));
+    builderImpl.blockedTasks().forEach(blockedTask -> taskGraph.addEdge(id, blockedTask));
+  }
+
+  private TaskId generateId() {
+    // TODO: more sophisticated algorithm
+    TaskId id;
+    do {
+      id = new TaskId((long) (Math.random() * Long.MAX_VALUE));
+    } while (taskGraph.contents().contains(id));
+    return id;
   }
 
   @Override
@@ -156,6 +182,30 @@ final class TaskStoreImpl implements TaskStore {
               + mutatorImpl);
     }
     return mutatorImpl;
+  }
+
+  TaskBuilderImpl validateBuilder(TaskBuilder builder) {
+    requireNonNull(builder);
+    if (!(builder instanceof TaskBuilderImpl)) {
+      throw new IllegalArgumentException(
+          "Unrecognized builder type. Expected "
+              + TaskBuilderImpl.class
+              + ", received "
+              + builder.getClass()
+              + ": "
+              + builder);
+    }
+    TaskBuilderImpl builderImpl = (TaskBuilderImpl) builder;
+    if (builderImpl.store() != this) {
+      throw new IllegalArgumentException(
+          "Builder associated with another store. Expected <"
+              + this
+              + ">, received <"
+              + builderImpl.store()
+              + ">: "
+              + builderImpl);
+    }
+    return builderImpl;
   }
 
   @Override
