@@ -8,6 +8,7 @@ import io.reactivex.Flowable;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
 import java.util.Optional;
+import java.util.function.Function;
 import omnia.data.structure.DirectedGraph;
 import omnia.data.structure.Graph;
 import omnia.data.structure.Map;
@@ -19,13 +20,14 @@ import omnia.data.structure.mutable.MutableMap;
 import omnia.data.structure.observable.writable.WritableObservableDirectedGraph;
 import tasks.io.Store;
 import tasks.model.Task;
+import tasks.model.TaskMutator;
 import tasks.model.TaskStore;
 
 final class TaskStoreImpl implements TaskStore {
 
   private final WritableObservableDirectedGraph<TaskId> taskGraph = WritableObservableDirectedGraph.create();
   private final MutableMap<TaskId, TaskData> taskData = HashMap.create();
-  private Store<Pair<DirectedGraph<TaskId>, Map<TaskId, TaskData>>> fileStore;
+  private Store<Pair<DirectedGraph<TaskId>, Map<TaskId, TaskData>>> fileStore; // TODO
 
   Maybe<Flowable<TaskData>> lookUp(TaskId id) {
     return Single.just(taskData.valueOf(id))
@@ -66,7 +68,15 @@ final class TaskStoreImpl implements TaskStore {
             predecessors.stream().map(Graph.Node::item).map(this::toTask).collect(toSet()));
   }
 
-  private TaskImpl validateTask(Task task) {
+  @Override
+  public Completable mutateTask(Task task, Function<? super TaskMutator, ? extends TaskMutator> mutation) {
+    TaskImpl taskImpl = validateTask(task);
+    return Single.just(new TaskMutatorImpl(this, taskImpl.id()))
+        .<TaskMutator>map(mutation::apply)
+        .flatMapCompletable(mutator -> Completable.fromAction(() -> applyMutator(mutator)));
+  }
+
+  TaskImpl validateTask(Task task) {
     requireNonNull(task);
     if (!(task instanceof TaskImpl)) {
       throw new IllegalArgumentException(
@@ -92,6 +102,56 @@ final class TaskStoreImpl implements TaskStore {
 
   private Task toTask(TaskId id) {
     return new TaskImpl(this, id);
+  }
+
+  private void applyMutator(TaskMutator mutator) {
+    TaskMutatorImpl mutatorImpl = validateMutator(mutator);
+    applyMutatorToTaskData(mutatorImpl);
+    applyMutatorToTaskGraph(mutatorImpl);
+  }
+
+  private void applyMutatorToTaskData(TaskMutatorImpl mutatorImpl) {
+    Optional.of(mutatorImpl)
+        .filter(mutator -> mutator.completed().isPresent() && mutator.label().isPresent())
+        .map(TaskMutatorImpl::id)
+        .flatMap(taskData::valueOf)
+        .map(data ->
+            new TaskData(
+                mutatorImpl.completed().orElse(data.completed()),
+                mutatorImpl.label().orElse(data.label())))
+        .ifPresent(data -> taskData.putMapping(mutatorImpl.id(), data));
+  }
+
+  private void applyMutatorToTaskGraph(TaskMutatorImpl mutatorImpl) {
+    TaskId id = mutatorImpl.id();
+    mutatorImpl.blockingTasksToAdd()
+        .forEach(blockingId -> taskGraph.addEdge(blockingId, id));
+    mutatorImpl.blockingTasksToRemove()
+        .forEach(blockingId -> taskGraph.removeEdge(blockingId, id));
+  }
+
+  TaskMutatorImpl validateMutator(TaskMutator mutator) {
+    requireNonNull(mutator);
+    if (!(mutator instanceof TaskMutatorImpl)) {
+      throw new IllegalArgumentException(
+          "Unrecognized mutator type. Expected "
+              + TaskMutatorImpl.class
+              + ", received "
+              + mutator.getClass()
+              + ": "
+              + mutator);
+    }
+    TaskMutatorImpl mutatorImpl = (TaskMutatorImpl) mutator;
+    if (mutatorImpl.store() != this) {
+      throw new IllegalArgumentException(
+          "Mutator associated with another store. Expected <"
+              + this
+              + ">, received <"
+              + mutatorImpl.store()
+              + ">: "
+              + mutatorImpl);
+    }
+    return mutatorImpl;
   }
 
   @Override

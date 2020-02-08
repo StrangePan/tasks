@@ -2,6 +2,7 @@ package tasks.model;
 
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
+import java.util.function.Function;
 import omnia.data.structure.Set;
 
 /**
@@ -15,6 +16,8 @@ public interface TaskStore {
   Flowable<Set<Task>> tasksBlocking(Task blockedTask);
 
   Flowable<Set<Task>> tasksBlockedBy(Task blockingTask);
+
+  Completable mutateTask(Task task, Function<? super TaskMutator, ? extends TaskMutator> mutation);
 
   Completable writeToDisk();
 }
