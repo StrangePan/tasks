@@ -96,8 +96,11 @@ final class TaskStoreImpl implements TaskStore {
 
   @Override
   public Completable mutateTask(Task task, Function<? super TaskMutator, ? extends TaskMutator> mutation) {
-    TaskImpl taskImpl = validateTask(task);
-    return Single.just(new TaskMutatorImpl(this, taskImpl.id()))
+    return mutateTask(validateTask(task), mutation);
+  }
+
+  Completable mutateTask(TaskImpl task, Function<? super TaskMutator, ? extends TaskMutator> mutation) {
+    return Single.just(new TaskMutatorImpl(this, task.id()))
         .<TaskMutator>map(mutation::apply)
         .flatMapCompletable(mutator -> Completable.fromAction(() -> applyMutator(mutator)));
   }

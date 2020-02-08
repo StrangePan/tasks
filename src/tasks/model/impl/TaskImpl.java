@@ -2,10 +2,13 @@ package tasks.model.impl;
 
 import static java.util.Objects.requireNonNull;
 
+import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import java.util.Objects;
-import omnia.data.structure.observable.ObservableSet;
+import java.util.function.Function;
+import omnia.data.structure.Set;
 import tasks.model.Task;
+import tasks.model.TaskMutator;
 
 final class TaskImpl implements Task {
 
@@ -31,7 +34,7 @@ final class TaskImpl implements Task {
 
   @Override
   public Flowable<String> label() {
-    return store.lookUp(id)
+    return store().lookUp(id)
         .toSingle()
         .flatMapPublisher(f -> f)
         .map(TaskData::label);
@@ -42,15 +45,20 @@ final class TaskImpl implements Task {
     return new Query() {
 
       @Override
-      public ObservableSet<Task> tasksBlockedByThis() {
-        return store.tasksBlockedBy(TaskImpl.this);
+      public Flowable<Set<Task>> tasksBlockedByThis() {
+        return store().tasksBlockedBy(TaskImpl.this);
       }
 
       @Override
-      public ObservableSet<Task> tasksBlockingThis() {
-        return store.tasksBlocking(TaskImpl.this);
+      public Flowable<Set<Task>> tasksBlockingThis() {
+        return store().tasksBlocking(TaskImpl.this);
       }
     };
+  }
+
+  @Override
+  public Completable mutate(Function<? super TaskMutator, ? extends TaskMutator> mutator) {
+    return store().mutateTask(this, mutator);
   }
 
   TaskStoreImpl store() {

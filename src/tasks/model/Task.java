@@ -1,6 +1,9 @@
 package tasks.model;
 
+import io.reactivex.Completable;
 import io.reactivex.Flowable;
+import java.util.function.Function;
+import omnia.data.structure.Set;
 import omnia.data.structure.observable.ObservableSet;
 
 /**
@@ -20,8 +23,10 @@ public interface Task {
 
   interface Query {
 
-    ObservableSet<Task> tasksBlockedByThis();
+    Flowable<Set<Task>> tasksBlockedByThis();
 
-    ObservableSet<Task> tasksBlockingThis();
+    Flowable<Set<Task>> tasksBlockingThis();
   }
+
+  Completable mutate(Function<? super TaskMutator, ? extends TaskMutator> mutator);
 }
