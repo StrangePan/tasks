@@ -2,6 +2,7 @@ package tasks.model.impl;
 
 import static java.util.Objects.requireNonNull;
 
+import io.reactivex.Observable;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.HashSet;
@@ -30,9 +31,33 @@ final class TaskBuilderImpl implements TaskBuilder {
   }
 
   @Override
+  public TaskBuilderImpl setBlockingTasks(Iterable<Task> tasks) {
+    Iterable<TaskId> taskIds =
+        Observable.fromIterable(tasks)
+            .map(store()::validateTask)
+            .map(TaskImpl::id)
+            .blockingIterable();
+    blockingTasksToAdd.clear();
+    taskIds.forEach(blockingTasksToAdd::add);
+    return this;
+  }
+
+  @Override
   public TaskBuilderImpl addBlockingTask(Task task) {
     TaskImpl taskImpl = store().validateTask(task);
     blockingTasksToAdd.add(taskImpl.id());
+    return this;
+  }
+
+  @Override
+  public TaskBuilderImpl setBlockedTasks(Iterable<Task> tasks) {
+    Iterable<TaskId> taskIds =
+        Observable.fromIterable(tasks)
+            .map(store()::validateTask)
+            .map(TaskImpl::id)
+            .blockingIterable();
+    blockedTasksToAdd.clear();
+    taskIds.forEach(blockedTasksToAdd::add);
     return this;
   }
 

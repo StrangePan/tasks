@@ -50,6 +50,11 @@ final class HandlerUtil {
     }
   }
 
+  static Observable<tasks.model.Task> toTasks(tasks.model.TaskStore store, Iterable<CliTaskId> ids) {
+    return Observable.fromIterable(ids)
+        .flatMapMaybe(id -> store.lookUpById(id.asLong()));
+  }
+
   static void writeTasks(DirectedGraph<Task> tasks) {
     new TaskStore(file()).storeBlocking(tasks);
   }

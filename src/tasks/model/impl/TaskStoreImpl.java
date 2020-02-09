@@ -15,6 +15,7 @@ import omnia.data.structure.Map;
 import omnia.data.structure.Pair;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableMap;
+import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.HashMap;
 import omnia.data.structure.mutable.MutableMap;
 import omnia.data.structure.observable.writable.WritableObservableDirectedGraph;
@@ -223,10 +224,26 @@ public final class TaskStoreImpl implements TaskStore {
 
   private void applyMutatorToTaskGraph(TaskMutatorImpl mutatorImpl) {
     TaskId id = mutatorImpl.id();
+
+    if (mutatorImpl.overwriteBlockingTasks()) {
+      taskGraph.nodeOf(id)
+          .map(DirectedGraph.DirectedNode::incomingEdges)
+          .map(ImmutableSet::copyOf)
+          .orElse(ImmutableSet.empty())
+          .forEach(edge -> taskGraph.removeEdge(edge.start(), edge.end()));
+    }
     mutatorImpl.blockingTasksToAdd()
         .forEach(blockingId -> taskGraph.addEdge(blockingId, id));
     mutatorImpl.blockingTasksToRemove()
         .forEach(blockingId -> taskGraph.removeEdge(blockingId, id));
+
+    if (mutatorImpl.overwriteBlockedTasks()) {
+      taskGraph.nodeOf(id)
+          .map(DirectedGraph.DirectedNode::outgoingEdges)
+          .map(ImmutableSet::copyOf)
+          .orElse(ImmutableSet.empty())
+          .forEach(edge -> taskGraph.removeEdge(edge.start(), edge.end()));
+    }
     mutatorImpl.blockedTasksToAdd()
         .forEach(blockedId -> taskGraph.addEdge(id, blockedId));
     mutatorImpl.blockedTasksToRemove()
