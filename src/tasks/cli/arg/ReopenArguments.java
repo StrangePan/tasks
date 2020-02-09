@@ -1,10 +1,10 @@
 package tasks.cli.arg;
 
 import omnia.data.structure.List;
-import tasks.Task;
+import tasks.cli.CliTaskId;
 
 public final class ReopenArguments extends SimpleArguments {
-  private ReopenArguments(List<Task.Id> tasks) {
+  private ReopenArguments(List<CliTaskId> tasks) {
     super(tasks);
   }
 

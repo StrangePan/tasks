@@ -9,12 +9,13 @@ import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableDirectedGraph;
 import omnia.data.structure.immutable.ImmutableSet;
 import tasks.Task;
+import tasks.cli.CliTaskId;
 import tasks.cli.arg.RemoveArguments;
 
 public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
   @Override
   public void handle(RemoveArguments arguments) {
-    Set<Task.Id> specifiedIds = ImmutableSet.<Task.Id>builder().addAll(arguments.tasks()).build();
+    Set<CliTaskId> specifiedIds = ImmutableSet.<CliTaskId>builder().addAll(arguments.tasks()).build();
 
     // Validate arguments
     if (!specifiedIds.isPopulated()) {
@@ -34,7 +35,7 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
 
     if (targetTasks.count() != specifiedIds.count()) {
       // likely specified a task ID that doesn't exist. report which ones are wrong.
-      Set<Task.Id> unknownIds =
+      Set<CliTaskId> unknownIds =
           differenceBetween(
               specifiedIds,
               targetTasks.stream().map(Task::id).collect(toSet()));

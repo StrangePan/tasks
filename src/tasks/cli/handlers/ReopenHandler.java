@@ -4,21 +4,19 @@ import static java.util.stream.Collectors.joining;
 import static omnia.algorithm.SetAlgorithms.differenceBetween;
 import static omnia.data.stream.Collectors.toSet;
 
-import java.util.stream.Stream;
-import omnia.data.structure.Collection;
 import omnia.data.structure.DirectedGraph;
-import omnia.data.structure.HomogeneousPair;
 import omnia.data.structure.Pair;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableDirectedGraph;
 import omnia.data.structure.immutable.ImmutableSet;
 import tasks.Task;
+import tasks.cli.CliTaskId;
 import tasks.cli.arg.ReopenArguments;
 
 public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
   @Override
   public void handle(ReopenArguments arguments) {
-    Set<Task.Id> specifiedIds = ImmutableSet.<Task.Id>builder().addAll(arguments.tasks()).build();
+    Set<CliTaskId> specifiedIds = ImmutableSet.<CliTaskId>builder().addAll(arguments.tasks()).build();
 
     // Validate arguments
     if (!specifiedIds.isPopulated()) {
@@ -38,7 +36,7 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
 
     if (targetTasks.count() != specifiedIds.count()) {
       // likely specified a task ID that doesn't exist. report which ones are wrong.
-      Set<Task.Id> unknownIds =
+      Set<CliTaskId> unknownIds =
           differenceBetween(
               specifiedIds,
               targetTasks.stream().map(Task::id).collect(toSet()));
@@ -55,7 +53,7 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
         targetTaskNodes.stream().filter(n -> n.item().isCompleted()).collect(toSet());
     Set<Task> completedTasks =
         completedTaskNodes.stream().map(DirectedGraph.Node::item).collect(toSet());
-    Set<Task.Id> completedTaskIds = completedTasks.stream().map(Task::id).collect(toSet());
+    Set<CliTaskId> completedTaskIds = completedTasks.stream().map(Task::id).collect(toSet());
 
     if (alreadyOpenTasks.isPopulated()) {
       System.out.println(

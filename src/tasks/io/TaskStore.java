@@ -21,6 +21,7 @@ import omnia.data.structure.mutable.MutableSet;
 import omnia.string.Escapist;
 import omnia.string.SimpleEscapist;
 import tasks.Task;
+import tasks.cli.CliTaskId;
 
 public class TaskStore implements Store<DirectedGraph<Task>> {
 
@@ -67,7 +68,7 @@ public class TaskStore implements Store<DirectedGraph<Task>> {
     }
 
     DirectedGraph<Task> read() {
-      MutableMap<Task.Id, Task> taskMap = HashMap.create();
+      MutableMap<CliTaskId, Task> taskMap = HashMap.create();
       ImmutableDirectedGraph.Builder<Task> taskGraphBuilder = ImmutableDirectedGraph.builder();
       while (scanner.hasNextLine()) {
         parseTaskString(scanner.nextLine(), taskMap, taskGraphBuilder);
@@ -82,13 +83,13 @@ public class TaskStore implements Store<DirectedGraph<Task>> {
 
     private static void parseTaskString(
         String taskString,
-        MutableMap<Task.Id, Task> taskMap,
+        MutableMap<CliTaskId, Task> taskMap,
         ImmutableDirectedGraph.Builder<Task> taskGraph) {
       String[] parts = taskString.split(";");
 
       Task parsedTask =
           Task.builder()
-              .id(Task.Id.parse(parts[0]))
+              .id(CliTaskId.parse(parts[0]))
               .label(escapist().unescape(parts[1]))
               .isCompleted(Boolean.parseBoolean(parts[3]))
               .build();
@@ -97,7 +98,7 @@ public class TaskStore implements Store<DirectedGraph<Task>> {
       taskGraph.addNode(parsedTask);
       Arrays.stream(parts[2].split(","))
           .filter(s -> !s.isEmpty())
-          .map(Task.Id::parse)
+          .map(CliTaskId::parse)
           .map(taskMap::valueOf)
           .map(Optional::get)
           .forEach(dependency -> taskGraph.addEdge(parsedTask, dependency));
@@ -137,7 +138,7 @@ public class TaskStore implements Store<DirectedGraph<Task>> {
 
     private static List<Task> generateTasks(DirectedGraph<Task> tasks) {
       ImmutableList.Builder<Task> sortedTasks = ImmutableList.builder();
-      MutableSet<Task.Id> seenIds = new HashSet<>();
+      MutableSet<CliTaskId> seenIds = new HashSet<>();
       for (DirectedGraph.Node<Task> task : tasks.nodes()) {
         sortedTasks.addAll(generateSortedTasks(task, seenIds));
       }
@@ -149,7 +150,7 @@ public class TaskStore implements Store<DirectedGraph<Task>> {
      * precede their dependents.
      */
     private static List<Task> generateSortedTasks(
-        DirectedGraph.Node<Task> task, MutableSet<Task.Id> seenIds) {
+        DirectedGraph.Node<Task> task, MutableSet<CliTaskId> seenIds) {
       ImmutableList.Builder<Task> taskList = ImmutableList.builder();
       if (!seenIds.contains(task.item().id())) {
         seenIds.add(task.item().id());
@@ -171,7 +172,7 @@ public class TaskStore implements Store<DirectedGraph<Task>> {
               taskGraph.nodeOf(task).orElseThrow(AssertionError::new).successors().stream()
                   .map(DirectedGraph.Node::item)
                   .map(Task::id)
-                  .map(Task.Id::serialize)
+                  .map(CliTaskId::serialize)
                   .collect(Collectors.joining(",")))
           .append(';')
           .append(task.isCompleted())

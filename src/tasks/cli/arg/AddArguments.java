@@ -8,15 +8,15 @@ import omnia.data.structure.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import tasks.Task;
+import tasks.cli.CliTaskId;
 
 public final class AddArguments {
   private final String description;
-  private final List<Task.Id> blockingTasks;
-  private final List<Task.Id> blockedTasks;
+  private final List<CliTaskId> blockingTasks;
+  private final List<CliTaskId> blockedTasks;
 
   private AddArguments(
-      String description, List<Task.Id> blockingTasks, List<Task.Id> blockedTasks) {
+      String description, List<CliTaskId> blockingTasks, List<CliTaskId> blockedTasks) {
     this.description = description;
     this.blockingTasks = blockingTasks;
     this.blockedTasks = blockedTasks;
@@ -28,12 +28,12 @@ public final class AddArguments {
   }
 
   /** List empty task IDs that are blocking this new task in the order specified in the CLI. */
-  public List<Task.Id> blockingTasks() {
+  public List<CliTaskId> blockingTasks() {
     return blockingTasks;
   }
 
   /** List empty task IDs that are blocked by this new task in the order specified in the CLI. */
-  public List<Task.Id> blockedTasks() {
+  public List<CliTaskId> blockedTasks() {
     return blockedTasks;
   }
 
@@ -72,8 +72,8 @@ public final class AddArguments {
       throw new CliArguments.ArgumentFormatException("Unexpected extra arguments");
     }
 
-    List<Task.Id> afterTasks = parseTaskIds(getOptionValues(commandLine, "a"));
-    List<Task.Id> beforeTasks = parseTaskIds(getOptionValues(commandLine, "b"));
+    List<CliTaskId> afterTasks = parseTaskIds(getOptionValues(commandLine, "a"));
+    List<CliTaskId> beforeTasks = parseTaskIds(getOptionValues(commandLine, "b"));
 
     return new AddArguments(argsList.itemAt(1), afterTasks, beforeTasks);
   }

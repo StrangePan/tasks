@@ -2,6 +2,7 @@ package tasks.model;
 
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
+import io.reactivex.Maybe;
 import java.util.function.Function;
 import omnia.data.structure.Set;
 
@@ -10,6 +11,8 @@ import omnia.data.structure.Set;
  * fetch the canonical data of an individual Task.
  */
 public interface TaskStore {
+
+  Maybe<Task> lookUpById(long id);
 
   Flowable<Set<Task>> allTasks();
 

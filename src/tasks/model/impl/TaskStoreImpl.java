@@ -46,6 +46,18 @@ public final class TaskStoreImpl implements TaskStore {
   }
 
   @Override
+  public Maybe<Task> lookUpById(long id) {
+    return taskGraph.observe()
+        .states()
+        .firstOrError()
+        .map(graph -> graph.nodeOf(new TaskId(id)))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .map(DirectedGraph.Node::item)
+        .map(this::toTask);
+  }
+
+  @Override
   public Flowable<Set<Task>> allTasks() {
     return taskGraph.observe()
         .states()

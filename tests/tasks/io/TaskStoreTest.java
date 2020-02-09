@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import tasks.Task;
+import tasks.cli.CliTaskId;
 import tasks.io.testing.FakeFile;
 
 @RunWith(JUnit4.class)
@@ -19,7 +20,7 @@ public final class TaskStoreTest {
   public void store_thenRetrieve_withSingleTask_didRetrieve() {
     Task task =
         Task.builder()
-            .id(Task.Id.from(132))
+            .id(CliTaskId.from(132))
             .label("this was a triumph")
             .isCompleted(false)
             .build();
@@ -35,13 +36,13 @@ public final class TaskStoreTest {
   public void store_thenRetrieve_withTwoTasks_withDependencies_didRetrieve() {
     Task task1 =
         Task.builder()
-            .id(Task.Id.from(132))
+            .id(CliTaskId.from(132))
             .label("this was a triumph")
             .isCompleted(false)
             .build();
     Task task2 =
         Task.builder()
-            .id(Task.Id.from(2))
+            .id(CliTaskId.from(2))
             .label("i'm making a note here: huge success")
             .build();
 

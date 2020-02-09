@@ -12,8 +12,9 @@ import omnia.data.structure.Pair;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableDirectedGraph;
 import omnia.data.structure.immutable.ImmutableSet;
-import tasks.Task;
 import tasks.cli.arg.AddArguments;
+import tasks.model.Task;
+import tasks.model.TaskStore;
 
 public final class AddHandler implements ArgumentHandler<AddArguments> {
 
@@ -25,8 +26,8 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
       throw new HandlerException("description cannot be empty or whitespace only");
     }
 
-    DirectedGraph<Task> taskGraph = HandlerUtil.loadTasks();
-    Set<Task> tasks = taskGraph.contents();
+    TaskStore taskStore = HandlerUtil.loadTaskStore();
+    Set<Task> tasks = taskStore.allTasks().blockingFirst();
     Set<Task.Id> taskIds = tasks.stream().map(Task::id).collect(toSet());
     Set<Task.Id> blockedIds = ImmutableSet.copyOf(arguments.blockedTasks());
     Set<Task.Id> blockingIds = ImmutableSet.copyOf(arguments.blockingTasks());

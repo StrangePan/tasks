@@ -10,12 +10,13 @@ import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableDirectedGraph;
 import omnia.data.structure.immutable.ImmutableSet;
 import tasks.Task;
+import tasks.cli.CliTaskId;
 import tasks.cli.arg.CompleteArguments;
 
 public final class CompleteHandler implements ArgumentHandler<CompleteArguments> {
   @Override
   public void handle(CompleteArguments arguments) {
-    Set<Task.Id> specifiedIds = ImmutableSet.<Task.Id>builder().addAll(arguments.tasks()).build();
+    Set<CliTaskId> specifiedIds = ImmutableSet.<CliTaskId>builder().addAll(arguments.tasks()).build();
 
     // Validate arguments
     if (!specifiedIds.isPopulated()) {
@@ -35,7 +36,7 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
 
     if (targetTasks.count() != specifiedIds.count()) {
       // likely specified a task ID that doesn't exist. report which ones are wrong.
-      Set<Task.Id> unknownIds =
+      Set<CliTaskId> unknownIds =
           differenceBetween(
               specifiedIds,
               targetTasks.stream().map(Task::id).collect(toSet()));
@@ -52,7 +53,7 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
         targetTaskNodes.stream().filter(n -> !n.item().isCompleted()).collect(toSet());
     Set<Task> uncompletedTasks =
         uncompletedTaskNodes.stream().map(DirectedGraph.Node::item).collect(toSet());
-    Set<Task.Id> uncompletedTaskIds = uncompletedTasks.stream().map(Task::id).collect(toSet());
+    Set<CliTaskId> uncompletedTaskIds = uncompletedTasks.stream().map(Task::id).collect(toSet());
 
     if (alreadyCompletedTasks.isPopulated()) {
       System.out.println(

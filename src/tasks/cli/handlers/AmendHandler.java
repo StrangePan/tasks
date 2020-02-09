@@ -13,6 +13,7 @@ import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableDirectedGraph;
 import omnia.data.structure.immutable.ImmutableSet;
 import tasks.Task;
+import tasks.cli.CliTaskId;
 import tasks.cli.arg.AmendArguments;
 
 public final class AmendHandler implements ArgumentHandler<AmendArguments> {
@@ -31,10 +32,10 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
 
     Task targetTask = targetTaskNode.item();
 
-    Set<Task.Id> existingTaskIds = taskGraph.contents().stream().map(Task::id).collect(toSet());
+    Set<CliTaskId> existingTaskIds = taskGraph.contents().stream().map(Task::id).collect(toSet());
 
-    Set<Task.Id> allSpecifiedIds =
-        ImmutableSet.<Task.Id>builder()
+    Set<CliTaskId> allSpecifiedIds =
+        ImmutableSet.<CliTaskId>builder()
             .addAll(arguments.blockedTasks())
             .addAll(arguments.blockedTasksToAdd())
             .addAll(arguments.blockedTasksToRemove())
@@ -44,7 +45,7 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
             .build();
 
     // validate that all parameters refer to existing tasks
-    Set<Task.Id> undefinedTasks =
+    Set<CliTaskId> undefinedTasks =
         SetAlgorithms.differenceBetween(allSpecifiedIds, existingTaskIds);
 
     if (undefinedTasks.isPopulated()) {
@@ -63,7 +64,7 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
     }
 
     // ensure the same task isn't added and removed at the same time
-    Set<Task.Id> ambiguousBlockedTasks =
+    Set<CliTaskId> ambiguousBlockedTasks =
         SetAlgorithms.intersectionOf(
             ImmutableSet.copyOf(arguments.blockedTasksToAdd()),
             ImmutableSet.copyOf(arguments.blockedTasksToRemove()));
@@ -74,7 +75,7 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
               .collect(joining(", "));
       throw new HandlerException("ambiguous operation: tasks both added and removed from before: " + listOfAmbiguousTasks);
     }
-    Set<Task.Id> ambiguousBlockingTasks =
+    Set<CliTaskId> ambiguousBlockingTasks =
         SetAlgorithms.intersectionOf(
             ImmutableSet.copyOf(arguments.blockedTasksToAdd()),
             ImmutableSet.copyOf(arguments.blockedTasksToRemove()));
@@ -87,7 +88,7 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
     }
 
     // okay, operation isn't ambiguous, task doesn't reference itself, and task ids are valid
-    Set<Task.Id> blockingTaskIds =
+    Set<CliTaskId> blockingTaskIds =
         arguments.blockingTasks().isPopulated()
             ? ImmutableSet.copyOf(arguments.blockingTasks())
             : SetAlgorithms.unionOf(
@@ -100,7 +101,7 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
                         .collect(toSet()),
                     ImmutableSet.copyOf(arguments.blockingTasksToRemove())));
 
-    Set<Task.Id> blockedTaskIds =
+    Set<CliTaskId> blockedTaskIds =
         arguments.blockedTasks().isPopulated()
             ? ImmutableSet.copyOf(arguments.blockedTasks())
             : SetAlgorithms.unionOf(

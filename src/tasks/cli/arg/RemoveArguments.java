@@ -1,10 +1,10 @@
 package tasks.cli.arg;
 
 import omnia.data.structure.List;
-import tasks.Task;
+import tasks.cli.CliTaskId;
 
 public final class RemoveArguments extends SimpleArguments {
-  private RemoveArguments(List<Task.Id> tasks) {
+  private RemoveArguments(List<CliTaskId> tasks) {
     super(tasks);
   }
 
