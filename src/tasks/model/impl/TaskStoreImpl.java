@@ -18,17 +18,25 @@ import omnia.data.structure.immutable.ImmutableMap;
 import omnia.data.structure.mutable.HashMap;
 import omnia.data.structure.mutable.MutableMap;
 import omnia.data.structure.observable.writable.WritableObservableDirectedGraph;
-import tasks.io.Store;
+import tasks.io.File;
 import tasks.model.Task;
 import tasks.model.TaskBuilder;
 import tasks.model.TaskMutator;
 import tasks.model.TaskStore;
 
-final class TaskStoreImpl implements TaskStore {
+public final class TaskStoreImpl implements TaskStore {
 
-  private final WritableObservableDirectedGraph<TaskId> taskGraph = WritableObservableDirectedGraph.create();
-  private final MutableMap<TaskId, TaskData> taskData = HashMap.create();
-  private Store<Pair<DirectedGraph<TaskId>, Map<TaskId, TaskData>>> fileStore; // TODO
+  private final TaskFileSource fileSource; // TODO
+  private final WritableObservableDirectedGraph<TaskId> taskGraph;
+  private final MutableMap<TaskId, TaskData> taskData;
+
+  public TaskStoreImpl(String filePath) {
+    this.fileSource = new TaskFileSource(File.fromPath(filePath));
+    Pair<DirectedGraph<TaskId>, Map<TaskId, TaskData>> loadedData =
+        fileSource.readFromFile().blockingGet();
+    taskGraph = WritableObservableDirectedGraph.copyOf(loadedData.first());
+    taskData = HashMap.copyOf(loadedData.second());
+  }
 
   Maybe<Flowable<TaskData>> lookUp(TaskId id) {
     return Single.just(taskData.valueOf(id))
@@ -232,7 +240,7 @@ final class TaskStoreImpl implements TaskStore {
         .firstOrError()
         .map(graph -> (DirectedGraph<TaskId>) graph)
         .zipWith(Single.just((Map<TaskId, TaskData>) ImmutableMap.copyOf(taskData)), Pair::of)
-        .map(pair -> Completable.fromAction(() -> fileStore.storeBlocking(pair)))
-        .flatMapCompletable(c -> c);
+        .flatMapCompletable(fileSource::writeToFile)
+        .cache();
   }
 }

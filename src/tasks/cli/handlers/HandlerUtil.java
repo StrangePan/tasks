@@ -7,17 +7,24 @@ import omnia.data.structure.DirectedGraph;
 import tasks.Task;
 import tasks.io.File;
 import tasks.io.TaskStore;
+import tasks.model.impl.TaskStoreImpl;
 
 final class HandlerUtil {
 
   private HandlerUtil() {}
 
+  private static final String FILE_NAME = "asdf";
+
   private static File file() {
-    return File.fromPath("asdf");
+    return File.fromPath(FILE_NAME);
   }
 
   static DirectedGraph<Task> loadTasks() {
     return new TaskStore(file()).retrieveBlocking();
+  }
+
+  static tasks.model.TaskStore loadTaskStore() {
+    return new TaskStoreImpl(FILE_NAME);
   }
 
   static void writeTasks(DirectedGraph<Task> tasks) {
