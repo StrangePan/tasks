@@ -14,7 +14,7 @@ final class TaskData {
     this.label = requireNonNull(label);
   }
 
-  boolean completed() {
+  boolean isCompleted() {
     return completed;
   }
 

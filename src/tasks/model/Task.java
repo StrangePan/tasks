@@ -17,6 +17,8 @@ import omnia.data.structure.observable.ObservableSet;
  */
 public interface Task {
 
+  Flowable<Boolean> isCompleted();
+
   Flowable<String> label();
 
   Query query();

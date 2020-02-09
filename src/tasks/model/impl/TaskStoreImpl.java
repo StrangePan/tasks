@@ -217,7 +217,7 @@ public final class TaskStoreImpl implements TaskStore {
         .flatMap(taskData::valueOf)
         .map(data ->
             new TaskData(
-                mutatorImpl.completed().orElse(data.completed()),
+                mutatorImpl.completed().orElse(data.isCompleted()),
                 mutatorImpl.label().orElse(data.label())))
         .ifPresent(data -> taskData.putMapping(mutatorImpl.id(), data));
   }

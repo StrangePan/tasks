@@ -33,6 +33,14 @@ final class TaskImpl implements Task {
   }
 
   @Override
+  public Flowable<Boolean> isCompleted() {
+    return store().lookUp(id)
+        .toSingle()
+        .flatMapPublisher(f -> f)
+        .map(TaskData::isCompleted);
+  }
+
+  @Override
   public Flowable<String> label() {
     return store().lookUp(id)
         .toSingle()
