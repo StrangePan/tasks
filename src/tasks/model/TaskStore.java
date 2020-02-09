@@ -21,5 +21,7 @@ public interface TaskStore {
 
   Completable mutateTask(Task task, Function<? super TaskMutator, ? extends TaskMutator> mutation);
 
+  Completable deleteTask(Task task);
+
   Completable writeToDisk();
 }

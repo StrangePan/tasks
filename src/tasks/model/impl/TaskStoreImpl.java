@@ -73,7 +73,8 @@ final class TaskStoreImpl implements TaskStore {
   public Completable createTask(String label, Function<? super TaskBuilder, ? extends TaskBuilder> builder) {
     return Single.just(new TaskBuilderImpl(this, label))
         .<TaskBuilder>map(builder::apply)
-        .flatMapCompletable(taskBuilder -> Completable.fromAction(() -> applyBuilder(taskBuilder)));
+        .flatMapCompletable(taskBuilder -> Completable.fromAction(() -> applyBuilder(taskBuilder)))
+        .cache();
   }
 
   private void applyBuilder(TaskBuilder builder) {
@@ -83,6 +84,30 @@ final class TaskStoreImpl implements TaskStore {
     taskData.putMapping(id, data);
     builderImpl.blockingTasks().forEach(blockingTask -> taskGraph.addEdge(blockingTask, id));
     builderImpl.blockedTasks().forEach(blockedTask -> taskGraph.addEdge(id, blockedTask));
+  }
+
+  TaskBuilderImpl validateBuilder(TaskBuilder builder) {
+    requireNonNull(builder);
+    if (!(builder instanceof TaskBuilderImpl)) {
+      throw new IllegalArgumentException(
+          "Unrecognized builder type. Expected "
+              + TaskBuilderImpl.class
+              + ", received "
+              + builder.getClass()
+              + ": "
+              + builder);
+    }
+    TaskBuilderImpl builderImpl = (TaskBuilderImpl) builder;
+    if (builderImpl.store() != this) {
+      throw new IllegalArgumentException(
+          "Builder associated with another store. Expected <"
+              + this
+              + ">, received <"
+              + builderImpl.store()
+              + ">: "
+              + builderImpl);
+    }
+    return builderImpl;
   }
 
   private TaskId generateId() {
@@ -102,7 +127,8 @@ final class TaskStoreImpl implements TaskStore {
   Completable mutateTask(TaskImpl task, Function<? super TaskMutator, ? extends TaskMutator> mutation) {
     return Single.just(new TaskMutatorImpl(this, task.id()))
         .<TaskMutator>map(mutation::apply)
-        .flatMapCompletable(mutator -> Completable.fromAction(() -> applyMutator(mutator)));
+        .flatMapCompletable(mutator -> Completable.fromAction(() -> applyMutator(mutator)))
+        .cache();
   }
 
   TaskImpl validateTask(Task task) {
@@ -139,30 +165,6 @@ final class TaskStoreImpl implements TaskStore {
     applyMutatorToTaskGraph(mutatorImpl);
   }
 
-  private void applyMutatorToTaskData(TaskMutatorImpl mutatorImpl) {
-    Optional.of(mutatorImpl)
-        .filter(mutator -> mutator.completed().isPresent() && mutator.label().isPresent())
-        .map(TaskMutatorImpl::id)
-        .flatMap(taskData::valueOf)
-        .map(data ->
-            new TaskData(
-                mutatorImpl.completed().orElse(data.completed()),
-                mutatorImpl.label().orElse(data.label())))
-        .ifPresent(data -> taskData.putMapping(mutatorImpl.id(), data));
-  }
-
-  private void applyMutatorToTaskGraph(TaskMutatorImpl mutatorImpl) {
-    TaskId id = mutatorImpl.id();
-    mutatorImpl.blockingTasksToAdd()
-        .forEach(blockingId -> taskGraph.addEdge(blockingId, id));
-    mutatorImpl.blockingTasksToRemove()
-        .forEach(blockingId -> taskGraph.removeEdge(blockingId, id));
-    mutatorImpl.blockedTasksToAdd()
-        .forEach(blockedId -> taskGraph.addEdge(id, blockedId));
-    mutatorImpl.blockedTasksToRemove()
-        .forEach(blockedId -> taskGraph.removeEdge(id, blockedId));
-  }
-
   TaskMutatorImpl validateMutator(TaskMutator mutator) {
     requireNonNull(mutator);
     if (!(mutator instanceof TaskMutatorImpl)) {
@@ -187,28 +189,40 @@ final class TaskStoreImpl implements TaskStore {
     return mutatorImpl;
   }
 
-  TaskBuilderImpl validateBuilder(TaskBuilder builder) {
-    requireNonNull(builder);
-    if (!(builder instanceof TaskBuilderImpl)) {
-      throw new IllegalArgumentException(
-          "Unrecognized builder type. Expected "
-              + TaskBuilderImpl.class
-              + ", received "
-              + builder.getClass()
-              + ": "
-              + builder);
-    }
-    TaskBuilderImpl builderImpl = (TaskBuilderImpl) builder;
-    if (builderImpl.store() != this) {
-      throw new IllegalArgumentException(
-          "Builder associated with another store. Expected <"
-              + this
-              + ">, received <"
-              + builderImpl.store()
-              + ">: "
-              + builderImpl);
-    }
-    return builderImpl;
+  private void applyMutatorToTaskData(TaskMutatorImpl mutatorImpl) {
+    Optional.of(mutatorImpl)
+        .filter(mutator -> mutator.completed().isPresent() && mutator.label().isPresent())
+        .map(TaskMutatorImpl::id)
+        .flatMap(taskData::valueOf)
+        .map(data ->
+            new TaskData(
+                mutatorImpl.completed().orElse(data.completed()),
+                mutatorImpl.label().orElse(data.label())))
+        .ifPresent(data -> taskData.putMapping(mutatorImpl.id(), data));
+  }
+
+  private void applyMutatorToTaskGraph(TaskMutatorImpl mutatorImpl) {
+    TaskId id = mutatorImpl.id();
+    mutatorImpl.blockingTasksToAdd()
+        .forEach(blockingId -> taskGraph.addEdge(blockingId, id));
+    mutatorImpl.blockingTasksToRemove()
+        .forEach(blockingId -> taskGraph.removeEdge(blockingId, id));
+    mutatorImpl.blockedTasksToAdd()
+        .forEach(blockedId -> taskGraph.addEdge(id, blockedId));
+    mutatorImpl.blockedTasksToRemove()
+        .forEach(blockedId -> taskGraph.removeEdge(id, blockedId));
+  }
+
+  @Override
+  public Completable deleteTask(Task task) {
+    return deleteTask(validateTask(task));
+  }
+
+  public Completable deleteTask(TaskImpl task) {
+    return Completable.mergeArray(
+        Completable.fromAction(() -> taskGraph.removeNode(task.id())),
+        Completable.fromAction(() -> taskData.removeKey(task.id())))
+        .cache();
   }
 
   @Override
