@@ -21,6 +21,10 @@ public final class CliTaskId {
     this.id = id;
   }
 
+  public long asLong() {
+    return id;
+  }
+
   public String serialize() {
     return Long.toString(id);
   }
