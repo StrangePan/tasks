@@ -4,5 +4,7 @@ import tasks.cli.arg.HelpArguments;
 
 public final class HelpHandler implements ArgumentHandler<HelpArguments> {
   @Override
-  public void handle(HelpArguments arguments) {}
+  public void handle(HelpArguments arguments) {
+    // TODO
+  }
 }
