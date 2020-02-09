@@ -9,6 +9,7 @@ import io.reactivex.Maybe;
 import io.reactivex.Single;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import omnia.data.structure.DirectedGraph;
 import omnia.data.structure.Graph;
 import omnia.data.structure.Map;
@@ -88,6 +89,33 @@ public final class TaskStoreImpl implements TaskStore {
             optionalNode.map(DirectedGraph.DirectedNode::successors).orElse(Set.empty()))
         .map(predecessors ->
             predecessors.stream().map(Graph.Node::item).map(this::toTask).collect(toSet()));
+  }
+
+  @Override
+  public Flowable<Set<Task>> unblockedTasks() {
+    return tasksFromNodesMatching(node -> !node.incomingEdges().isPopulated());
+  }
+
+  @Override
+  public Flowable<Set<Task>> blockedTasks() {
+    return tasksFromNodesMatching(node -> node.incomingEdges().isPopulated());
+  }
+
+  @Override
+  public Flowable<Set<Task>> completedTasks() {
+    return tasksFromNodesMatching(node -> taskData.valueOf(node.item()).get().isCompleted());
+  }
+
+  private Flowable<Set<Task>> tasksFromNodesMatching(Predicate<? super DirectedGraph.DirectedNode<? extends TaskId>> filter) {
+    return taskGraph.observe()
+        .states()
+        .map(DirectedGraph::nodes)
+        .map(Set::stream)
+        .map(stream ->
+            stream.filter(filter)
+                .map(Graph.Node::item)
+                .map(this::toTask)
+                .collect(toSet()));
   }
 
   @Override

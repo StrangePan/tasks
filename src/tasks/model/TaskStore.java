@@ -20,6 +20,12 @@ public interface TaskStore {
 
   Flowable<Set<Task>> tasksBlockedBy(Task blockingTask);
 
+  Flowable<Set<Task>> unblockedTasks();
+
+  Flowable<Set<Task>> blockedTasks();
+
+  Flowable<Set<Task>> completedTasks();
+
   Completable createTask(String label, Function<? super TaskBuilder, ? extends TaskBuilder> builder);
 
   Completable mutateTask(Task task, Function<? super TaskMutator, ? extends TaskMutator> mutation);

@@ -97,7 +97,7 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
           HandlerUtil.toTasks(taskStore, arguments.blockedTasksToRemove())
               .blockingForEach(mutator::removeBlockedTask);
           return mutator;
-        });
+        }).blockingAwait();
 
     taskStore.writeToDisk().blockingAwait();
     System.out.println("task amended: " + targetTask);

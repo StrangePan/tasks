@@ -50,7 +50,8 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
               Observable.fromIterable(blockingTasks).reduce(b, TaskBuilder::addBlockingTask))
           .flatMap(b ->
               Observable.fromIterable(blockedTasks).reduce(b, TaskBuilder::addBlockedTask))
-        .blockingGet());
+        .blockingGet())
+        .blockingAwait();
 
     // Construct a new task graph with the new task inserted and the new edges assembled
     taskStore.writeToDisk().blockingAwait();
