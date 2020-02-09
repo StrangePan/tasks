@@ -8,36 +8,26 @@ import java.util.Optional;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableSet;
 import tasks.cli.arg.CompleteArguments;
+import tasks.cli.handlers.HandlerUtil.CompletedState;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
 public final class CompleteHandler implements ArgumentHandler<CompleteArguments> {
   @Override
   public void handle(CompleteArguments arguments) {
-    TaskStore taskStore = HandlerUtil.loadTaskStore();
+    // Validate arguments
+    if (!arguments.tasks().isPopulated()) {
+      throw new HandlerException("no tasks specified");
+    }
 
+    TaskStore taskStore = HandlerUtil.loadTaskStore();
     HandlerUtil.validateTasksIds(taskStore, arguments.tasks());
 
     Set<Task> specifiedTasks =
         ImmutableSet.copyOf(HandlerUtil.toTasks(taskStore, arguments.tasks()).blockingIterable());
 
-    // Validate arguments
-    if (!specifiedTasks.isPopulated()) {
-      throw new HandlerException("no tasks specified");
-    }
-
     EnumMap<CompletedState, Set<Task>> tasksGroupedByState =
-        Observable.fromIterable(specifiedTasks)
-            .groupBy(task -> task.isCompleted().blockingFirst()
-                ? CompletedState.COMPLETE
-                : CompletedState.INCOMPLETE)
-            .reduce(
-                new EnumMap<CompletedState, Set<Task>>(CompletedState.class),
-                (map, tasks) -> {
-                  map.put(tasks.getKey(), ImmutableSet.copyOf(tasks.blockingIterable()));
-                  return map;
-                })
-            .blockingGet();
+        HandlerUtil.groupByCompletionState(Observable.fromIterable(specifiedTasks));
 
     Set<Task> alreadyCompletedTasks =
         tasksGroupedByState.getOrDefault(CompletedState.COMPLETE, Set.empty());
@@ -65,10 +55,5 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
 
     // write to disk
     taskStore.writeToDisk().blockingAwait();
-  }
-
-  enum CompletedState {
-    COMPLETE,
-    INCOMPLETE,
   }
 }

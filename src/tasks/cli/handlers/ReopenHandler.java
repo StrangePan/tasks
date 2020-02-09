@@ -1,85 +1,58 @@
 package tasks.cli.handlers;
 
 import static java.util.stream.Collectors.joining;
-import static omnia.algorithm.SetAlgorithms.differenceBetween;
-import static omnia.data.stream.Collectors.toSet;
 
-import omnia.data.structure.DirectedGraph;
-import omnia.data.structure.Pair;
+import io.reactivex.Observable;
+import java.util.EnumMap;
+import java.util.Optional;
 import omnia.data.structure.Set;
-import omnia.data.structure.immutable.ImmutableDirectedGraph;
 import omnia.data.structure.immutable.ImmutableSet;
-import tasks.Task;
-import tasks.cli.CliTaskId;
 import tasks.cli.arg.ReopenArguments;
+import tasks.model.Task;
+import tasks.model.TaskStore;
 
 public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
   @Override
   public void handle(ReopenArguments arguments) {
-    Set<CliTaskId> specifiedIds = ImmutableSet.<CliTaskId>builder().addAll(arguments.tasks()).build();
-
     // Validate arguments
-    if (!specifiedIds.isPopulated()) {
+    if (!arguments.tasks().isPopulated()) {
       throw new HandlerException("no tasks specified");
     }
 
-    DirectedGraph<Task> taskGraph = HandlerUtil.loadTasks();
-    Set<DirectedGraph.Node<Task>> targetTaskNodes =
-        taskGraph.nodes()
-            .stream()
-            .filter(n -> specifiedIds.contains(n.item().id()))
-            .collect(toSet());
-    Set<Task> targetTasks =
-        targetTaskNodes.stream()
-            .map(DirectedGraph.Node::item)
-            .collect(toSet());
+    TaskStore taskStore = HandlerUtil.loadTaskStore();
+    HandlerUtil.validateTasksIds(taskStore, arguments.tasks());
 
-    if (targetTasks.count() != specifiedIds.count()) {
-      // likely specified a task ID that doesn't exist. report which ones are wrong.
-      Set<CliTaskId> unknownIds =
-          differenceBetween(
-              specifiedIds,
-              targetTasks.stream().map(Task::id).collect(toSet()));
-      String listOfUnknownIds =
-          unknownIds.stream()
-              .map(Object::toString)
-              .collect(joining(", "));
-      throw new HandlerException("unknown task id(s) specified: " + listOfUnknownIds);
-    }
+    Set<Task> specifiedTasks =
+        ImmutableSet.copyOf(HandlerUtil.toTasks(taskStore, arguments.tasks()).blockingIterable());
 
-    Set<Task> alreadyOpenTasks =
-        targetTasks.stream().filter(t -> !t.isCompleted()).collect(toSet());
-    Set<DirectedGraph.Node<Task>> completedTaskNodes =
-        targetTaskNodes.stream().filter(n -> n.item().isCompleted()).collect(toSet());
+    EnumMap<HandlerUtil.CompletedState, Set<Task>> tasksGroupedByState =
+        HandlerUtil.groupByCompletionState(Observable.fromIterable(specifiedTasks));
+
     Set<Task> completedTasks =
-        completedTaskNodes.stream().map(DirectedGraph.Node::item).collect(toSet());
-    Set<CliTaskId> completedTaskIds = completedTasks.stream().map(Task::id).collect(toSet());
+        tasksGroupedByState.getOrDefault(HandlerUtil.CompletedState.COMPLETE, Set.empty());
+    Set<Task> alreadyOpenTasks =
+        tasksGroupedByState.getOrDefault(HandlerUtil.CompletedState.INCOMPLETE, Set.empty());
 
-    if (alreadyOpenTasks.isPopulated()) {
-      System.out.println(
-          "task(s) already open: "
-              + alreadyOpenTasks.stream()
-                  .map(Task::id)
-                  .map(Object::toString)
-                  .collect(joining(", ")));
-    }
+    // report tasks already open
+    Optional.of(
+        alreadyOpenTasks.stream()
+            .map(Object::toString)
+            .collect(joining(", ")))
+        .filter(s -> !s.isEmpty())
+        .map(list -> "tasks already open: " + list)
+        .ifPresent(System.out::println);
 
-    if (!completedTasks.isPopulated()) {
-      return;
-    }
+    // mark incomplete tasks as complete
+    Observable.fromIterable(completedTasks)
+        .flatMapCompletable(task -> task.mutate(mutator -> mutator.setCompleted(false)))
+        .blockingAwait();
 
-    ImmutableDirectedGraph.Builder<Task> newTaskBuilder =
-        ImmutableDirectedGraph.buildUpon(taskGraph);
-
-    // replace existing nodes with new nodes
-    completedTasks.stream()
-        .map(task -> Pair.of(task, task.toBuilder().isCompleted(false).build()))
-        .forEach(pair -> newTaskBuilder.replaceNode(pair.first(), pair.second()));
-
-    HandlerUtil.writeTasks(newTaskBuilder.build());
-
+    // report to user
     System.out.println(
-        "task(s) reopened: "
-            + completedTaskIds.stream().map(Object::toString).collect(joining(", ")));
+        "task(s) reopened:"
+            + completedTasks.stream().map(Object::toString).collect(joining(", ")));
+
+    // write to disk
+    taskStore.writeToDisk().blockingAwait();
   }
 }

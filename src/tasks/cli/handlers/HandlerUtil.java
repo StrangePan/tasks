@@ -3,6 +3,7 @@ package tasks.cli.handlers;
 import static java.util.stream.Collectors.joining;
 
 import io.reactivex.Observable;
+import java.util.EnumMap;
 import omnia.data.structure.Collection;
 import omnia.data.structure.DirectedGraph;
 import omnia.data.structure.Set;
@@ -61,5 +62,25 @@ final class HandlerUtil {
 
   static String stringifyContents(Collection<?> collection) {
     return collection.stream().map(Object::toString).collect(joining(","));
+  }
+
+  static EnumMap<CompletedState, Set<tasks.model.Task>> groupByCompletionState(
+      Observable<tasks.model.Task> tasks) {
+    return tasks
+        .groupBy(task -> task.isCompleted().blockingFirst()
+            ? CompletedState.COMPLETE
+            : CompletedState.INCOMPLETE)
+        .reduce(
+            new EnumMap<CompletedState, Set<tasks.model.Task>>(CompletedState.class),
+            (map, taskSet) -> {
+              map.put(taskSet.getKey(), ImmutableSet.copyOf(taskSet.blockingIterable()));
+              return map;
+            })
+        .blockingGet();
+  }
+
+  enum CompletedState {
+    COMPLETE,
+    INCOMPLETE,
   }
 }
