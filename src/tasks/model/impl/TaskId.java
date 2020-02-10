@@ -19,4 +19,8 @@ final class TaskId {
   public int hashCode() {
     return Objects.hash(id);
   }
+
+  long asLong() {
+    return id;
+  }
 }
