@@ -27,14 +27,7 @@ import tasks.cli.handlers.ReopenHandler;
 public final class EntryPoint {
 
   public static void main(String[] args) {
-    CliArguments arguments;
-
-    try {
-      arguments = CliArguments.parse(args);
-    } catch (CliArguments.ArgumentFormatException e) {
-      System.out.println(e.getMessage());
-      return;
-    }
+    CliArguments arguments = CliArguments.parse(args);
 
     ImmutableMap<Class<?>, ArgumentHandler<Object>> argumentHandlers =
         ImmutableMap.<Class<?>, ArgumentHandler<Object>>builder()
@@ -50,8 +43,6 @@ public final class EntryPoint {
 
     argumentHandlers.valueOf(arguments.getArguments().getClass())
         .ifPresent(handler -> handler.handle(arguments.getArguments()));
-
-    System.out.println(arguments);
   }
 
   private static <T> ValidatingHandler<T> validate(
