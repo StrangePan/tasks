@@ -53,7 +53,6 @@ final class TaskFileSource {
         .concatMap(o -> o)
         .map(String::getBytes)
         .blockingForEach(stream::write);
-    // TODO
   }
 
   private static Observable<String> serialize(Map<TaskId, TaskData> tasks) {
@@ -63,7 +62,7 @@ final class TaskFileSource {
         .sorted(Comparator.comparing(entry -> entry.key().asLong()))
         .map(entry -> Pair.of(entry.key(), entry.value()))
         .map(TaskFileSource::serialize)
-        .flatMap(line -> Observable.just(line, END_OF_LINE));
+        .concatMap(line -> Observable.just(line, END_OF_LINE));
   }
 
   private static String serialize(Pair<TaskId, TaskData> task) {
@@ -124,7 +123,7 @@ final class TaskFileSource {
         .filter(node -> node.successors().isPopulated())
         .sorted(Comparator.comparing(node -> node.item().asLong()))
         .map(TaskFileSource::serialize)
-        .flatMap(line -> Observable.just(line, END_OF_LINE));
+        .concatMap(line -> Observable.just(line, END_OF_LINE));
   }
 
   private static String serialize(DirectedGraph.DirectedNode<TaskId> node) {
