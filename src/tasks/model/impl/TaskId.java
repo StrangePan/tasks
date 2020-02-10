@@ -20,6 +20,11 @@ final class TaskId {
     return Objects.hash(id);
   }
 
+  @Override
+  public String toString() {
+    return Long.toString(asLong());
+  }
+
   long asLong() {
     return id;
   }

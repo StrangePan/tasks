@@ -33,6 +33,16 @@ final class TaskImpl implements Task {
   }
 
   @Override
+  public String toString() {
+    return new StringBuilder()
+        .append(id.toString())
+        .append(isCompleted().blockingFirst() ? " (completed)" : "")
+        .append(": ")
+        .append(label().blockingFirst())
+        .toString();
+  }
+
+  @Override
   public Flowable<Boolean> isCompleted() {
     return store().lookUp(id)
         .toSingle()

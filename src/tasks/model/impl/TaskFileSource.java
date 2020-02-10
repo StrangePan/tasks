@@ -6,9 +6,8 @@ import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.BufferedWriter;
+import java.io.Writer;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -34,19 +33,23 @@ final class TaskFileSource {
   }
 
   Single<Pair<DirectedGraph<TaskId>, Map<TaskId, TaskData>>> readFromFile() {
-    return Single.using(file::openInputStream, Single::just, InputStream::close)
-        .map(TaskFileSource::parseTaskData);
+    return Single.fromCallable(() -> {
+      try (BufferedReader reader = new BufferedReader(file.openReader())) {
+        return parseTaskData(reader);
+      }
+    });
   }
 
   Completable writeToFile(Pair<DirectedGraph<TaskId>, Map<TaskId, TaskData>> data) {
-    return Single.using(file::openOutputStream, Single::just, OutputStream::close)
-        .flatMapCompletable(stream -> Completable.fromAction(() -> serializeTaskData(data, stream)));
+    return Completable.fromAction(() -> {
+      try (BufferedWriter writer = new BufferedWriter(file.openWriter())) {
+        serializeTaskData(data, writer);
+      }
+    });
   }
 
-  private static Pair<DirectedGraph<TaskId>, Map<TaskId, TaskData>> parseTaskData(InputStream stream) {
-    return Single.just(stream)
-        .map(InputStreamReader::new)
-        .map(BufferedReader::new)
+  private static Pair<DirectedGraph<TaskId>, Map<TaskId, TaskData>> parseTaskData(BufferedReader reader) {
+    return Single.just(reader)
         .map(BufferedReader::lines)
         .map(Stream::iterator)
         .map(iterator -> (Iterable<String>) () -> iterator)
@@ -114,6 +117,7 @@ final class TaskFileSource {
       boolean completed = Boolean.parseBoolean(fields[1]);
       String label = unescapeLabel(fields[2]);
       tasks.put(id, new TaskData(completed, label));
+      graph.addNode(id);
       // TODO: ensure unique ids
     }
 
@@ -131,7 +135,7 @@ final class TaskFileSource {
     }
   }
 
-  private void serializeTaskData(Pair<DirectedGraph<TaskId>, Map<TaskId, TaskData>> data, OutputStream stream) {
+  private void serializeTaskData(Pair<DirectedGraph<TaskId>, Map<TaskId, TaskData>> data, Writer writer) {
     Observable.just(
             Observable.just("# version " + VERSION),
             Observable.just("# tasks"),
@@ -140,8 +144,7 @@ final class TaskFileSource {
             serialize(data.first()))
         .concatMap(o -> o)
         .concatMap(line -> Observable.just(line, END_OF_LINE))
-        .map(String::getBytes)
-        .blockingForEach(stream::write);
+        .blockingForEach(writer::write);
   }
 
   private static Observable<String> serialize(Map<TaskId, TaskData> tasks) {

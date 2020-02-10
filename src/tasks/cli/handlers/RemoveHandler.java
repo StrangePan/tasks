@@ -24,12 +24,13 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
     Set<Task> tasksToDelete =
         ImmutableSet.copyOf(HandlerUtil.toTasks(taskStore, arguments.tasks()).blockingIterable());
 
-    String report = "tasks marked as completed:" + stringify(tasksToDelete);
+    String report = "tasks removed:" + stringify(tasksToDelete);
 
     Observable.fromIterable(tasksToDelete)
-        .flatMapCompletable(taskStore::deleteTask)
-        .andThen(taskStore.writeToDisk())
+        .concatMapCompletable(taskStore::deleteTask)
         .blockingAwait();
+
+    taskStore.writeToDisk().blockingAwait();
 
     System.out.println(report);
   }

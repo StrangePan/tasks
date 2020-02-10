@@ -13,18 +13,17 @@ public final class ListHandler implements ArgumentHandler<ListArguments> {
   public void handle(ListArguments arguments) {
     TaskStore taskStore = HandlerUtil.loadTaskStore();
 
-    String unblockedTasks = stringify(taskStore.unblockedTasks());
-    String blockedTasks = arguments.isBlockedSet() ? stringify(taskStore.blockedTasks()) : "";
-    String completedTasks = arguments.isCompletedSet() ? stringify(taskStore.completedTasks()) : "";
-
-    print("unblocked tasks:", unblockedTasks);
-    print("blocked tasks:", blockedTasks);
-    print("completed tasks:", completedTasks);
+    print("unblocked tasks:", stringify(taskStore.unblockedTasks()));
+    print("blocked tasks:", arguments.isBlockedSet() ? stringify(taskStore.blockedTasks()) : "");
+    print("completed tasks:", arguments.isCompletedSet() ? stringify(taskStore.completedTasks()) : "");
   }
 
   private static String stringify(Flowable<Set<Task>> tasks) {
-    return tasks.blockingFirst()
-        .stream()
+    return stringify(tasks.blockingFirst());
+  }
+
+  private static String stringify(Set<Task> tasks) {
+    return tasks.stream()
         .map(Task::toString)
         .map(line -> "\n  " + line)
         .collect(joining());
