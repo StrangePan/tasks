@@ -1,6 +1,8 @@
 package tasks.io;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,8 +24,8 @@ public interface File {
       public InputStream openInputStream() {
         try {
           return new FileInputStream(path);
-        } catch (IOException ex) {
-          throw new RuntimeException(ex);
+        } catch (FileNotFoundException ex) {
+          return new ByteArrayInputStream(new byte[0]);
         }
       }
 
