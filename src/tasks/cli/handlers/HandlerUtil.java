@@ -74,6 +74,15 @@ final class HandlerUtil {
         .blockingGet();
   }
 
+  static String stringify(Iterable<? extends Task> tasks) {
+    return Observable.fromIterable(tasks)
+        .map(Object::toString)
+        .flatMap(stringRep -> Observable.just("\n  ", stringRep))
+        .collectInto(new StringBuilder(), StringBuilder::append)
+        .map(Object::toString)
+        .blockingGet();
+  }
+
   enum CompletedState {
     COMPLETE,
     INCOMPLETE,

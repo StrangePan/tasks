@@ -1,7 +1,5 @@
 package tasks.cli.handlers;
 
-import static java.util.stream.Collectors.joining;
-
 import io.reactivex.Flowable;
 import omnia.data.structure.Set;
 import tasks.cli.arg.ListArguments;
@@ -19,14 +17,7 @@ public final class ListHandler implements ArgumentHandler<ListArguments> {
   }
 
   private static String stringify(Flowable<Set<Task>> tasks) {
-    return stringify(tasks.blockingFirst());
-  }
-
-  private static String stringify(Set<Task> tasks) {
-    return tasks.stream()
-        .map(Task::toString)
-        .map(line -> "\n  " + line)
-        .collect(joining());
+    return HandlerUtil.stringify(tasks.blockingFirst());
   }
 
   private static void print(String prefix, String message) {

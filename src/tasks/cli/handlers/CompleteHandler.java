@@ -1,7 +1,5 @@
 package tasks.cli.handlers;
 
-import static java.util.stream.Collectors.joining;
-
 import io.reactivex.Observable;
 import java.util.EnumMap;
 import java.util.Optional;
@@ -35,12 +33,10 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
         tasksGroupedByState.getOrDefault(CompletedState.INCOMPLETE, Set.empty());
 
     // report tasks already completed
-    Optional.of(
-        alreadyCompletedTasks.stream()
-            .map(Object::toString)
-            .collect(joining(", ")))
+    Optional.of(alreadyCompletedTasks)
+        .map(HandlerUtil::stringify)
         .filter(s -> !s.isEmpty())
-        .map(list -> "task(s) already marked as completed: " + list)
+        .map(list -> "task(s) already marked as completed:" + list)
         .ifPresent(System.out::println);
 
     // mark incomplete tasks as complete
@@ -49,9 +45,7 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
         .blockingAwait();
 
     // report to user
-    System.out.println(
-        "task(s) marked as completed: "
-            + incompleteTasks.stream().map(Object::toString).collect(joining(", ")));
+    System.out.println("task(s) marked as completed: " + HandlerUtil.stringify(incompleteTasks));
 
     // write to disk
     taskStore.writeToDisk().blockingAwait();

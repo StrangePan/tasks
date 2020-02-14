@@ -1,7 +1,5 @@
 package tasks.cli.handlers;
 
-import static java.util.stream.Collectors.joining;
-
 import io.reactivex.Observable;
 import java.util.EnumMap;
 import java.util.Optional;
@@ -34,10 +32,8 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
         tasksGroupedByState.getOrDefault(HandlerUtil.CompletedState.INCOMPLETE, Set.empty());
 
     // report tasks already open
-    Optional.of(
-        alreadyOpenTasks.stream()
-            .map(Object::toString)
-            .collect(joining(", ")))
+    Optional.of(alreadyOpenTasks)
+        .map(HandlerUtil::stringify)
         .filter(s -> !s.isEmpty())
         .map(list -> "tasks already open: " + list)
         .ifPresent(System.out::println);
@@ -48,9 +44,7 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
         .blockingAwait();
 
     // report to user
-    System.out.println(
-        "task(s) reopened:"
-            + completedTasks.stream().map(Object::toString).collect(joining(", ")));
+    System.out.println("task(s) reopened:" + HandlerUtil.stringify(completedTasks));
 
     // write to disk
     taskStore.writeToDisk().blockingAwait();
