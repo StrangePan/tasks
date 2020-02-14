@@ -93,17 +93,25 @@ public final class TaskStoreImpl implements TaskStore {
 
   @Override
   public Flowable<Set<Task>> unblockedTasks() {
-    return tasksFromNodesMatching(node -> !node.incomingEdges().isPopulated());
+    return tasksFromNodesMatching(node -> !hasIncomingEdges(node) && !isCompleted(node));
   }
 
   @Override
   public Flowable<Set<Task>> blockedTasks() {
-    return tasksFromNodesMatching(node -> node.incomingEdges().isPopulated());
+    return tasksFromNodesMatching(this::hasIncomingEdges);
   }
 
   @Override
   public Flowable<Set<Task>> completedTasks() {
-    return tasksFromNodesMatching(node -> taskData.valueOf(node.item()).get().isCompleted());
+    return tasksFromNodesMatching(this::isCompleted);
+  }
+
+  private boolean isCompleted(Graph.Node<? extends TaskId> node) {
+    return taskData.valueOf(node.item()).get().isCompleted();
+  }
+
+  private boolean hasIncomingEdges(DirectedGraph.DirectedNode<? extends TaskId> node) {
+    return node.incomingEdges().isPopulated();
   }
 
   private Flowable<Set<Task>> tasksFromNodesMatching(Predicate<? super DirectedGraph.DirectedNode<? extends TaskId>> filter) {
@@ -175,11 +183,8 @@ public final class TaskStoreImpl implements TaskStore {
 
   Completable mutateTask(TaskImpl task, Function<? super TaskMutator, ? extends TaskMutator> mutation) {
     return Single.just(new TaskMutatorImpl(this, task.id()))
-        .doOnSuccess(m -> System.out.println("TaskMutatorImpl"))
         .<TaskMutator>map(mutation::apply)
-        .doOnSuccess(m -> System.out.println("mutation::apply"))
         .flatMapCompletable(mutator -> Completable.fromAction(() -> applyMutator(mutator)))
-        .doOnComplete(() -> System.out.println("applyMutator"))
         .cache();
   }
 
