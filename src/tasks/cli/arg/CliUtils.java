@@ -13,7 +13,9 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import tasks.cli.CliTaskId;
 
-class CliUtils {
+final class CliUtils {
+  private CliUtils() {}
+
   static CommandLine tryParse(String[] args, Options options) {
     try {
       return new DefaultParser().parse(options, args, /* stopAtNonOption= */ false);
@@ -37,7 +39,7 @@ class CliUtils {
   }
 
   static Optional<String> getSingleOptionValue(CommandLine commandLine, String opt) {
-    if (commandLine.getOptionValues(opt).length > 1) {
+    if (Optional.ofNullable(commandLine.getOptionValues(opt)).orElse(new String[0]).length > 1) {
       throw new CliArguments.ArgumentFormatException("Too many values provided for parameter '" + opt + "'");
     }
     return Optional.ofNullable(commandLine.getOptionValue(opt));

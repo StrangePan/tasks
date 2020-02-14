@@ -49,8 +49,8 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
     // ensure the same task isn't added and removed at the same time
     Optional.of(
         SetAlgorithms.intersectionOf(
-            ImmutableSet.copyOf(arguments.blockedTasksToAdd()),
-            ImmutableSet.copyOf(arguments.blockedTasksToRemove()))
+            ImmutableSet.copyOf(arguments.blockingTasksToAdd()),
+            ImmutableSet.copyOf(arguments.blockingTasksToRemove()))
         .stream()
         .map(Object::toString)
         .collect(joining(", ")))
