@@ -75,6 +75,8 @@ public final class CliArguments {
         return CliMode.ADD;
       case "amend":
         return CliMode.AMEND;
+      case "info":
+        return CliMode.INFO;
       case "remove":
       case "rm":
         return CliMode.REMOVE;
