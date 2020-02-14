@@ -20,14 +20,25 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
       throw new HandlerException("no tasks specified");
     }
 
+    System.out.println("prepared to load");
+
     TaskStore taskStore = HandlerUtil.loadTaskStore();
+
+    System.out.println("loaded from file");
+
     HandlerUtil.validateTasksIds(taskStore, arguments.tasks());
+
+    System.out.println("validate tasks against store");
 
     Set<Task> specifiedTasks =
         ImmutableSet.copyOf(HandlerUtil.toTasks(taskStore, arguments.tasks()).blockingIterable());
 
+    System.out.println("prepared to group tasks by completed state");
+
     EnumMap<CompletedState, Set<Task>> tasksGroupedByState =
         HandlerUtil.groupByCompletionState(Observable.fromIterable(specifiedTasks));
+
+    System.out.println("grouped tasks by completed state");
 
     Set<Task> alreadyCompletedTasks =
         tasksGroupedByState.getOrDefault(CompletedState.COMPLETE, Set.empty());
@@ -43,10 +54,14 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
         .map(list -> "task(s) already marked as completed: " + list)
         .ifPresent(System.out::println);
 
+    System.out.println("prepared to mutate incomplete tasks");
+
     // mark incomplete tasks as complete
     Observable.fromIterable(incompleteTasks)
-        .flatMapCompletable(task -> task.mutate(mutator -> mutator.setCompleted(true)))
+        .concatMapCompletable(task -> task.mutate(mutator -> mutator.setCompleted(true)))
         .blockingAwait();
+
+    System.out.println("applied mutations to incomplete tasks");
 
     // report to user
     System.out.println(

@@ -175,8 +175,11 @@ public final class TaskStoreImpl implements TaskStore {
 
   Completable mutateTask(TaskImpl task, Function<? super TaskMutator, ? extends TaskMutator> mutation) {
     return Single.just(new TaskMutatorImpl(this, task.id()))
+        .doOnSuccess(m -> System.out.println("TaskMutatorImpl"))
         .<TaskMutator>map(mutation::apply)
+        .doOnSuccess(m -> System.out.println("mutation::apply"))
         .flatMapCompletable(mutator -> Completable.fromAction(() -> applyMutator(mutator)))
+        .doOnComplete(() -> System.out.println("applyMutator"))
         .cache();
   }
 
@@ -240,7 +243,7 @@ public final class TaskStoreImpl implements TaskStore {
 
   private void applyMutatorToTaskData(TaskMutatorImpl mutatorImpl) {
     Optional.of(mutatorImpl)
-        .filter(mutator -> mutator.completed().isPresent() && mutator.label().isPresent())
+        .filter(mutator -> mutator.completed().isPresent() || mutator.label().isPresent())
         .map(TaskMutatorImpl::id)
         .flatMap(taskData::valueOf)
         .map(data ->
