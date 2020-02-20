@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import io.reactivex.Observable;
 import java.util.Optional;
 import omnia.data.structure.Set;
+import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.HashSet;
 import omnia.data.structure.mutable.MutableSet;
@@ -45,10 +46,11 @@ public final class TaskMutatorImpl implements TaskMutator {
   @Override
   public TaskMutatorImpl setBlockingTasks(Iterable<Task> tasks) {
     Iterable<TaskId> taskIds =
-        Observable.fromIterable(tasks)
-            .map(store()::validateTask)
-            .map(TaskImpl::id)
-            .blockingIterable();
+        ImmutableList.copyOf(
+            Observable.fromIterable(tasks)
+                .map(store()::validateTask)
+                .map(TaskImpl::id)
+                .blockingIterable());
     overwriteBlockingTasks = true;
     blockingTasksToAdd.clear();
     blockingTasksToRemove.clear();
@@ -77,10 +79,11 @@ public final class TaskMutatorImpl implements TaskMutator {
   @Override
   public TaskMutatorImpl setBlockedTasks(Iterable<Task> tasks) {
     Iterable<TaskId> taskIds =
-        Observable.fromIterable(tasks)
-            .map(store()::validateTask)
-            .map(TaskImpl::id)
-            .blockingIterable();
+        ImmutableList.copyOf(
+            Observable.fromIterable(tasks)
+                .map(store()::validateTask)
+                .map(TaskImpl::id)
+                .blockingIterable());
     overwriteBlockedTasks = true;
     blockedTasksToAdd.clear();
     blockedTasksToRemove.clear();

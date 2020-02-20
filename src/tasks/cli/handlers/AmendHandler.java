@@ -90,7 +90,7 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
               .blockingForEach(mutator::removeBlockingTask);
 
           if (arguments.blockedTasks().isPopulated()) {
-            mutator.setBlockedTasks(HandlerUtil.toTasks(taskStore, arguments.blockedTasksToAdd()).blockingIterable());
+            mutator.setBlockedTasks(HandlerUtil.toTasks(taskStore, arguments.blockedTasks()).blockingIterable());
           }
           HandlerUtil.toTasks(taskStore, arguments.blockedTasksToAdd())
               .blockingForEach(mutator::addBlockedTask);

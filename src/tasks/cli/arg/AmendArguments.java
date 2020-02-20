@@ -165,7 +165,7 @@ public final class AmendArguments {
           "--before cannot be use with --addbefore or --rmbefore");
     }
 
-    if (!description1.isPresent()
+    if (description1.isEmpty()
         && !afterTasks.isPopulated()
         && !afterTasksToAdd.isPopulated()
         && !afterTasksToRemove.isPopulated()
