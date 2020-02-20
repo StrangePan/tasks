@@ -16,13 +16,13 @@ public interface TaskStore {
 
   Flowable<Set<Task>> allTasks();
 
-  Flowable<Set<Task>> tasksBlocking(Task blockedTask);
+  Flowable<Set<Task>> allTasksBlocking(Task blockedTask);
 
-  Flowable<Set<Task>> tasksBlockedBy(Task blockingTask);
+  Flowable<Set<Task>> allTasksBlockedBy(Task blockingTask);
 
-  Flowable<Set<Task>> unblockedTasks();
+  Flowable<Set<Task>> allTasksWithoutOpenBlockers();
 
-  Flowable<Set<Task>> blockedTasks();
+  Flowable<Set<Task>> allTasksWithOpenBlockers();
 
   Flowable<Set<Task>> completedTasks();
 

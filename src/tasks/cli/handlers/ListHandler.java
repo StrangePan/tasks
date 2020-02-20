@@ -11,8 +11,8 @@ public final class ListHandler implements ArgumentHandler<ListArguments> {
   public void handle(ListArguments arguments) {
     TaskStore taskStore = HandlerUtil.loadTaskStore();
 
-    print("unblocked tasks:", stringify(taskStore.unblockedTasks()));
-    print("blocked tasks:", arguments.isBlockedSet() ? stringify(taskStore.blockedTasks()) : "");
+    print("unblocked tasks:", stringify(taskStore.allTasksWithoutOpenBlockers()));
+    print("blocked tasks:", arguments.isBlockedSet() ? stringify(taskStore.allTasksWithOpenBlockers()) : "");
     print("completed tasks:", arguments.isCompletedSet() ? stringify(taskStore.completedTasks()) : "");
   }
 

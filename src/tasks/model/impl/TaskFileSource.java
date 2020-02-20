@@ -106,7 +106,7 @@ final class TaskFileSource {
       TaskId id = parseId(fields[0]);
       Stream.of(fields[1].split(TASK_ID_DELIMITER))
           .map(TaskFileSource::parseId)
-          .forEach(dependency -> graph.addEdge(dependency, id));
+          .forEach(dependency -> graph.addEdge(id, dependency));
       // TODO: ensure unique ids
       // TODO: ensure we have data for all ids
     }

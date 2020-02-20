@@ -64,12 +64,12 @@ final class TaskImpl implements Task {
 
       @Override
       public Flowable<Set<Task>> tasksBlockedByThis() {
-        return store().tasksBlockedBy(TaskImpl.this);
+        return store().allTasksBlockedBy(TaskImpl.this);
       }
 
       @Override
       public Flowable<Set<Task>> tasksBlockingThis() {
-        return store().tasksBlocking(TaskImpl.this);
+        return store().allTasksBlocking(TaskImpl.this);
       }
     };
   }
