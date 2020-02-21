@@ -1,5 +1,6 @@
 package tasks.cli.handlers;
 
+import io.reactivex.Completable;
 import io.reactivex.Observable;
 import java.util.EnumMap;
 import java.util.Optional;
@@ -11,7 +12,7 @@ import tasks.model.TaskStore;
 
 public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
   @Override
-  public void handle(ReopenArguments arguments) {
+  public Completable handle(ReopenArguments arguments) {
     // Validate arguments
     if (!arguments.tasks().isPopulated()) {
       throw new HandlerException("no tasks specified");
@@ -43,10 +44,11 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
         .flatMapCompletable(task -> task.mutate(mutator -> mutator.setCompleted(false)))
         .blockingAwait();
 
-    // report to user
-    System.out.println("task(s) reopened:" + HandlerUtil.stringify(completedTasks));
-
     // write to disk
-    taskStore.writeToDisk().blockingAwait();
+    return taskStore.writeToDisk()
+        .doOnComplete(
+            () ->
+                // report to user
+                System.out.println("task(s) reopened:" + HandlerUtil.stringify(completedTasks)));
   }
 }

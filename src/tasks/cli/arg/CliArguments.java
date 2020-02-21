@@ -26,9 +26,11 @@ public final class CliArguments {
           .build();
 
   private final Object arguments;
+  private final String modeArgument;
 
-  private CliArguments(Object arguments) {
+  private CliArguments(Object arguments, String modeArgument) {
     this.arguments = requireNonNull(arguments);
+    this.modeArgument = requireNonNull(modeArgument);
   }
 
   /**
@@ -38,6 +40,10 @@ public final class CliArguments {
    */
   public Object getArguments() {
     return arguments;
+  }
+
+  public String getModeArgument() {
+    return modeArgument;
   }
 
   @Override
@@ -56,11 +62,12 @@ public final class CliArguments {
     List<String> argsList = ImmutableList.<String>builder().addAll(args).build();
 
     // Determine what mode we're in. This will affect what flags are available and what they mean.
-    CliMode mode = modeFromArgument(argsList.isPopulated() ? argsList.itemAt(0) : "");
+    String modeArgument = argsList.isPopulated() ? argsList.itemAt(0) : "";
+    CliMode mode = modeFromArgument(modeArgument);
 
     Object modeArguments = ARGS_TO_MODEL.valueOf(mode).map(f -> f.apply(args)).orElse(null);
 
-    return new CliArguments(modeArguments);
+    return new CliArguments(modeArguments, modeArgument);
   }
 
   private static CliMode modeFromArgument(String arg) {

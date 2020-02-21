@@ -2,6 +2,8 @@ package tasks.cli;
 
 import static java.util.Objects.requireNonNull;
 
+import io.reactivex.Completable;
+import io.reactivex.Maybe;
 import java.util.function.Supplier;
 import omnia.data.structure.immutable.ImmutableMap;
 import tasks.cli.arg.AddArguments;
@@ -27,28 +29,42 @@ import tasks.cli.handlers.ReopenHandler;
 public final class EntryPoint {
 
   public static void main(String[] args) {
-    CliArguments arguments;
-    try {
-      arguments = CliArguments.parse(args);
-    } catch (CliArguments.ArgumentFormatException e) {
-      System.out.println(e.getMessage());
-      return;
-    }
+    Maybe.just(args)
+        .compose(EntryPoint::parseCliArguments)
+        .compose(EntryPoint::handleCliArguments)
+        .flatMapCompletable(c -> c)
+        .blockingAwait();
+  }
 
-    ImmutableMap<Class<?>, ArgumentHandler<Object>> argumentHandlers =
-        ImmutableMap.<Class<?>, ArgumentHandler<Object>>builder()
-            .put(AddArguments.class, validate(AddArguments.class, AddHandler::new))
-            .put(AmendArguments.class, validate(AmendArguments.class, AmendHandler::new))
-            .put(CompleteArguments.class, validate(CompleteArguments.class, CompleteHandler::new))
-            .put(HelpArguments.class, validate(HelpArguments.class, HelpHandler::new))
-            .put(InfoArguments.class, validate(InfoArguments.class, InfoHandler::new))
-            .put(ListArguments.class, validate(ListArguments.class, ListHandler::new))
-            .put(RemoveArguments.class, validate(RemoveArguments.class, RemoveHandler::new))
-            .put(ReopenArguments.class, validate(ReopenArguments.class, ReopenHandler::new))
-            .build();
+  private static Maybe<CliArguments> parseCliArguments(Maybe<String[]> args) {
+    return args
+        .map(CliArguments::parse)
+        .doOnError(e -> System.out.println(e.getMessage()))
+        .onErrorComplete();
+  }
 
-    argumentHandlers.valueOf(arguments.getArguments().getClass())
-        .ifPresent(handler -> handler.handle(arguments.getArguments()));
+  private static Maybe<Completable> handleCliArguments(Maybe<CliArguments> args) {
+    return args.map(arguments ->
+        handlers()
+            .valueOf(arguments.getArguments().getClass())
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        "Handler not defined for mode " + arguments.getModeArgument()))
+            .handle(arguments.getArguments()));
+  }
+
+  private static ImmutableMap<Class<?>, ArgumentHandler<Object>> handlers() {
+    return ImmutableMap.<Class<?>, ArgumentHandler<Object>>builder()
+        .put(AddArguments.class, validate(AddArguments.class, AddHandler::new))
+        .put(AmendArguments.class, validate(AmendArguments.class, AmendHandler::new))
+        .put(CompleteArguments.class, validate(CompleteArguments.class, CompleteHandler::new))
+        .put(HelpArguments.class, validate(HelpArguments.class, HelpHandler::new))
+        .put(InfoArguments.class, validate(InfoArguments.class, InfoHandler::new))
+        .put(ListArguments.class, validate(ListArguments.class, ListHandler::new))
+        .put(RemoveArguments.class, validate(RemoveArguments.class, RemoveHandler::new))
+        .put(ReopenArguments.class, validate(ReopenArguments.class, ReopenHandler::new))
+        .build();
   }
 
   private static <T> ValidatingHandler<T> validate(
@@ -67,9 +83,9 @@ public final class EntryPoint {
     }
 
     @Override
-    public void handle(Object arguments) {
+    public Completable handle(Object arguments) {
       if (clazz.isAssignableFrom(arguments.getClass())) {
-        supplier.get().handle(clazz.cast(arguments));
+        return supplier.get().handle(clazz.cast(arguments));
       } else {
         throw new IllegalArgumentException("invalid argument type passed to handler");
       }

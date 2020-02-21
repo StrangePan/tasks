@@ -2,6 +2,7 @@ package tasks.cli.handlers;
 
 import static java.util.stream.Collectors.joining;
 
+import io.reactivex.Completable;
 import io.reactivex.Observable;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableSet;
@@ -11,7 +12,7 @@ import tasks.model.TaskStore;
 
 public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
   @Override
-  public void handle(RemoveArguments arguments) {
+  public Completable handle(RemoveArguments arguments) {
     // Validate arguments
     if (!arguments.tasks().isPopulated()) {
       throw new HandlerException("no tasks specified");
@@ -33,6 +34,7 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
     taskStore.writeToDisk().blockingAwait();
 
     System.out.println(report);
+    return Completable.complete();
   }
 
   private static String stringify(Set<Task> tasks) {

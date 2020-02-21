@@ -2,6 +2,7 @@ package tasks.cli.handlers;
 
 import static java.util.stream.Collectors.joining;
 
+import io.reactivex.Completable;
 import java.util.Optional;
 import omnia.algorithm.SetAlgorithms;
 import omnia.data.structure.Set;
@@ -13,7 +14,7 @@ import tasks.model.TaskStore;
 
 public final class AmendHandler implements ArgumentHandler<AmendArguments> {
   @Override
-  public void handle(AmendArguments arguments) {
+  public Completable handle(AmendArguments arguments) {
     TaskStore taskStore = HandlerUtil.loadTaskStore();
 
     Task targetTask =
@@ -99,7 +100,7 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
           return mutator;
         }).blockingAwait();
 
-    taskStore.writeToDisk().blockingAwait();
-    System.out.println("task amended: " + targetTask);
+    return taskStore.writeToDisk()
+        .doOnComplete(() -> System.out.println("task amended: " + targetTask));
   }
 }

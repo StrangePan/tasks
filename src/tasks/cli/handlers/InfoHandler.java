@@ -2,6 +2,7 @@ package tasks.cli.handlers;
 
 import static java.util.stream.Collectors.joining;
 
+import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import omnia.data.structure.Set;
 import tasks.cli.arg.InfoArguments;
@@ -10,7 +11,7 @@ import tasks.model.TaskStore;
 
 public final class InfoHandler implements ArgumentHandler<InfoArguments> {
   @Override
-  public void handle(InfoArguments arguments) {
+  public Completable handle(InfoArguments arguments) {
     if (!arguments.tasks().isPopulated()) {
       throw new HandlerException("no tasks specified");
     }
@@ -25,6 +26,7 @@ public final class InfoHandler implements ArgumentHandler<InfoArguments> {
             .blockingGet();
 
     System.out.println(message);
+    return Completable.complete();
   }
 
   private static String stringify(Task task) {

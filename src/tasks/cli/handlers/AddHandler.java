@@ -1,5 +1,6 @@
 package tasks.cli.handlers;
 
+import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import omnia.data.structure.Set;
@@ -14,7 +15,7 @@ import tasks.model.TaskStore;
 public final class AddHandler implements ArgumentHandler<AddArguments> {
 
   @Override
-  public void handle(AddArguments arguments) {
+  public Completable handle(AddArguments arguments) {
     // Validate arguments
     String label = arguments.description().trim();
     if (label.isEmpty()) {
@@ -54,6 +55,6 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
         .blockingAwait();
 
     // Construct a new task graph with the new task inserted and the new edges assembled
-    taskStore.writeToDisk().blockingAwait();
+    return taskStore.writeToDisk();
   }
 }
