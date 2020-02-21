@@ -49,15 +49,16 @@ public final class AddArguments {
     options.addOption(
         Option.builder("a")
             .longOpt("after")
-            .desc("The tasks this one comes after. This list empty tasks will be blocking this task.")
+            .desc("The tasks this one comes after. This list empty tasks will be blocking this "
+                + "task.")
             .optionalArg(false)
             .numberOfArgs(1)
             .build());
     options.addOption(
         Option.builder("b")
             .longOpt("before")
-            .desc("The tasks this one comes before. This list empty tasks will be unblocked by this " +
-                "task.")
+            .desc("The tasks this one comes before. This list empty tasks will be unblocked by "
+                + "this task.")
             .optionalArg(false)
             .numberOfArgs(1)
             .build());
