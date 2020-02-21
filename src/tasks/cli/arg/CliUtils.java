@@ -11,8 +11,11 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import tasks.Task;
-class CliUtils {
+import tasks.cli.CliTaskId;
+
+final class CliUtils {
+  private CliUtils() {}
+
   static CommandLine tryParse(String[] args, Options options) {
     try {
       return new DefaultParser().parse(options, args, /* stopAtNonOption= */ false);
@@ -21,14 +24,12 @@ class CliUtils {
     }
   }
 
-  static List<Task.Id> parseTaskIds(List<String> taskStrings) {
-    List<Task.Id> taskIds;
+  static List<CliTaskId> parseTaskIds(List<String> taskStrings) {
     try {
-      taskIds = taskStrings.stream().map(Task.Id::parse).collect(toList());
-    } catch (Task.Id.IdFormatException ex) {
+      return taskStrings.stream().map(CliTaskId::parse).collect(toList());
+    } catch (CliTaskId.IdFormatException ex) {
       throw new CliArguments.ArgumentFormatException("Invalid task ID", ex);
     }
-    return taskIds;
   }
 
   static List<String> getOptionValues(CommandLine commandLine, String opt) {
@@ -38,7 +39,7 @@ class CliUtils {
   }
 
   static Optional<String> getSingleOptionValue(CommandLine commandLine, String opt) {
-    if (commandLine.getOptionValues(opt).length > 1) {
+    if (Optional.ofNullable(commandLine.getOptionValues(opt)).orElse(new String[0]).length > 1) {
       throw new CliArguments.ArgumentFormatException("Too many values provided for parameter '" + opt + "'");
     }
     return Optional.ofNullable(commandLine.getOptionValue(opt));

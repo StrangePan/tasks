@@ -28,7 +28,6 @@ public final class EntryPoint {
 
   public static void main(String[] args) {
     CliArguments arguments;
-
     try {
       arguments = CliArguments.parse(args);
     } catch (CliArguments.ArgumentFormatException e) {
@@ -50,8 +49,6 @@ public final class EntryPoint {
 
     argumentHandlers.valueOf(arguments.getArguments().getClass())
         .ifPresent(handler -> handler.handle(arguments.getArguments()));
-
-    System.out.println(arguments);
   }
 
   private static <T> ValidatingHandler<T> validate(

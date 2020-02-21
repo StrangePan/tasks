@@ -8,12 +8,18 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
 public final class ListArguments {
+  private final boolean isUnblockedSet;
   private final boolean isBlockedSet;
   private final boolean isCompletedSet;
 
-  private ListArguments(boolean isBlockedSet, boolean isCompletedSet) {
+  private ListArguments(boolean isUnblockedSet, boolean isBlockedSet, boolean isCompletedSet) {
+    this.isUnblockedSet = isUnblockedSet;
     this.isBlockedSet = isBlockedSet;
     this.isCompletedSet = isCompletedSet;
+  }
+
+  public boolean isUnblockedSet() {
+    return isUnblockedSet;
   }
 
   public boolean isBlockedSet() {
@@ -44,13 +50,28 @@ public final class ListArguments {
             .desc("Setting this flag lists tasks that are already marked as completed.")
             .numberOfArgs(0)
             .build());
+    options.addOption(
+        Option.builder("u")
+            .longOpt("unblocked")
+            .desc("Setting this flag lists tasks that are unblocked. This is the default.")
+            .numberOfArgs(0)
+            .build());
+    options.addOption(
+        Option.builder("a")
+            .longOpt("all")
+            .desc("Setting this flag lists all tasks.")
+            .numberOfArgs(0)
+            .build());
 
     CommandLine commandLine = tryParse(args, options);
     assertNoExtraArgs(commandLine);
 
-    boolean isBlockedSet = commandLine.hasOption("b");
-    boolean isCompletedSet = commandLine.hasOption("c");
+    boolean isAllSet = commandLine.hasOption("a");
+    boolean isBlockedSet = isAllSet || commandLine.hasOption("b");
+    boolean isCompletedSet = isAllSet || commandLine.hasOption("c");
+    boolean isUnblockedSet =
+        isAllSet || commandLine.hasOption("u") || (!isBlockedSet && !isCompletedSet);
 
-    return new ListArguments(isBlockedSet, isCompletedSet);
+    return new ListArguments(isUnblockedSet, isBlockedSet, isCompletedSet);
   }
 }

@@ -7,21 +7,21 @@ import static tasks.cli.arg.CliUtils.tryParse;
 import java.util.function.Function;
 import omnia.data.structure.List;
 import org.apache.commons.cli.Options;
-import tasks.Task;
+import tasks.cli.CliTaskId;
 
 abstract class SimpleArguments {
-  private final List<Task.Id> tasks;
+  private final List<CliTaskId> tasks;
 
-  protected SimpleArguments(List<Task.Id> tasks) {
+  protected SimpleArguments(List<CliTaskId> tasks) {
     this.tasks = tasks;
   }
 
-  public List<Task.Id> tasks() {
+  public List<CliTaskId> tasks() {
     return tasks;
   }
 
   static <T extends SimpleArguments> T parse(
-      String[] args, Function<List<Task.Id>, T> constructor) {
+      String[] args, Function<List<CliTaskId>, T> constructor) {
     /*
     1st param assumed to be "remove" or an alias for it.
     2nd+ params must be task IDs
@@ -32,7 +32,7 @@ abstract class SimpleArguments {
       throw new CliArguments.ArgumentFormatException("No task IDs specified");
     }
 
-    List<Task.Id> taskIds = parseTaskIds(argsList.stream().skip(1).collect(toList()));
+    List<CliTaskId> taskIds = parseTaskIds(argsList.stream().skip(1).collect(toList()));
 
     return constructor.apply(taskIds);
   }

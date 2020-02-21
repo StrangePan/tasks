@@ -1,84 +1,53 @@
 package tasks.cli.handlers;
 
-import static java.util.stream.Collectors.joining;
-import static omnia.algorithm.SetAlgorithms.differenceBetween;
-import static omnia.data.stream.Collectors.toSet;
-
-import omnia.data.structure.DirectedGraph;
-import omnia.data.structure.Pair;
+import io.reactivex.Observable;
+import java.util.EnumMap;
+import java.util.Optional;
 import omnia.data.structure.Set;
-import omnia.data.structure.immutable.ImmutableDirectedGraph;
 import omnia.data.structure.immutable.ImmutableSet;
-import tasks.Task;
 import tasks.cli.arg.CompleteArguments;
+import tasks.cli.handlers.HandlerUtil.CompletedState;
+import tasks.model.Task;
+import tasks.model.TaskStore;
 
 public final class CompleteHandler implements ArgumentHandler<CompleteArguments> {
   @Override
   public void handle(CompleteArguments arguments) {
-    Set<Task.Id> specifiedIds = ImmutableSet.<Task.Id>builder().addAll(arguments.tasks()).build();
-
     // Validate arguments
-    if (!specifiedIds.isPopulated()) {
+    if (!arguments.tasks().isPopulated()) {
       throw new HandlerException("no tasks specified");
     }
 
-    DirectedGraph<Task> taskGraph = HandlerUtil.loadTasks();
-    Set<DirectedGraph.DirectedNode<Task>> targetTaskNodes =
-        taskGraph.nodes()
-            .stream()
-            .filter(n -> specifiedIds.contains(n.item().id()))
-            .collect(toSet());
-    Set<Task> targetTasks =
-        targetTaskNodes.stream()
-            .map(DirectedGraph.DirectedNode::item)
-            .collect(toSet());
+    TaskStore taskStore = HandlerUtil.loadTaskStore();
+    HandlerUtil.validateTasksIds(taskStore, arguments.tasks());
 
-    if (targetTasks.count() != specifiedIds.count()) {
-      // likely specified a task ID that doesn't exist. report which ones are wrong.
-      Set<Task.Id> unknownIds =
-          differenceBetween(
-              specifiedIds,
-              targetTasks.stream().map(Task::id).collect(toSet()));
-      String listOfUnknownIds =
-          unknownIds.stream()
-              .map(Object::toString)
-              .collect(joining(", "));
-      throw new HandlerException("unknown task id(s) specified: " + listOfUnknownIds);
-    }
+    Set<Task> specifiedTasks =
+        ImmutableSet.copyOf(HandlerUtil.toTasks(taskStore, arguments.tasks()).blockingIterable());
+
+    EnumMap<CompletedState, Set<Task>> tasksGroupedByState =
+        HandlerUtil.groupByCompletionState(Observable.fromIterable(specifiedTasks));
 
     Set<Task> alreadyCompletedTasks =
-        targetTasks.stream().filter(Task::isCompleted).collect(toSet());
-    Set<DirectedGraph.DirectedNode<Task>> uncompletedTaskNodes =
-        targetTaskNodes.stream().filter(n -> !n.item().isCompleted()).collect(toSet());
-    Set<Task> uncompletedTasks =
-        uncompletedTaskNodes.stream().map(DirectedGraph.Node::item).collect(toSet());
-    Set<Task.Id> uncompletedTaskIds = uncompletedTasks.stream().map(Task::id).collect(toSet());
+        tasksGroupedByState.getOrDefault(CompletedState.COMPLETE, Set.empty());
+    Set<Task> incompleteTasks =
+        tasksGroupedByState.getOrDefault(CompletedState.INCOMPLETE, Set.empty());
 
-    if (alreadyCompletedTasks.isPopulated()) {
-      System.out.println(
-          "task(s) already marked as completed: "
-              + alreadyCompletedTasks.stream()
-                  .map(Task::id)
-                  .map(Object::toString)
-                  .collect(joining(", ")));
-    }
+    // report tasks already completed
+    Optional.of(alreadyCompletedTasks)
+        .map(HandlerUtil::stringify)
+        .filter(s -> !s.isEmpty())
+        .map(list -> "task(s) already marked as completed:" + list)
+        .ifPresent(System.out::println);
 
-    if (!uncompletedTasks.isPopulated()) {
-      return;
-    }
+    // mark incomplete tasks as complete
+    Observable.fromIterable(incompleteTasks)
+        .concatMapCompletable(task -> task.mutate(mutator -> mutator.setCompleted(true)))
+        .blockingAwait();
 
-    ImmutableDirectedGraph.Builder<Task> newTaskGraphBuilder =
-        ImmutableDirectedGraph.buildUpon(taskGraph);
+    // report to user
+    System.out.println("task(s) marked as completed: " + HandlerUtil.stringify(incompleteTasks));
 
-    // replace existing nodes with new nodes
-    uncompletedTasks.stream()
-        .map(task -> Pair.of(task, task.toBuilder().isCompleted(true).build()))
-        .forEach(pair -> newTaskGraphBuilder.replaceNode(pair.first(), pair.second()));
-
-    HandlerUtil.writeTasks(newTaskGraphBuilder.build());
-
-    System.out.println(
-        "task(s) marked as completed: "
-            + uncompletedTaskIds.stream().map(Object::toString).collect(joining(", ")));
+    // write to disk
+    taskStore.writeToDisk().blockingAwait();
   }
 }

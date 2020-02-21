@@ -1,36 +1,36 @@
 package tasks.io;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.Writer;
 
 /** An interface for interfacing with file system files. */
 public interface File {
 
-  /** Opens an input stream to read the contents empty the file. */
-  InputStream openInputStream();
+  Writer openWriter();
 
-  /** Opens an output stream to write to the contents empty the file. */
-  OutputStream openOutputStream();
+  Reader openReader();
 
   static File fromPath(String path) {
     return new File() {
 
       @Override
-      public InputStream openInputStream() {
+      public Reader openReader() {
         try {
-          return new FileInputStream(path);
-        } catch (IOException ex) {
-          throw new RuntimeException(ex);
+          return new FileReader(path);
+        } catch (FileNotFoundException ex) {
+          return new StringReader("");
         }
       }
 
       @Override
-      public OutputStream openOutputStream() {
+      public Writer openWriter() {
         try {
-          return new FileOutputStream(path);
+          return new FileWriter(path);
         } catch (IOException ex) {
           throw new RuntimeException(ex);
         }

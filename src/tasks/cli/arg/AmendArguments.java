@@ -10,27 +10,27 @@ import omnia.data.structure.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import tasks.Task;
+import tasks.cli.CliTaskId;
 
 public final class AmendArguments {
-  private final Task.Id targetTask;
+  private final CliTaskId targetTask;
   private final Optional<String> description;
-  private final List<Task.Id> blockingTasks;
-  private final List<Task.Id> blockingTasksToAdd;
-  private final List<Task.Id> blockingTasksToRemove;
-  private final List<Task.Id> blockedTasks;
-  private final List<Task.Id> blockedTasksToAdd;
-  private final List<Task.Id> blockedTasksToRemove;
+  private final List<CliTaskId> blockingTasks;
+  private final List<CliTaskId> blockingTasksToAdd;
+  private final List<CliTaskId> blockingTasksToRemove;
+  private final List<CliTaskId> blockedTasks;
+  private final List<CliTaskId> blockedTasksToAdd;
+  private final List<CliTaskId> blockedTasksToRemove;
 
   private AmendArguments(
-      Task.Id targetTask,
+      CliTaskId targetTask,
       Optional<String> description,
-      List<Task.Id> blockingTasks,
-      List<Task.Id> blockingTasksToAdd,
-      List<Task.Id> blockingTasksToRemove,
-      List<Task.Id> blockedTasks,
-      List<Task.Id> blockedTasksToAdd,
-      List<Task.Id> blockedTasksToRemove) {
+      List<CliTaskId> blockingTasks,
+      List<CliTaskId> blockingTasksToAdd,
+      List<CliTaskId> blockingTasksToRemove,
+      List<CliTaskId> blockedTasks,
+      List<CliTaskId> blockedTasksToAdd,
+      List<CliTaskId> blockedTasksToRemove) {
     this.targetTask = targetTask;
     this.description = description;
     this.blockingTasks = blockingTasks;
@@ -41,7 +41,7 @@ public final class AmendArguments {
     this.blockedTasksToRemove = blockedTasksToRemove;
   }
 
-  public Task.Id targetTask() {
+  public CliTaskId targetTask() {
     return targetTask;
   }
 
@@ -49,27 +49,27 @@ public final class AmendArguments {
     return description;
   }
 
-  public List<Task.Id> blockingTasks() {
+  public List<CliTaskId> blockingTasks() {
     return blockingTasks;
   }
 
-  public List<Task.Id> blockingTasksToAdd() {
+  public List<CliTaskId> blockingTasksToAdd() {
     return blockingTasksToAdd;
   }
 
-  public List<Task.Id> blockingTasksToRemove() {
+  public List<CliTaskId> blockingTasksToRemove() {
     return blockingTasksToRemove;
   }
 
-  public List<Task.Id> blockedTasks() {
+  public List<CliTaskId> blockedTasks() {
     return blockedTasks;
   }
 
-  public List<Task.Id> blockedTasksToAdd() {
+  public List<CliTaskId> blockedTasksToAdd() {
     return blockedTasksToAdd;
   }
 
-  public List<Task.Id> blockedTasksToRemove() {
+  public List<CliTaskId> blockedTasksToRemove() {
     return blockedTasksToRemove;
   }
 
@@ -143,15 +143,15 @@ public final class AmendArguments {
       throw new CliArguments.ArgumentFormatException("Unexpected extra arguments");
     }
 
-    Task.Id targetTask = Task.Id.parse(argsList.itemAt(1));
+    CliTaskId targetTask = CliTaskId.parse(argsList.itemAt(1));
 
     Optional<String> description1 = getSingleOptionValue(commandLine, "m");
-    List<Task.Id> afterTasks = parseTaskIds(getOptionValues(commandLine, "a"));
-    List<Task.Id> afterTasksToAdd = parseTaskIds(getOptionValues(commandLine, "aa"));
-    List<Task.Id> afterTasksToRemove = parseTaskIds(getOptionValues(commandLine, "ra"));
-    List<Task.Id> beforeTasks = parseTaskIds(getOptionValues(commandLine, "b"));
-    List<Task.Id> beforeTasksToAdd = parseTaskIds(getOptionValues(commandLine, "ab"));
-    List<Task.Id> beforeTasksToRemove = parseTaskIds(getOptionValues(commandLine, "rb"));
+    List<CliTaskId> afterTasks = parseTaskIds(getOptionValues(commandLine, "a"));
+    List<CliTaskId> afterTasksToAdd = parseTaskIds(getOptionValues(commandLine, "aa"));
+    List<CliTaskId> afterTasksToRemove = parseTaskIds(getOptionValues(commandLine, "ra"));
+    List<CliTaskId> beforeTasks = parseTaskIds(getOptionValues(commandLine, "b"));
+    List<CliTaskId> beforeTasksToAdd = parseTaskIds(getOptionValues(commandLine, "ab"));
+    List<CliTaskId> beforeTasksToRemove = parseTaskIds(getOptionValues(commandLine, "rb"));
 
     if (afterTasks.isPopulated()
         && (afterTasksToAdd.isPopulated() || afterTasksToRemove.isPopulated())) {
@@ -165,7 +165,7 @@ public final class AmendArguments {
           "--before cannot be use with --addbefore or --rmbefore");
     }
 
-    if (!description1.isPresent()
+    if (description1.isEmpty()
         && !afterTasks.isPopulated()
         && !afterTasksToAdd.isPopulated()
         && !afterTasksToRemove.isPopulated()

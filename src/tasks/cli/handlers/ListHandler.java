@@ -1,58 +1,28 @@
 package tasks.cli.handlers;
 
-import static java.util.stream.Collectors.joining;
-import static omnia.data.stream.Collectors.toSet;
-
-import omnia.data.structure.DirectedGraph;
+import io.reactivex.Flowable;
 import omnia.data.structure.Set;
-import tasks.Task;
 import tasks.cli.arg.ListArguments;
+import tasks.model.Task;
+import tasks.model.TaskStore;
 
 public final class ListHandler implements ArgumentHandler<ListArguments> {
   @Override
   public void handle(ListArguments arguments) {
-    DirectedGraph<Task> taskGraph = HandlerUtil.loadTasks();
+    TaskStore taskStore = HandlerUtil.loadTaskStore();
 
-    boolean showBlocked = arguments.isBlockedSet();
-    boolean showCompleted = arguments.isCompletedSet();
+    print("unblocked tasks:", arguments.isUnblockedSet() ?  stringify(taskStore.allTasksWithoutOpenBlockers()) : "");
+    print("blocked tasks:", arguments.isBlockedSet() ? stringify(taskStore.allTasksWithOpenBlockers()) : "");
+    print("completed tasks:", arguments.isCompletedSet() ? stringify(taskStore.completedTasks()) : "");
+  }
 
-    Set<Task> unblockedTasks = findUnblockedTasksIn(taskGraph);
-    Set<Task> blockedTasks = showBlocked ? findBlockedIncompleteTasksIn(taskGraph) : Set.empty();
-    Set<Task> completedTasks = showCompleted ? findCompletedTasksIn(taskGraph) : Set.empty();
+  private static String stringify(Flowable<Set<Task>> tasks) {
+    return HandlerUtil.stringify(tasks.blockingFirst());
+  }
 
-    if (unblockedTasks.isPopulated()) {
-      System.out.println("unblocked tasks:" + stringify(unblockedTasks));
+  private static void print(String prefix, String message) {
+    if (!message.isEmpty()) {
+      System.out.println(prefix + message);
     }
-    if (blockedTasks.isPopulated()) {
-      System.out.println("blocked tasks:" + stringify(blockedTasks));
-    }
-    if (completedTasks.isPopulated()) {
-      System.out.println("completed tasks:" + stringify(completedTasks));
-    }
-  }
-
-  private static Set<Task> findUnblockedTasksIn(DirectedGraph<Task> taskGraph) {
-    return taskGraph.nodes().stream()
-        .filter(n -> n.predecessors().stream().allMatch(m -> m.item().isCompleted()))
-        .map(DirectedGraph.Node::item)
-        .collect(toSet());
-  }
-
-  private static Set<Task> findBlockedIncompleteTasksIn(DirectedGraph<Task> taskGraph) {
-    return taskGraph.nodes().stream()
-        .filter(n -> n.predecessors().stream().anyMatch(m -> !m.item().isCompleted()))
-        .map(DirectedGraph.Node::item)
-        .collect(toSet());
-  }
-
-  private static Set<Task> findCompletedTasksIn(DirectedGraph<Task> taskGraph) {
-    return taskGraph.nodes().stream()
-        .map(DirectedGraph.Node::item)
-        .filter(Task::isCompleted)
-        .collect(toSet());
-  }
-
-  private static String stringify(Set<Task> tasks) {
-    return tasks.stream().map(Object::toString).map(s -> "\n  " + s).collect(joining());
   }
 }

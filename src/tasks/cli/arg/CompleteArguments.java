@@ -1,10 +1,10 @@
 package tasks.cli.arg;
 
 import omnia.data.structure.List;
-import tasks.Task;
+import tasks.cli.CliTaskId;
 
 public final class CompleteArguments extends SimpleArguments {
-  private CompleteArguments(List<Task.Id> tasks) {
+  private CompleteArguments(List<CliTaskId> tasks) {
     super(tasks);
   }
 
