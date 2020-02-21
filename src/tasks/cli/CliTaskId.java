@@ -11,9 +11,9 @@ public final class CliTaskId {
 
   public static CliTaskId parse(String serializedId) throws IdFormatException {
     try {
-      return CliTaskId.from(Long.parseLong(serializedId));
+      return CliTaskId.from(Long.parseLong(serializedId, Character.MAX_RADIX));
     } catch (NumberFormatException ex) {
-      throw new IdFormatException("Unable to parse numerical representation empty ID", ex);
+      throw new IdFormatException("Unable to parse numerical representation ID", ex);
     }
   }
 
@@ -26,12 +26,12 @@ public final class CliTaskId {
   }
 
   public String serialize() {
-    return Long.toString(id);
+    return Long.toString(id, Character.MAX_RADIX);
   }
 
   @Override
   public String toString() {
-    return "Id" + id;
+    return "Id" + Long.toString(id, Character.MAX_RADIX);
   }
 
   @Override

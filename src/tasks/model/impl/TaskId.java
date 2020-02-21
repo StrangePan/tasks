@@ -22,7 +22,7 @@ final class TaskId {
 
   @Override
   public String toString() {
-    return Long.toString(asLong());
+    return Long.toString(asLong(), Character.MAX_RADIX);
   }
 
   long asLong() {
