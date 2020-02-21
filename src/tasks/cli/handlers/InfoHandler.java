@@ -29,8 +29,8 @@ public final class InfoHandler implements ArgumentHandler<InfoArguments> {
 
   private static String stringify(Task task) {
     return task.toString()
-        + stringify(task.query().tasksBlockingThis())
-        + stringify(task.query().tasksBlockedByThis());
+        + maybeAddPrefix("\ntasks blocking this:", stringify(task.query().tasksBlockingThis()))
+        + maybeAddPrefix("\ntasks blocked by this:", stringify(task.query().tasksBlockedByThis()));
   }
 
   private static String stringify(Flowable<Set<Task>> tasks) {
@@ -39,5 +39,9 @@ public final class InfoHandler implements ArgumentHandler<InfoArguments> {
 
   private static String stringify(Set<Task> tasks) {
     return tasks.stream().map(Task::toString).map(line -> "\n  " + line).collect(joining());
+  }
+
+  private static String maybeAddPrefix(String prefix, String content) {
+    return content.isEmpty() ? content : prefix + content;
   }
 }
