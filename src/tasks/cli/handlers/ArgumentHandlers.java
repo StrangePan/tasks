@@ -18,23 +18,28 @@ import tasks.cli.arg.ReopenArguments;
 
 public final class ArgumentHandlers implements ArgumentHandler<Object> {
 
-  private final ImmutableMap<Class<?>, ArgumentHandler<Object>> registeredHandlers =
-      new RegistryBuilder()
-          .register(AddArguments.class, AddHandler::new)
-          .register(AmendArguments.class, AmendHandler::new)
-          .register(CompleteArguments.class, CompleteHandler::new)
-          .register(HelpArguments.class, HelpHandler::new)
-          .register(InfoArguments.class, InfoHandler::new)
-          .register(ListArguments.class, ListHandler::new)
-          .register(RemoveArguments.class, RemoveHandler::new)
-          .register(ReopenArguments.class, ReopenHandler::new)
-          .build();
+  private final ImmutableMap<Class<?>, ArgumentHandler<Object>> registeredHandlers;
 
   public static ArgumentHandlers create() {
     return new ArgumentHandlers();
   }
 
-  private ArgumentHandlers() {}
+  private ArgumentHandlers() {
+    this.registeredHandlers = buildHandlerMap();
+  }
+
+  private static ImmutableMap<Class<?>, ArgumentHandler<Object>> buildHandlerMap() {
+    return new RegistryBuilder()
+        .register(AddArguments.class, AddHandler::new)
+        .register(AmendArguments.class, AmendHandler::new)
+        .register(CompleteArguments.class, CompleteHandler::new)
+        .register(HelpArguments.class, HelpHandler::new)
+        .register(InfoArguments.class, InfoHandler::new)
+        .register(ListArguments.class, ListHandler::new)
+        .register(RemoveArguments.class, RemoveHandler::new)
+        .register(ReopenArguments.class, ReopenHandler::new)
+        .build();
+  }
 
   @Override
   public Completable handle(Object arguments) {
