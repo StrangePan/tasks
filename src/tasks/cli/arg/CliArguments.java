@@ -13,7 +13,7 @@ import omnia.data.structure.immutable.ImmutableMap;
 /** Data structure for arguments passed into the command line. */
 public final class CliArguments {
 
-  private static final Map<CliMode, Function<String[], Object>> ARGS_TO_MODEL =
+  private final Map<CliMode, Function<String[], Object>> argsParsers =
       ImmutableMap.<CliMode, Function<String[], Object>>builder()
           .put(CliMode.HELP, HelpArguments::parse)
           .put(CliMode.LIST, ListArguments::parse)
@@ -25,33 +25,9 @@ public final class CliArguments {
           .put(CliMode.REOPEN, ReopenArguments::parse)
           .build();
 
-  private final Object arguments;
-  private final String modeArgument;
+  public CliArguments() {}
 
-  private CliArguments(Object arguments, String modeArgument) {
-    this.arguments = requireNonNull(arguments);
-    this.modeArgument = requireNonNull(modeArgument);
-  }
-
-  /**
-   * Get the mode-specific arguments.
-   *
-   * <p>Will be one empty {@link AddArguments}.
-   */
-  public Object getArguments() {
-    return arguments;
-  }
-
-  public String getModeArgument() {
-    return modeArgument;
-  }
-
-  @Override
-  public String toString() {
-    return "CliArguments {" + arguments + "}";
-  }
-
-  public static CliArguments parse(String[] args) {
+  public Object parse(String[] args) {
 
     // Parameter validation
     requireNonNull(args);
@@ -65,9 +41,7 @@ public final class CliArguments {
     String modeArgument = argsList.isPopulated() ? argsList.itemAt(0) : "";
     CliMode mode = modeFromArgument(modeArgument);
 
-    Object modeArguments = ARGS_TO_MODEL.valueOf(mode).map(f -> f.apply(args)).orElse(null);
-
-    return new CliArguments(modeArguments, modeArgument);
+    return argsParsers.valueOf(mode).map(f -> f.apply(args)).orElseThrow(AssertionError::new);
   }
 
   private static CliMode modeFromArgument(String arg) {

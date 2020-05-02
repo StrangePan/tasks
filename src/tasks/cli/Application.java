@@ -12,6 +12,9 @@ import tasks.cli.handlers.ArgumentHandlers;
 final class Application {
   private final String[] rawArgs;
 
+  private final Memoized<CliArguments> argumentsParser =
+      Memoized.memoize(CliArguments::new);
+
   private final Memoized<ArgumentHandler<Object>> argumentHandler =
       Memoized.memoize(ArgumentHandlers::create);
 
@@ -21,23 +24,22 @@ final class Application {
 
   void run() {
     Maybe.just(rawArgs)
-        .compose(Application::parseCliArguments)
+        .compose(this::parseCliArguments)
         .compose(this::handleCliArguments)
         .flatMapCompletable(c -> c)
         .blockingAwait();
   }
 
 
-  private static Maybe<CliArguments> parseCliArguments(Maybe<String[]> args) {
+  private Maybe<Object> parseCliArguments(Maybe<String[]> args) {
     return args
-        .map(CliArguments::parse)
+        .map(a -> argumentsParser.value().parse(a))
         .doOnError(e -> System.out.println(e.getMessage()))
         .onErrorComplete();
   }
 
-  private Maybe<Completable> handleCliArguments(Maybe<CliArguments> args) {
-    return args.map(CliArguments::getArguments)
-        .flatMap(arguments -> argumentHandler.value().handle(arguments).toMaybe());
+  private Maybe<Completable> handleCliArguments(Maybe<Object> args) {
+    return args.flatMap(arguments -> argumentHandler.value().handle(arguments).toMaybe());
   }
 
 }
