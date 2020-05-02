@@ -6,12 +6,15 @@ import static omnia.data.stream.Collectors.toList;
 
 import java.util.Optional;
 import omnia.data.structure.List;
+import omnia.data.structure.Set;
 import omnia.data.structure.mutable.ArrayList;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import tasks.cli.CliTaskId;
+import tasks.model.Task;
+import tasks.model.TaskStore;
 
 final class CliUtils {
   private CliUtils() {}
@@ -32,6 +35,54 @@ final class CliUtils {
     }
   }
 
+  static List<ParseResult<Task>> parseTaskIds(List<String> userInputs, TaskStore taskStore) {
+    return userInputs.stream()
+        .map(userInput -> parseTaskId(userInput, taskStore))
+        .collect(toList());
+  }
+
+  private static ParseResult<Task> parseTaskId(String userInput, TaskStore taskStore) {
+    Set<Task> matchingTasks = getTasksMatching(userInput, taskStore);
+    if (matchingTasks.count() > 1) {
+      return ParseResult.failure(String.format("Ambiguous task ID: multiple tasks match '%s'", userInput));
+    }
+    return matchingTasks.stream()
+        .findFirst()
+        .map(ParseResult::success)
+        .orElse(
+            ParseResult.failure(String.format("Unknown task ID: no tasks match '%s'", userInput)));
+  }
+
+  private static Set<Task> getTasksMatching(String userInput, TaskStore taskStore) {
+    return taskStore.allTasksMatchingCliPrefix(userInput).blockingFirst();
+  }
+
+  static final class ParseResult<T> {
+    private final Optional<T> successResult;
+    private final Optional<String> failureMessage;
+
+    private static <T> ParseResult<T> success(T result) {
+      return new ParseResult<>(Optional.of(result), Optional.empty());
+    }
+
+    private static <T> ParseResult<T> failure(String message) {
+      return new ParseResult<>(Optional.empty(), Optional.of(message));
+    }
+
+    private ParseResult(Optional<T> successResult, Optional<String> failureMessage) {
+      this.successResult = requireNonNull(successResult);
+      this.failureMessage = requireNonNull(failureMessage);
+    }
+
+    Optional<T> successResult() {
+      return successResult;
+    }
+
+    Optional<String> failureMessage() {
+      return failureMessage;
+    }
+  }
+
   static List<String> getOptionValues(CommandLine commandLine, String opt) {
     return ArrayList.of(
         Optional.ofNullable(requireNonNull(commandLine).getOptionValues(requireNonNull(opt)))
@@ -40,7 +91,8 @@ final class CliUtils {
 
   static Optional<String> getSingleOptionValue(CommandLine commandLine, String opt) {
     if (Optional.ofNullable(commandLine.getOptionValues(opt)).orElse(new String[0]).length > 1) {
-      throw new CliArguments.ArgumentFormatException("Too many values provided for parameter '" + opt + "'");
+      throw new CliArguments.ArgumentFormatException(
+          String.format("Too many values provided for parameter '%s'", opt));
     }
     return Optional.ofNullable(commandLine.getOptionValue(opt));
   }
@@ -51,7 +103,7 @@ final class CliUtils {
           commandLine.getArgList()
               .stream()
               .skip(1)
-              .map(s -> "\"" + s + "\"")
+              .map(s -> String.format("'%s'", s))
               .collect(joining(", "));
 
       throw new CliArguments.ArgumentFormatException("Unexpected arguments given: " + unexpectedArgs);
