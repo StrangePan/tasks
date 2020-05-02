@@ -8,18 +8,23 @@ import omnia.data.cache.Memoized;
 import tasks.cli.arg.CliArguments;
 import tasks.cli.handlers.ArgumentHandler;
 import tasks.cli.handlers.ArgumentHandlers;
+import tasks.model.TaskStore;
+import tasks.model.impl.TaskStoreImpl;
 
 final class Application {
   private final String[] rawArgs;
 
-  private final Memoized<CliArguments> argumentsParser =
-      Memoized.memoize(CliArguments::new);
+  private final Memoized<TaskStore> taskStore = Memoized.memoize(() -> new TaskStoreImpl("asdf"));
+
+  private final Memoized<CliArguments> argumentsParser;
 
   private final Memoized<ArgumentHandler<Object>> argumentHandler =
       Memoized.memoize(ArgumentHandlers::create);
 
   Application(String[] rawArgs) {
     this.rawArgs = requireNonNull(rawArgs);
+
+    argumentsParser = Memoized.memoize(() -> new CliArguments(taskStore));
   }
 
   void run() {

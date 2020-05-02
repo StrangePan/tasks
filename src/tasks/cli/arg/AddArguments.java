@@ -1,22 +1,30 @@
 package tasks.cli.arg;
 
+import static omnia.data.stream.Collectors.toList;
 import static tasks.cli.arg.CliUtils.getOptionValues;
 import static tasks.cli.arg.CliUtils.parseTaskIds;
 import static tasks.cli.arg.CliUtils.tryParse;
 
+import java.util.Optional;
+import java.util.stream.Collectors;
+import omnia.data.cache.Memoized;
+import omnia.data.structure.Collection;
 import omnia.data.structure.List;
+import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import tasks.cli.CliTaskId;
+import tasks.cli.arg.CliUtils.ParseResult;
+import tasks.model.Task;
+import tasks.model.TaskStore;
 
 public final class AddArguments {
   private final String description;
-  private final List<CliTaskId> blockingTasks;
-  private final List<CliTaskId> blockedTasks;
+  private final List<Task> blockingTasks;
+  private final List<Task> blockedTasks;
 
   private AddArguments(
-      String description, List<CliTaskId> blockingTasks, List<CliTaskId> blockedTasks) {
+      String description, List<Task> blockingTasks, List<Task> blockedTasks) {
     this.description = description;
     this.blockingTasks = blockingTasks;
     this.blockedTasks = blockedTasks;
@@ -28,54 +36,85 @@ public final class AddArguments {
   }
 
   /** List empty task IDs that are blocking this new task in the order specified in the CLI. */
-  public List<CliTaskId> blockingTasks() {
+  public List<Task> blockingTasks() {
     return blockingTasks;
   }
 
   /** List empty task IDs that are blocked by this new task in the order specified in the CLI. */
-  public List<CliTaskId> blockedTasks() {
+  public List<Task> blockedTasks() {
     return blockedTasks;
   }
 
-  static AddArguments parse(String[] args) {
-    /*
-    1st param assumed to be "add" or an alias for it
-    2nd param must be description
-    3+ params not supported
-    optional befores
-    optional afters
-    */
-    Options options = new Options();
-    options.addOption(
-        Option.builder("a")
-            .longOpt("after")
-            .desc("The tasks this one comes after. This list empty tasks will be blocking this "
-                + "task.")
-            .optionalArg(false)
-            .numberOfArgs(1)
-            .build());
-    options.addOption(
-        Option.builder("b")
-            .longOpt("before")
-            .desc("The tasks this one comes before. This list empty tasks will be unblocked by "
-                + "this task.")
-            .optionalArg(false)
-            .numberOfArgs(1)
-            .build());
+  static final class Parser implements CliArguments.Parser<AddArguments> {
+    private final Memoized<TaskStore> taskStore;
 
-    CommandLine commandLine = tryParse(args, options);
-
-    List<String> argsList = List.masking(commandLine.getArgList());
-    if (argsList.count() < 2) {
-      throw new CliArguments.ArgumentFormatException("Task description not defined");
-    }
-    if (argsList.count() > 2) {
-      throw new CliArguments.ArgumentFormatException("Unexpected extra arguments");
+    Parser(Memoized<TaskStore> taskStore) {
+      this.taskStore = taskStore;
     }
 
-    List<CliTaskId> afterTasks = parseTaskIds(getOptionValues(commandLine, "a"));
-    List<CliTaskId> beforeTasks = parseTaskIds(getOptionValues(commandLine, "b"));
+    @Override
+    public AddArguments parse(String[] args) {
+      /*
+      1st param assumed to be "add" or an alias for it
+      2nd param must be description
+      3+ params not supported
+      optional befores
+      optional afters
+      */
+      Options options = new Options();
+      options.addOption(
+          Option.builder("a")
+              .longOpt("after")
+              .desc("The tasks this one comes after. This list empty tasks will be blocking this "
+                  + "task.")
+              .optionalArg(false)
+              .numberOfArgs(1)
+              .build());
+      options.addOption(
+          Option.builder("b")
+              .longOpt("before")
+              .desc("The tasks this one comes before. This list empty tasks will be unblocked by "
+                  + "this task.")
+              .optionalArg(false)
+              .numberOfArgs(1)
+              .build());
 
-    return new AddArguments(argsList.itemAt(1), afterTasks, beforeTasks);
+      CommandLine commandLine = tryParse(args, options);
+
+      List<String> argsList = List.masking(commandLine.getArgList());
+      if (argsList.count() < 2) {
+        throw new CliArguments.ArgumentFormatException("Task description not defined");
+      }
+      if (argsList.count() > 2) {
+        throw new CliArguments.ArgumentFormatException("Unexpected extra arguments");
+      }
+
+      List<ParseResult<Task>> afterTasks =
+          parseTaskIds(getOptionValues(commandLine, "a"), taskStore.value());
+      List<ParseResult<Task>> beforeTasks =
+          parseTaskIds(getOptionValues(commandLine, "b"), taskStore.value());
+
+      generateFailureMessage(
+          ImmutableList.<ParseResult<?>>builder().addAll(afterTasks).addAll(beforeTasks).build())
+          .ifPresent(message -> {
+            throw new CliArguments.ArgumentFormatException("Unable to parse task IDs:\n" + message);
+          });
+
+      return new AddArguments(
+          argsList.itemAt(1), extractTasksFrom(afterTasks), extractTasksFrom(beforeTasks));
+    }
+  }
+
+  private static Optional<String> generateFailureMessage(Collection<ParseResult<?>> parseResults) {
+    return Optional.of(
+        parseResults.stream()
+            .map(ParseResult::failureMessage)
+            .flatMap(Optional::stream)
+            .collect(Collectors.joining("\n")))
+        .filter(message -> !message.isBlank());
+  }
+
+  private static List<Task> extractTasksFrom(List<ParseResult<Task>> tasks) {
+    return tasks.stream().flatMap(result -> result.successResult().stream()).collect(toList());
   }
 }

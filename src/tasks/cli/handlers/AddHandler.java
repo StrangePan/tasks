@@ -4,9 +4,7 @@ import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import omnia.data.structure.Set;
-import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
-import tasks.cli.CliTaskId;
 import tasks.cli.arg.AddArguments;
 import tasks.model.Task;
 import tasks.model.TaskBuilder;
@@ -23,26 +21,10 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
     }
 
     TaskStore taskStore = HandlerUtil.loadTaskStore();
-    HandlerUtil.validateTasksIds(
-        taskStore,
-        ImmutableList.<CliTaskId>builder()
-            .addAll(arguments.blockingTasks())
-            .addAll(arguments.blockedTasks())
-            .build());
 
     // Collect the dependencies and dependents
-    Set<Task> blockingTasks =
-        ImmutableSet.copyOf(
-            Observable.fromIterable(arguments.blockingTasks())
-                .map(CliTaskId::asLong)
-                .flatMapMaybe(taskStore::lookUpById)
-                .blockingIterable());
-    Set<Task> blockedTasks =
-        ImmutableSet.copyOf(
-            Observable.fromIterable(arguments.blockedTasks())
-                .map(CliTaskId::asLong)
-                .flatMapMaybe(taskStore::lookUpById)
-                .blockingIterable());
+    Set<Task> blockingTasks = ImmutableSet.copyOf(arguments.blockingTasks());
+    Set<Task> blockedTasks = ImmutableSet.copyOf(arguments.blockedTasks());
 
     // Construct the new task
     taskStore.createTask(label, builder ->

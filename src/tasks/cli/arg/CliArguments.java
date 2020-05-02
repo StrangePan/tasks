@@ -4,28 +4,37 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.function.Function;
+import java.util.function.Supplier;
+import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.Map;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableMap;
+import omnia.data.structure.mutable.HashMap;
+import omnia.data.structure.mutable.MutableMap;
+import tasks.model.TaskStore;
 
 /** Data structure for arguments passed into the command line. */
 public final class CliArguments {
 
-  private final Map<CliMode, Function<String[], Object>> argsParsers =
-      ImmutableMap.<CliMode, Function<String[], Object>>builder()
-          .put(CliMode.HELP, HelpArguments::parse)
-          .put(CliMode.LIST, ListArguments::parse)
-          .put(CliMode.INFO, InfoArguments::parse)
-          .put(CliMode.ADD, AddArguments::parse)
-          .put(CliMode.REMOVE, RemoveArguments::parse)
-          .put(CliMode.AMEND, AmendArguments::parse)
-          .put(CliMode.COMPLETE, CompleteArguments::parse)
-          .put(CliMode.REOPEN, ReopenArguments::parse)
-          .build();
+  private final Map<CliMode, Parser<?>> registeredParsers;
 
-  public CliArguments() {}
+  public CliArguments(Memoized<TaskStore> taskStore) {
+    registeredParsers = createArgParsersRegistry(taskStore);
+  }
+
+  private static Map<CliMode, Parser<?>> createArgParsersRegistry(Memoized<TaskStore> taskStore) {
+    return new RegistryBuilder()
+        .register(CliMode.HELP, () -> HelpArguments::parse)
+        .register(CliMode.LIST, () -> ListArguments::parse)
+        .register(CliMode.INFO, () -> InfoArguments::parse)
+        .register(CliMode.ADD, () -> new AddArguments.Parser(taskStore))
+        .register(CliMode.REMOVE, () -> RemoveArguments::parse)
+        .register(CliMode.AMEND, () -> AmendArguments::parse)
+        .register(CliMode.COMPLETE, () -> CompleteArguments::parse)
+        .register(CliMode.REOPEN, () -> ReopenArguments::parse)
+        .build();
+  }
 
   public Object parse(String[] args) {
 
@@ -41,7 +50,9 @@ public final class CliArguments {
     String modeArgument = argsList.isPopulated() ? argsList.itemAt(0) : "";
     CliMode mode = modeFromArgument(modeArgument);
 
-    return argsParsers.valueOf(mode).map(f -> f.apply(args)).orElseThrow(AssertionError::new);
+    return registeredParsers.valueOf(mode)
+        .map(parser -> parser.parse(args))
+        .orElseThrow(AssertionError::new);
   }
 
   private static CliMode modeFromArgument(String arg) {
@@ -77,6 +88,34 @@ public final class CliArguments {
 
     ArgumentFormatException(String reason, Throwable cause) {
       super(reason, cause);
+    }
+  }
+
+  interface Parser<T> {
+    T parse(String[] args);
+  }
+
+  private static final class RegistryBuilder {
+    private final MutableMap<CliMode, Parser<?>> registeredHandlers =
+        HashMap.create();
+
+     RegistryBuilder register(CliMode mode, Supplier<? extends Parser<?>> parserSupplier) {
+      requireNonNull(mode);
+      requireNonNull(parserSupplier);
+      requireUnique(mode);
+      Memoized<? extends Parser<?>> memoizedParser = Memoized.memoize(parserSupplier);
+      registeredHandlers.putMapping(mode, s -> memoizedParser.value().parse(s));
+      return this;
+    }
+
+    private void requireUnique(CliMode mode) {
+      if (registeredHandlers.keys().contains(mode)) {
+        throw new IllegalStateException("Duplication registration for " + mode);
+      }
+    }
+
+    ImmutableMap<CliMode, Parser<?>> build() {
+      return ImmutableMap.copyOf(registeredHandlers);
     }
   }
 }
