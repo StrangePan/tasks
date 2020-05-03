@@ -1,9 +1,12 @@
 package tasks.cli.arg;
 
 import static omnia.data.stream.Collectors.toList;
+import static tasks.cli.arg.CliUtils.extractTasksFrom;
+import static tasks.cli.arg.CliUtils.generateAggregateFailureMessage;
 import static tasks.cli.arg.CliUtils.getOptionValues;
 import static tasks.cli.arg.CliUtils.parseTaskIds;
 import static tasks.cli.arg.CliUtils.tryParse;
+import static tasks.cli.arg.CliUtils.validateParsedTasks;
 
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -94,27 +97,11 @@ public final class AddArguments {
       List<ParseResult<Task>> beforeTasks =
           parseTaskIds(getOptionValues(commandLine, "b"), taskStore.value());
 
-      generateFailureMessage(
-          ImmutableList.<ParseResult<?>>builder().addAll(afterTasks).addAll(beforeTasks).build())
-          .ifPresent(message -> {
-            throw new CliArguments.ArgumentFormatException("Unable to parse task IDs:\n" + message);
-          });
+      validateParsedTasks(
+          ImmutableList.<ParseResult<?>>builder().addAll(afterTasks).addAll(beforeTasks).build());
 
       return new AddArguments(
           argsList.itemAt(1), extractTasksFrom(afterTasks), extractTasksFrom(beforeTasks));
     }
-  }
-
-  private static Optional<String> generateFailureMessage(Collection<ParseResult<?>> parseResults) {
-    return Optional.of(
-        parseResults.stream()
-            .map(ParseResult::failureMessage)
-            .flatMap(Optional::stream)
-            .collect(Collectors.joining("\n")))
-        .filter(message -> !message.isBlank());
-  }
-
-  private static List<Task> extractTasksFrom(List<ParseResult<Task>> tasks) {
-    return tasks.stream().flatMap(result -> result.successResult().stream()).collect(toList());
   }
 }

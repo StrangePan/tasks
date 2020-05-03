@@ -30,7 +30,7 @@ public final class CliArguments {
         .register(CliMode.INFO, () -> InfoArguments::parse)
         .register(CliMode.ADD, () -> new AddArguments.Parser(taskStore))
         .register(CliMode.REMOVE, () -> RemoveArguments::parse)
-        .register(CliMode.AMEND, () -> AmendArguments::parse)
+        .register(CliMode.AMEND, () -> new AmendArguments.Parser(taskStore))
         .register(CliMode.COMPLETE, () -> CompleteArguments::parse)
         .register(CliMode.REOPEN, () -> ReopenArguments::parse)
         .build();

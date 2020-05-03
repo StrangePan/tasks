@@ -1,6 +1,7 @@
 package tasks.cli;
 
 import static java.util.Objects.requireNonNull;
+import static omnia.data.cache.Memoized.memoize;
 
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
@@ -14,17 +15,16 @@ import tasks.model.impl.TaskStoreImpl;
 final class Application {
   private final String[] rawArgs;
 
-  private final Memoized<TaskStore> taskStore = Memoized.memoize(() -> new TaskStoreImpl("asdf"));
+  private final Memoized<TaskStore> taskStore = memoize(() -> new TaskStoreImpl("asdf"));
 
   private final Memoized<CliArguments> argumentsParser;
-
-  private final Memoized<ArgumentHandler<Object>> argumentHandler =
-      Memoized.memoize(ArgumentHandlers::create);
+  private final Memoized<ArgumentHandler<Object>> argumentHandler;
 
   Application(String[] rawArgs) {
     this.rawArgs = requireNonNull(rawArgs);
 
-    argumentsParser = Memoized.memoize(() -> new CliArguments(taskStore));
+    argumentsParser = memoize(() -> new CliArguments(taskStore));
+    argumentHandler = memoize(() -> ArgumentHandlers.create(taskStore));
   }
 
   void run() {

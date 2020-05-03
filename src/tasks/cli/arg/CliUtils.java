@@ -5,8 +5,11 @@ import static java.util.stream.Collectors.joining;
 import static omnia.data.stream.Collectors.toList;
 
 import java.util.Optional;
+import java.util.stream.Collectors;
+import omnia.data.structure.Collection;
 import omnia.data.structure.List;
 import omnia.data.structure.Set;
+import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.mutable.ArrayList;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
@@ -41,7 +44,7 @@ final class CliUtils {
         .collect(toList());
   }
 
-  private static ParseResult<Task> parseTaskId(String userInput, TaskStore taskStore) {
+  static ParseResult<Task> parseTaskId(String userInput, TaskStore taskStore) {
     Set<Task> matchingTasks = getTasksMatching(userInput, taskStore);
     if (matchingTasks.count() > 1) {
       return ParseResult.failure(String.format("Ambiguous task ID: multiple tasks match '%s'", userInput));
@@ -55,6 +58,27 @@ final class CliUtils {
 
   private static Set<Task> getTasksMatching(String userInput, TaskStore taskStore) {
     return taskStore.allTasksMatchingCliPrefix(userInput).blockingFirst();
+  }
+
+  static void validateParsedTasks(Collection<ParseResult<?>> parseResults) {
+    generateAggregateFailureMessage(parseResults)
+        .ifPresent(message -> {
+          throw new CliArguments.ArgumentFormatException("Unable to parse task IDs:\n" + message);
+        });
+  }
+
+  static Optional<String> generateAggregateFailureMessage(
+      Collection<ParseResult<?>> parseResults) {
+    return Optional.of(
+        parseResults.stream()
+            .map(ParseResult::failureMessage)
+            .flatMap(Optional::stream)
+            .collect(Collectors.joining("\n")))
+        .filter(message -> !message.isBlank());
+  }
+
+  static List<Task> extractTasksFrom(List<ParseResult<Task>> tasks) {
+    return tasks.stream().flatMap(result -> result.successResult().stream()).collect(toList());
   }
 
   static final class ParseResult<T> {

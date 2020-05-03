@@ -1,34 +1,33 @@
 package tasks.cli.handlers;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
 import io.reactivex.Completable;
 import java.util.Optional;
 import omnia.algorithm.SetAlgorithms;
+import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableSet;
-import tasks.cli.CliTaskId;
 import tasks.cli.arg.AmendArguments;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
 public final class AmendHandler implements ArgumentHandler<AmendArguments> {
+  private final Memoized<TaskStore> taskStore;
+
+  AmendHandler(Memoized<TaskStore> taskStore) {
+    this.taskStore = requireNonNull(taskStore);
+  }
+
   @Override
   public Completable handle(AmendArguments arguments) {
-    TaskStore taskStore = HandlerUtil.loadTaskStore();
-
-    Task targetTask =
-        taskStore.lookUpById(arguments.targetTask().asLong())
-            .map(Optional::of)
-            .defaultIfEmpty(Optional.empty())
-            .blockingGet()
-            .orElseThrow(() ->
-                new HandlerException("unknown task id specified: " + arguments.targetTask()));
+    Task targetTask = arguments.targetTask();
 
     // nifty trick for limiting the scope of variables
     {
-      Set<CliTaskId> allSpecifiedIds =
-          ImmutableSet.<CliTaskId>builder()
+      Set<Task> allSpecifiedTasks =
+          ImmutableSet.<Task>builder()
               .addAll(arguments.blockedTasks())
               .addAll(arguments.blockedTasksToAdd())
               .addAll(arguments.blockedTasksToRemove())
@@ -37,12 +36,10 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
               .addAll(arguments.blockingTasksToRemove())
               .build();
 
-      HandlerUtil.validateTasksIds(taskStore, allSpecifiedIds);
-
       // ensure task isn't connected to itself
       // this is a convenience but is not strictly required because we still need to check if the
       // graph is cyclical
-      if (allSpecifiedIds.contains(arguments.targetTask())) {
+      if (allSpecifiedTasks.contains(targetTask)) {
         throw new HandlerException("target task cannot block or be blocked by itself");
       }
     }
@@ -77,26 +74,24 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
         });
 
     // okay, operation isn't ambiguous, task doesn't reference itself, and task ids are valid
+    TaskStore taskStore = this.taskStore.value();
     taskStore.mutateTask(
         targetTask,
         mutator -> {
           arguments.description().ifPresent(mutator::setLabel);
 
           if (arguments.blockingTasks().isPopulated()) {
-            mutator.setBlockingTasks(HandlerUtil.toTasks(taskStore, arguments.blockingTasks()).blockingIterable());
+            mutator.setBlockingTasks(arguments.blockingTasks());
           }
-          HandlerUtil.toTasks(taskStore, arguments.blockingTasksToAdd())
-              .blockingForEach(mutator::addBlockingTask);
-          HandlerUtil.toTasks(taskStore, arguments.blockingTasksToRemove())
-              .blockingForEach(mutator::removeBlockingTask);
+          arguments.blockingTasksToAdd().forEach(mutator::addBlockingTask);
+          arguments.blockingTasksToRemove().forEach(mutator::removeBlockingTask);
 
           if (arguments.blockedTasks().isPopulated()) {
-            mutator.setBlockedTasks(HandlerUtil.toTasks(taskStore, arguments.blockedTasks()).blockingIterable());
+            mutator.setBlockedTasks(arguments.blockedTasks());
           }
-          HandlerUtil.toTasks(taskStore, arguments.blockedTasksToAdd())
-              .blockingForEach(mutator::addBlockedTask);
-          HandlerUtil.toTasks(taskStore, arguments.blockedTasksToRemove())
-              .blockingForEach(mutator::removeBlockedTask);
+          arguments.blockedTasksToAdd().forEach(mutator::addBlockedTask);
+          arguments.blockedTasksToRemove().forEach(mutator::removeBlockedTask);
+
           return mutator;
         }).blockingAwait();
 

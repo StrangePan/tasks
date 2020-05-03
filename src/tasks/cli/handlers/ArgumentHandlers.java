@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import io.reactivex.Completable;
 import java.util.function.Supplier;
+import omnia.data.cache.Memoized;
 import omnia.data.structure.immutable.ImmutableMap;
 import omnia.data.structure.mutable.HashMap;
 import omnia.data.structure.mutable.MutableMap;
@@ -15,23 +16,23 @@ import tasks.cli.arg.InfoArguments;
 import tasks.cli.arg.ListArguments;
 import tasks.cli.arg.RemoveArguments;
 import tasks.cli.arg.ReopenArguments;
+import tasks.model.TaskStore;
 
 public final class ArgumentHandlers implements ArgumentHandler<Object> {
-
   private final ImmutableMap<Class<?>, ArgumentHandler<Object>> registeredHandlers;
 
-  public static ArgumentHandlers create() {
-    return new ArgumentHandlers();
+  public static ArgumentHandlers create(Memoized<TaskStore> taskStore) {
+    return new ArgumentHandlers(taskStore);
   }
 
-  private ArgumentHandlers() {
-    this.registeredHandlers = buildHandlerMap();
+  private ArgumentHandlers(Memoized<TaskStore> taskStore) {
+    this.registeredHandlers = buildHandlerMap(taskStore);
   }
 
-  private static ImmutableMap<Class<?>, ArgumentHandler<Object>> buildHandlerMap() {
+  private static ImmutableMap<Class<?>, ArgumentHandler<Object>> buildHandlerMap(Memoized<TaskStore> taskStore) {
     return new RegistryBuilder()
         .register(AddArguments.class, AddHandler::new)
-        .register(AmendArguments.class, AmendHandler::new)
+        .register(AmendArguments.class, () -> new AmendHandler(taskStore))
         .register(CompleteArguments.class, CompleteHandler::new)
         .register(HelpArguments.class, HelpHandler::new)
         .register(InfoArguments.class, InfoHandler::new)
