@@ -9,10 +9,8 @@ import static tasks.cli.arg.CliUtils.validateParsedTasks;
 
 import java.util.function.Function;
 import omnia.data.cache.Memoized;
-import omnia.data.structure.Collection;
 import omnia.data.structure.List;
 import org.apache.commons.cli.Options;
-import tasks.cli.CliTaskId;
 import tasks.cli.arg.CliUtils.ParseResult;
 import tasks.model.Task;
 import tasks.model.TaskStore;
