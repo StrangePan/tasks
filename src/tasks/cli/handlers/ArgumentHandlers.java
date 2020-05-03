@@ -31,7 +31,7 @@ public final class ArgumentHandlers implements ArgumentHandler<Object> {
 
   private static ImmutableMap<Class<?>, ArgumentHandler<Object>> buildHandlerMap(Memoized<TaskStore> taskStore) {
     return new RegistryBuilder()
-        .register(AddArguments.class, AddHandler::new)
+        .register(AddArguments.class, () -> new AddHandler(taskStore))
         .register(AmendArguments.class, () -> new AmendHandler(taskStore))
         .register(CompleteArguments.class, CompleteHandler::new)
         .register(HelpArguments.class, HelpHandler::new)
