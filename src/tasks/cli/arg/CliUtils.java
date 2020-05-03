@@ -9,13 +9,11 @@ import java.util.stream.Collectors;
 import omnia.data.structure.Collection;
 import omnia.data.structure.List;
 import omnia.data.structure.Set;
-import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.mutable.ArrayList;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import tasks.cli.CliTaskId;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
@@ -27,14 +25,6 @@ final class CliUtils {
       return new DefaultParser().parse(options, args, /* stopAtNonOption= */ false);
     } catch (ParseException e) {
       throw new CliArguments.ArgumentFormatException("Unable to parse arguments: " + e.getMessage(), e);
-    }
-  }
-
-  static List<CliTaskId> parseTaskIds(List<String> taskStrings) {
-    try {
-      return taskStrings.stream().map(CliTaskId::parse).collect(toList());
-    } catch (CliTaskId.IdFormatException ex) {
-      throw new CliArguments.ArgumentFormatException("Invalid task ID", ex);
     }
   }
 

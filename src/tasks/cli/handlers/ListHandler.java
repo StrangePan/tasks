@@ -1,16 +1,25 @@
 package tasks.cli.handlers;
 
+import static java.util.Objects.requireNonNull;
+
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
+import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import tasks.cli.arg.ListArguments;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
 public final class ListHandler implements ArgumentHandler<ListArguments> {
+  private final Memoized<TaskStore> taskStore;
+
+  ListHandler(Memoized<TaskStore> taskStore) {
+    this.taskStore = requireNonNull(taskStore);
+  }
+
   @Override
   public Completable handle(ListArguments arguments) {
-    TaskStore taskStore = HandlerUtil.loadTaskStore();
+    TaskStore taskStore = this.taskStore.value();
 
     print(
         "unblocked tasks:",
