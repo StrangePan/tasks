@@ -60,7 +60,7 @@ final class CliUtils {
     return taskStore.allTasksMatchingCliPrefix(userInput).blockingFirst();
   }
 
-  static void validateParsedTasks(Collection<ParseResult<?>> parseResults) {
+  static void validateParsedTasks(Collection<? extends ParseResult<?>> parseResults) {
     generateAggregateFailureMessage(parseResults)
         .ifPresent(message -> {
           throw new CliArguments.ArgumentFormatException("Unable to parse task IDs:\n" + message);
@@ -68,7 +68,7 @@ final class CliUtils {
   }
 
   static Optional<String> generateAggregateFailureMessage(
-      Collection<ParseResult<?>> parseResults) {
+      Collection<? extends ParseResult<?>> parseResults) {
     return Optional.of(
         parseResults.stream()
             .map(ParseResult::failureMessage)

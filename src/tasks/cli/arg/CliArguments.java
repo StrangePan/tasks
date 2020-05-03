@@ -1,6 +1,7 @@
 package tasks.cli.arg;
 
 import static java.util.Objects.requireNonNull;
+import static omnia.data.cache.Memoized.memoize;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -27,12 +28,12 @@ public final class CliArguments {
     return new RegistryBuilder()
         .register(CliMode.HELP, () -> HelpArguments::parse)
         .register(CliMode.LIST, () -> ListArguments::parse)
-        .register(CliMode.INFO, () -> InfoArguments::parse)
+        .register(CliMode.INFO, () -> new InfoArguments.Parser(taskStore))
         .register(CliMode.ADD, () -> new AddArguments.Parser(taskStore))
-        .register(CliMode.REMOVE, () -> RemoveArguments::parse)
+        .register(CliMode.REMOVE, () -> new RemoveArguments.Parser(taskStore))
         .register(CliMode.AMEND, () -> new AmendArguments.Parser(taskStore))
-        .register(CliMode.COMPLETE, () -> CompleteArguments::parse)
-        .register(CliMode.REOPEN, () -> ReopenArguments::parse)
+        .register(CliMode.COMPLETE, () -> new CompleteArguments.Parser(taskStore))
+        .register(CliMode.REOPEN, () -> new ReopenArguments.Parser(taskStore))
         .build();
   }
 
@@ -96,14 +97,13 @@ public final class CliArguments {
   }
 
   private static final class RegistryBuilder {
-    private final MutableMap<CliMode, Parser<?>> registeredHandlers =
-        HashMap.create();
+    private final MutableMap<CliMode, Parser<?>> registeredHandlers = HashMap.create();
 
      RegistryBuilder register(CliMode mode, Supplier<? extends Parser<?>> parserSupplier) {
       requireNonNull(mode);
       requireNonNull(parserSupplier);
       requireUnique(mode);
-      Memoized<? extends Parser<?>> memoizedParser = Memoized.memoize(parserSupplier);
+      Memoized<? extends Parser<?>> memoizedParser = memoize(parserSupplier);
       registeredHandlers.putMapping(mode, s -> memoizedParser.value().parse(s));
       return this;
     }

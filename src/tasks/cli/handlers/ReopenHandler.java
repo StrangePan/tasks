@@ -1,16 +1,24 @@
 package tasks.cli.handlers;
 
+import static java.util.Objects.requireNonNull;
+
 import io.reactivex.Completable;
 import io.reactivex.Observable;
 import java.util.EnumMap;
 import java.util.Optional;
+import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
-import omnia.data.structure.immutable.ImmutableSet;
 import tasks.cli.arg.ReopenArguments;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
 public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
+  private final Memoized<TaskStore> taskStore;
+
+  ReopenHandler(Memoized<TaskStore> taskStore) {
+    this.taskStore = requireNonNull(taskStore);
+  }
+
   @Override
   public Completable handle(ReopenArguments arguments) {
     // Validate arguments
@@ -18,14 +26,10 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
       throw new HandlerException("no tasks specified");
     }
 
-    TaskStore taskStore = HandlerUtil.loadTaskStore();
-    HandlerUtil.validateTasksIds(taskStore, arguments.tasks());
-
-    Set<Task> specifiedTasks =
-        ImmutableSet.copyOf(HandlerUtil.toTasks(taskStore, arguments.tasks()).blockingIterable());
+    TaskStore taskStore = this.taskStore.value();
 
     EnumMap<HandlerUtil.CompletedState, Set<Task>> tasksGroupedByState =
-        HandlerUtil.groupByCompletionState(Observable.fromIterable(specifiedTasks));
+        HandlerUtil.groupByCompletionState(Observable.fromIterable(arguments.tasks()));
 
     Set<Task> completedTasks =
         tasksGroupedByState.getOrDefault(HandlerUtil.CompletedState.COMPLETE, Set.empty());

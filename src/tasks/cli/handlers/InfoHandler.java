@@ -4,28 +4,24 @@ import static java.util.stream.Collectors.joining;
 
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
+import java.util.stream.Collectors;
 import omnia.data.structure.Set;
 import tasks.cli.arg.InfoArguments;
 import tasks.model.Task;
-import tasks.model.TaskStore;
 
 public final class InfoHandler implements ArgumentHandler<InfoArguments> {
+  
   @Override
   public Completable handle(InfoArguments arguments) {
     if (!arguments.tasks().isPopulated()) {
       throw new HandlerException("no tasks specified");
     }
 
-    TaskStore taskStore = HandlerUtil.loadTaskStore();
-    HandlerUtil.validateTasksIds(taskStore, arguments.tasks());
-
-    String message =
-        HandlerUtil.toTasks(taskStore, arguments.tasks())
+    System.out.println(
+        arguments.tasks().stream()
             .map(InfoHandler::stringify)
-            .reduce((first, second) -> first + "\n\n" + second)
-            .blockingGet();
+            .collect(Collectors.joining("\n\n")));
 
-    System.out.println(message);
     return Completable.complete();
   }
 

@@ -33,12 +33,12 @@ public final class ArgumentHandlers implements ArgumentHandler<Object> {
     return new RegistryBuilder()
         .register(AddArguments.class, () -> new AddHandler(taskStore))
         .register(AmendArguments.class, () -> new AmendHandler(taskStore))
-        .register(CompleteArguments.class, CompleteHandler::new)
+        .register(CompleteArguments.class, () -> new CompleteHandler(taskStore))
         .register(HelpArguments.class, HelpHandler::new)
         .register(InfoArguments.class, InfoHandler::new)
         .register(ListArguments.class, ListHandler::new)
-        .register(RemoveArguments.class, RemoveHandler::new)
-        .register(ReopenArguments.class, ReopenHandler::new)
+        .register(RemoveArguments.class, () -> new RemoveHandler(taskStore))
+        .register(ReopenArguments.class, () -> new ReopenHandler(taskStore))
         .build();
   }
 
