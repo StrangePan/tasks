@@ -8,10 +8,7 @@ import static tasks.cli.arg.CliUtils.parseTaskIds;
 import static tasks.cli.arg.CliUtils.tryParse;
 import static tasks.cli.arg.CliUtils.validateParsedTasks;
 
-import java.util.Optional;
-import java.util.stream.Collectors;
 import omnia.data.cache.Memoized;
-import omnia.data.structure.Collection;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
