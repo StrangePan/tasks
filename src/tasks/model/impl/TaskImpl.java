@@ -8,6 +8,7 @@ import io.reactivex.Observable;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import omnia.cli.out.Output;
 import omnia.data.structure.Set;
 import omnia.data.structure.mutable.MutableSet;
 import omnia.data.structure.mutable.TreeSet;
@@ -54,20 +55,16 @@ final class TaskImpl implements Task {
     int longestCommonPrefix = Math.max(
         precedingId.map(other -> longestCommonPrefix(other, stringId)).orElse(0),
         followingId.map(other -> longestCommonPrefix(other, stringId)).orElse(0)) + 1;
-    String formattingResetCode = "\033[0m";
-    String underlineInitCode = "\033[4m";
-    String formattedStringId =
-        underlineInitCode
-            + stringId.substring(0, longestCommonPrefix)
-            + formattingResetCode
-            + stringId.substring(longestCommonPrefix);
-
-    return new StringBuilder()
-        .append(formattedStringId)
+    return Output.builder()
+        .underlined()
+        .append(stringId.substring(0, longestCommonPrefix))
+        .defaultUnderline()
+        .append(stringId.substring(longestCommonPrefix))
         .append(isCompleted().blockingFirst() ? " (completed)" : "")
         .append(": ")
         .append(label().blockingFirst())
-        .toString();
+        .build()
+        .render();
   }
 
   private static int longestCommonPrefix(String a, String b) {
