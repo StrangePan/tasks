@@ -57,11 +57,20 @@ final class TaskImpl implements Task {
         followingId.map(other -> longestCommonPrefix(other, stringId)).orElse(0)) + 1;
     return Output.builder()
         .underlined()
+        .color(Output.Color16.LIGHT_GREEN)
         .append(stringId.substring(0, longestCommonPrefix))
         .defaultUnderline()
         .append(stringId.substring(longestCommonPrefix))
-        .append(isCompleted().blockingFirst() ? " (completed)" : "")
+        .defaultColor()
+        .append(
+            isCompleted().blockingFirst()
+                ? Output.builder()
+                    .color(Output.Color16.LIGHT_CYAN)
+                    .append(" (completed)")
+                    .build()
+                : Output.empty())
         .append(": ")
+        .defaultColor()
         .append(label().blockingFirst())
         .build()
         .render();
