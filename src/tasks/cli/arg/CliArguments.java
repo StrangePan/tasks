@@ -63,6 +63,7 @@ public final class CliArguments {
         return CliMode.HELP;
       case "list":
       case "ls":
+      case "l":
         return CliMode.LIST;
       case "add":
         return CliMode.ADD;
