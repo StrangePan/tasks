@@ -72,8 +72,7 @@ final class TaskImpl implements Task {
         .append(": ")
         .defaultColor()
         .append(label().blockingFirst())
-        .build()
-        .render();
+        .build().toString();
   }
 
   private static int longestCommonPrefix(String a, String b) {

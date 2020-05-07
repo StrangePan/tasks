@@ -3,11 +3,9 @@ package tasks.cli.handlers;
 import static java.util.Objects.requireNonNull;
 
 import io.reactivex.Completable;
-import io.reactivex.Flowable;
 import omnia.data.cache.Memoized;
-import omnia.data.structure.Set;
+import omnia.data.structure.immutable.ImmutableSet;
 import tasks.cli.arg.ListArguments;
-import tasks.model.Task;
 import tasks.model.TaskStore;
 
 public final class ListHandler implements ArgumentHandler<ListArguments> {
@@ -21,28 +19,22 @@ public final class ListHandler implements ArgumentHandler<ListArguments> {
   public Completable handle(ListArguments arguments) {
     TaskStore taskStore = this.taskStore.value();
 
-    print(
+    HandlerUtil.printIfPopulated(
         "unblocked tasks:",
-        arguments.isUnblockedSet() ?  stringify(taskStore.allTasksWithoutOpenBlockers()) : "");
-
-    print(
+        arguments.isUnblockedSet()
+            ? taskStore.allTasksWithoutOpenBlockers().blockingFirst()
+            : ImmutableSet.empty());
+    HandlerUtil.printIfPopulated(
         "blocked tasks:",
-        arguments.isBlockedSet() ? stringify(taskStore.allTasksWithOpenBlockers()) : "");
-
-    print(
+        arguments.isBlockedSet()
+            ? taskStore.allTasksWithOpenBlockers().blockingFirst()
+            : ImmutableSet.empty());
+    HandlerUtil.printIfPopulated(
         "completed tasks:",
-        arguments.isCompletedSet() ? stringify(taskStore.completedTasks()) : "");
+        arguments.isCompletedSet()
+            ? taskStore.completedTasks().blockingFirst()
+            : ImmutableSet.empty());
 
     return Completable.complete();
-  }
-
-  private static String stringify(Flowable<Set<Task>> tasks) {
-    return HandlerUtil.stringify(tasks.blockingFirst());
-  }
-
-  private static void print(String prefix, String message) {
-    if (!message.isEmpty()) {
-      System.out.println(prefix + message);
-    }
   }
 }

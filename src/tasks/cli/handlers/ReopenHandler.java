@@ -5,7 +5,6 @@ import static java.util.Objects.requireNonNull;
 import io.reactivex.Completable;
 import io.reactivex.Observable;
 import java.util.EnumMap;
-import java.util.Optional;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import tasks.cli.arg.ReopenArguments;
@@ -37,11 +36,7 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
         tasksGroupedByState.getOrDefault(HandlerUtil.CompletedState.INCOMPLETE, Set.empty());
 
     // report tasks already open
-    Optional.of(alreadyOpenTasks)
-        .map(HandlerUtil::stringify)
-        .filter(s -> !s.isEmpty())
-        .map(list -> "tasks already open: " + list)
-        .ifPresent(System.out::println);
+    HandlerUtil.printIfPopulated("tasks already open:", alreadyOpenTasks);
 
     // mark incomplete tasks as complete
     Observable.fromIterable(completedTasks)
@@ -50,9 +45,6 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
 
     // write to disk
     return taskStore.writeToDisk()
-        .doOnComplete(
-            () ->
-                // report to user
-                System.out.println("task(s) reopened:" + HandlerUtil.stringify(completedTasks)));
+        .doOnComplete(() -> HandlerUtil.printIfPopulated("task(s) reopened:", completedTasks));
   }
 }

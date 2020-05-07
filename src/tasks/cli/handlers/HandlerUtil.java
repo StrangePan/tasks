@@ -2,6 +2,8 @@ package tasks.cli.handlers;
 
 import io.reactivex.Observable;
 import java.util.EnumMap;
+import omnia.cli.out.Output;
+import omnia.data.structure.Collection;
 import omnia.data.structure.Pair;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableSet;
@@ -34,12 +36,23 @@ final class HandlerUtil {
         .blockingGet();
   }
 
-  static String stringify(Iterable<? extends Task> tasks) {
+  static void printIfPopulated(String prefix, Collection<Task> tasks) {
+    if (tasks.isPopulated()) {
+      System.out.println(stringifyIfPopulated(prefix, tasks));
+    }
+  }
+
+  static Output stringifyIfPopulated(String prefix, Collection<Task> tasks) {
+    return tasks.isPopulated()
+        ? Output.builder().appendLine(prefix).appendLine(stringify(tasks), 2).build()
+        : Output.empty();
+  }
+
+  private static Output stringify(Iterable<? extends Task> tasks) {
     return Observable.fromIterable(tasks)
         .map(Object::toString)
-        .flatMap(stringRep -> Observable.just("\n  ", stringRep))
-        .collectInto(new StringBuilder(), StringBuilder::append)
-        .map(Object::toString)
+        .collectInto(Output.builder(), Output.Builder::appendLine)
+        .map(Output.Builder::build)
         .blockingGet();
   }
 

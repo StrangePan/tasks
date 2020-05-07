@@ -5,7 +5,6 @@ import static java.util.Objects.requireNonNull;
 import io.reactivex.Completable;
 import io.reactivex.Observable;
 import java.util.EnumMap;
-import java.util.Optional;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import tasks.cli.arg.CompleteArguments;
@@ -38,11 +37,7 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
         tasksGroupedByState.getOrDefault(CompletedState.INCOMPLETE, Set.empty());
 
     // report tasks already completed
-    Optional.of(alreadyCompletedTasks)
-        .map(HandlerUtil::stringify)
-        .filter(s -> !s.isEmpty())
-        .map(list -> "task(s) already marked as completed:" + list)
-        .ifPresent(System.out::println);
+    HandlerUtil.printIfPopulated("task(s) already marked as completed:", alreadyCompletedTasks);
 
     // mark incomplete tasks as complete
     Observable.fromIterable(incompleteTasks)
@@ -51,10 +46,8 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
 
     // write to disk
     return taskStore.writeToDisk()
-        .doOnComplete
-            (() ->
-                // report to user
-                System.out.println(
-                    "task(s) marked as completed: " + HandlerUtil.stringify(incompleteTasks)));
+        .doOnComplete(
+            () -> HandlerUtil.printIfPopulated("task(s) marked as completed:", incompleteTasks));
   }
+
 }
