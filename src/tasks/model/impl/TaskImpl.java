@@ -39,6 +39,11 @@ final class TaskImpl implements Task {
 
   @Override
   public String toString() {
+    return render().toString();
+  }
+
+  @Override
+  public Output render() {
     String stringId = id.toString();
     TreeSet<String> allIds =
         store.allTasks()
@@ -65,14 +70,14 @@ final class TaskImpl implements Task {
         .append(
             isCompleted().blockingFirst()
                 ? Output.builder()
-                    .color(Output.Color16.LIGHT_CYAN)
-                    .append(" (completed)")
-                    .build()
+                .color(Output.Color16.LIGHT_CYAN)
+                .append(" (completed)")
+                .build()
                 : Output.empty())
         .append(": ")
         .defaultColor()
         .append(label().blockingFirst())
-        .build().toString();
+        .build();
   }
 
   private static int longestCommonPrefix(String a, String b) {

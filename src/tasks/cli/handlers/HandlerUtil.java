@@ -38,19 +38,24 @@ final class HandlerUtil {
 
   static void printIfPopulated(String prefix, Collection<Task> tasks) {
     if (tasks.isPopulated()) {
-      System.out.println(stringifyIfPopulated(prefix, tasks));
+      System.out.print(stringifyIfPopulated(prefix, tasks).renderForTerminal());
     }
   }
 
   static Output stringifyIfPopulated(String prefix, Collection<Task> tasks) {
     return tasks.isPopulated()
-        ? Output.builder().appendLine(prefix).appendLine(stringify(tasks), 2).build()
+        ? Output.builder()
+            .color(Output.Color16.LIGHT_MAGENTA)
+            .appendLine(prefix)
+            .defaultColor()
+            .appendLine(stringify(tasks), 2)
+            .build()
         : Output.empty();
   }
 
   private static Output stringify(Iterable<? extends Task> tasks) {
     return Observable.fromIterable(tasks)
-        .map(Object::toString)
+        .map(Task::render)
         .collectInto(Output.builder(), Output.Builder::appendLine)
         .map(Output.Builder::build)
         .blockingGet();
