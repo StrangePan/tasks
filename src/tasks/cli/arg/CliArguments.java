@@ -9,11 +9,13 @@ import java.util.Objects;
 import java.util.function.Supplier;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
+import omnia.data.structure.Collection;
 import omnia.data.structure.List;
 import omnia.data.structure.Map;
+import omnia.data.structure.Pair;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableList;
-import omnia.data.structure.immutable.ImmutableMap;
+import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.HashMap;
 import omnia.data.structure.mutable.MutableMap;
 import tasks.model.TaskStore;
@@ -21,40 +23,86 @@ import tasks.model.TaskStore;
 /** Data structure for arguments passed into the command line. */
 public final class CliArguments {
 
-  private static final Map<String, CliMode> modeAliases =
-      ImmutableMap.<String, CliMode>builder()
-          .putAll(aliasesFor(CliMode.HELP, "", "help"))
-          .putAll(aliasesFor(CliMode.LIST, "list", "ls", "l"))
-          .putAll(aliasesFor(CliMode.ADD, "add"))
-          .putAll(aliasesFor(CliMode.AMEND, "amend"))
-          .putAll(aliasesFor(CliMode.INFO, "info"))
-          .putAll(aliasesFor(CliMode.REMOVE, "remove", "rm"))
-          .putAll(aliasesFor(CliMode.COMPLETE, "complete"))
-          .putAll(aliasesFor(CliMode.REOPEN, "reopen"))
-          .build();
-
-  private static Map<String, CliMode> aliasesFor(CliMode mode, String...aliases) {
-    return Arrays.stream(aliases).collect(toImmutableMap(alias -> alias, unused -> mode));
-  }
-
-  private static Map<CliMode, ModeRegistration> createModeParserRegistry(
+  private static Collection<ModeRegistration> createModeParserRegistry(
       Memoized<TaskStore> taskStore, Memoized<Set<String>> validModes) {
     return new RegistryBuilder()
-        .register(CliMode.HELP, () -> new HelpArguments.Parser(validModes), Output::empty)
-        .register(CliMode.LIST, () -> ListArguments::parse, Output::empty)
-        .register(CliMode.INFO, () -> new InfoArguments.Parser(taskStore), Output::empty)
-        .register(CliMode.ADD, () -> new AddArguments.Parser(taskStore), Output::empty)
-        .register(CliMode.REMOVE, () -> new RemoveArguments.Parser(taskStore), Output::empty)
-        .register(CliMode.AMEND, () -> new AmendArguments.Parser(taskStore), Output::empty)
-        .register(CliMode.COMPLETE, () -> new CompleteArguments.Parser(taskStore), Output::empty)
-        .register(CliMode.REOPEN, () -> new ReopenArguments.Parser(taskStore), Output::empty)
+        .register(
+            ModeRegistration.builder()
+                .cliMode(CliMode.HELP)
+                .canonicalName("help")
+                .aliases("")
+                .parser(() -> new HelpArguments.Parser(validModes))
+                .helpDocumentation(Output::empty))
+        .register(
+            ModeRegistration.builder()
+                .cliMode(CliMode.LIST)
+                .canonicalName("list")
+                .aliases("ls", "l")
+                .parser(() -> ListArguments::parse)
+                .helpDocumentation(Output::empty))
+        .register(
+            ModeRegistration.builder()
+                .cliMode(CliMode.INFO)
+                .canonicalName("info")
+                .aliases()
+                .parser(() -> new InfoArguments.Parser(taskStore))
+                .helpDocumentation(Output::empty))
+        .register(
+            ModeRegistration.builder()
+                .cliMode(CliMode.ADD)
+                .canonicalName("add")
+                .aliases()
+                .parser(() -> new AddArguments.Parser(taskStore))
+                .helpDocumentation(Output::empty))
+        .register(
+            ModeRegistration.builder()
+                .cliMode(CliMode.REMOVE)
+                .canonicalName("remove")
+                .aliases("rm")
+                .parser(() -> new RemoveArguments.Parser(taskStore))
+                .helpDocumentation(Output::empty))
+        .register(
+            ModeRegistration.builder()
+                .cliMode(CliMode.AMEND)
+                .canonicalName("amend")
+                .aliases()
+                .parser(() -> new AmendArguments.Parser(taskStore))
+                .helpDocumentation(Output::empty))
+        .register(
+            ModeRegistration.builder()
+                .cliMode(CliMode.COMPLETE)
+                .canonicalName("complete")
+                .aliases()
+                .parser(() -> new CompleteArguments.Parser(taskStore))
+                .helpDocumentation(Output::empty))
+        .register(
+            ModeRegistration.builder()
+                .cliMode(CliMode.REOPEN)
+                .canonicalName("reopen")
+                .aliases()
+                .parser(() -> new ReopenArguments.Parser(taskStore))
+                .helpDocumentation(Output::empty))
         .build();
   }
 
-  private final Map<CliMode, ModeRegistration> registeredModes;
+  private final Map<String, ModeRegistration> registrationsIndexedByAliases;
 
   public CliArguments(Memoized<TaskStore> taskStore) {
-    registeredModes = createModeParserRegistry(taskStore, memoize(modeAliases::keys));
+    Collection<ModeRegistration> registrations =
+        createModeParserRegistry(taskStore, memoize(this::modeNamesAndAliases));
+
+    registrationsIndexedByAliases =
+        registrations.stream()
+            .flatMap(
+                registration ->
+                    registration.canonicalNameAndAliases()
+                        .stream()
+                        .map(alias -> Pair.of(alias, registration)))
+            .collect(toImmutableMap());
+  }
+
+  private Set<String> modeNamesAndAliases() {
+    return registrationsIndexedByAliases.keys();
   }
 
   public Object parse(String[] args) {
@@ -65,20 +113,21 @@ public final class CliArguments {
       throw new IllegalArgumentException("arg cannot contain null");
     }
 
-    List<String> argsList = ImmutableList.<String>builder().addAll(args).build();
+    List<String> argsList = ImmutableList.copyOf(args);
 
     // Determine what mode we're in. This will affect what flags are available and what they mean.
     String modeArgument = argsList.isPopulated() ? argsList.itemAt(0) : "";
     CliMode mode = modeFromArgument(modeArgument);
 
-    return registeredModes.valueOf(mode)
+    return registrationsIndexedByAliases.valueOf(mode)
         .map(ModeRegistration::parserSupplier)
         .map(parser -> parser.parse(args))
         .orElseThrow(AssertionError::new);
   }
 
-  private static CliMode modeFromArgument(String arg) {
-    return modeAliases.valueOf(arg)
+  private CliMode modeFromArgument(String arg) {
+    return registrationsIndexedByAliases.valueOf(arg)
+        .map(ModeRegistration::cliMode)
         .orElseThrow(() -> new ArgumentFormatException("unrecognized mode " + arg));
   }
 
@@ -99,16 +148,10 @@ public final class CliArguments {
   private static final class RegistryBuilder {
     private final MutableMap<CliMode, ModeRegistration> registeredHandlers = HashMap.create();
 
-     RegistryBuilder register(
-         CliMode mode,
-         Supplier<? extends Parser<?>> parserSupplier,
-         Supplier<? extends Output> helpDocumentation) {
-      requireNonNull(mode);
-      requireNonNull(parserSupplier);
-      requireUnique(mode);
-       registeredHandlers.putMapping(
-           mode,
-           new ModeRegistration(parserSupplier, helpDocumentation));
+     RegistryBuilder register(ModeRegistration registration) {
+       requireNonNull(registration);
+       requireUnique(registration.cliMode());
+       registeredHandlers.putMapping(registration.cliMode(), registration);
       return this;
     }
 
@@ -118,20 +161,58 @@ public final class CliArguments {
       }
     }
 
-    ImmutableMap<CliMode, ModeRegistration> build() {
-      return ImmutableMap.copyOf(registeredHandlers);
+    Set<ModeRegistration> build() {
+      return ImmutableSet.copyOf(registeredHandlers.values());
     }
   }
 
   private static final class ModeRegistration {
+    private final CliMode cliMode;
+    private final String canonicalName;
+    private final Collection<String> aliases;
     private final Memoized<Parser<?>> parser;
     private final Memoized<Output> helpDocumentation;
 
-    ModeRegistration(
+    private ModeRegistration(
+        CliMode cliMode,
+        String canonicalName,
+        Collection<String> aliases,
         Supplier<? extends Parser<?>> parserSupplier,
         Supplier<? extends Output> helpDocumentation) {
-      this.parser = memoize(requireNonNull(parserSupplier));
-      this.helpDocumentation = memoize(requireNonNull(helpDocumentation));
+      requireNonNull(cliMode);
+      requireNonNull(canonicalName);
+      requireNonNull(aliases);
+      requireNonNull(parserSupplier);
+      requireNonNull(helpDocumentation);
+
+      if (aliases.contains(canonicalName)) {
+        throw new IllegalArgumentException("aliases cannot contain the canonical name");
+      }
+      if (ImmutableSet.copyOf(aliases).count() < aliases.count()) {
+        throw new IllegalArgumentException("aliases cannot contain duplicates: " + aliases);
+      }
+
+      this.cliMode = cliMode;
+      this.canonicalName = canonicalName;
+      this.aliases = ImmutableList.copyOf(aliases);
+      this.parser = memoize(parserSupplier);
+      this.helpDocumentation = memoize(helpDocumentation);
+    }
+
+    CliMode cliMode() {
+      return cliMode;
+    }
+
+    String canonicalName() {
+      return canonicalName;
+    }
+
+    Collection<String> aliases() {
+      return aliases;
+    }
+
+    List<String> canonicalNameAndAliases() {
+      return ImmutableList.<String>builder().add(canonicalName).addAll(aliases).build();
     }
 
     Parser<?> parserSupplier() {
@@ -140,6 +221,40 @@ public final class CliArguments {
 
     Output helpDocumentation() {
       return helpDocumentation.value();
+    }
+
+    interface Builder0 {
+      Builder1 cliMode(CliMode cliMode);
+    }
+
+    interface Builder1 {
+      Builder2 canonicalName(String canonicalName);
+    }
+
+    interface Builder2 {
+      Builder3 aliases(String...aliases);
+    }
+
+    interface Builder3 {
+      Builder4 parser(Supplier<? extends Parser<?>> parserSupplier);
+    }
+
+    interface Builder4 {
+      ModeRegistration helpDocumentation(Supplier<? extends Output> helpDocumentation);
+    }
+
+    static Builder0 builder() {
+      return cliMode ->
+          (Builder1) canonicalName ->
+            (Builder2) aliases ->
+                (Builder3) parserSupplier ->
+                    (Builder4) helpDocumentation ->
+                        new ModeRegistration(
+                            cliMode,
+                            canonicalName,
+                            ImmutableList.copyOf(aliases),
+                            parserSupplier,
+                            helpDocumentation);
     }
   }
 }
