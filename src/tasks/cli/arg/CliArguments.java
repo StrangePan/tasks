@@ -10,6 +10,7 @@ import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.Map;
+import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableMap;
 import omnia.data.structure.mutable.HashMap;
@@ -19,15 +20,15 @@ import tasks.model.TaskStore;
 /** Data structure for arguments passed into the command line. */
 public final class CliArguments {
 
-  private final Map<CliMode, Parser<?>> registeredParsers;
+  private final Map<CliMode, ModeRegistration> registeredModes;
 
   public CliArguments(Memoized<TaskStore> taskStore) {
-    registeredParsers = createArgParsersRegistry(taskStore);
+    registeredModes = createArgParsersRegistry(taskStore);
   }
 
-  private static Map<CliMode, Parser<?>> createArgParsersRegistry(Memoized<TaskStore> taskStore) {
+  private static Map<CliMode, ModeRegistration> createArgParsersRegistry(Memoized<TaskStore> taskStore) {
     return new RegistryBuilder()
-        .register(CliMode.HELP, () -> HelpArguments::parse, Output::empty)
+        .register(CliMode.HELP, () -> new HelpArguments.Parser(Set.empty()), Output::empty)
         .register(CliMode.LIST, () -> ListArguments::parse, Output::empty)
         .register(CliMode.INFO, () -> new InfoArguments.Parser(taskStore), Output::empty)
         .register(CliMode.ADD, () -> new AddArguments.Parser(taskStore), Output::empty)
@@ -52,7 +53,8 @@ public final class CliArguments {
     String modeArgument = argsList.isPopulated() ? argsList.itemAt(0) : "";
     CliMode mode = modeFromArgument(modeArgument);
 
-    return registeredParsers.valueOf(mode)
+    return registeredModes.valueOf(mode)
+        .map(ModeRegistration::parserSupplier)
         .map(parser -> parser.parse(args))
         .orElseThrow(AssertionError::new);
   }
@@ -99,7 +101,7 @@ public final class CliArguments {
   }
 
   private static final class RegistryBuilder {
-    private final MutableMap<CliMode, Parser<?>> registeredHandlers = HashMap.create();
+    private final MutableMap<CliMode, ModeRegistration> registeredHandlers = HashMap.create();
 
      RegistryBuilder register(
          CliMode mode,
@@ -108,8 +110,9 @@ public final class CliArguments {
       requireNonNull(mode);
       requireNonNull(parserSupplier);
       requireUnique(mode);
-      Memoized<? extends Parser<?>> memoizedParser = memoize(parserSupplier);
-      registeredHandlers.putMapping(mode, s -> memoizedParser.value().parse(s));
+       registeredHandlers.putMapping(
+           mode,
+           new ModeRegistration(parserSupplier, helpDocumentation));
       return this;
     }
 
@@ -119,28 +122,28 @@ public final class CliArguments {
       }
     }
 
-    ImmutableMap<CliMode, Parser<?>> build() {
+    ImmutableMap<CliMode, ModeRegistration> build() {
       return ImmutableMap.copyOf(registeredHandlers);
     }
   }
 
-  private static final class ArgumentRegistration<T> {
-    private final Supplier<? extends Parser<T>> parserSupplier;
-    private final Supplier<? extends Output> helpDocumentation;
+  private static final class ModeRegistration {
+    private final Memoized<Parser<?>> parser;
+    private final Memoized<Output> helpDocumentation;
 
-    ArgumentRegistration(
-        Supplier<? extends Parser<T>> parserSupplier,
+    ModeRegistration(
+        Supplier<? extends Parser<?>> parserSupplier,
         Supplier<? extends Output> helpDocumentation) {
-      this.parserSupplier = requireNonNull(parserSupplier);
-      this.helpDocumentation = requireNonNull(helpDocumentation);
+      this.parser = memoize(requireNonNull(parserSupplier));
+      this.helpDocumentation = memoize(requireNonNull(helpDocumentation));
     }
 
-    Supplier<? extends Parser<T>> parserSupplier() {
-      return parserSupplier;
+    Parser<?> parserSupplier() {
+      return parser.value();
     }
 
-    Supplier<? extends Output> helpDocumentation() {
-      return helpDocumentation;
+    Output helpDocumentation() {
+      return helpDocumentation.value();
     }
   }
 }
