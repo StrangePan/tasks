@@ -6,6 +6,7 @@ import static omnia.data.cache.Memoized.memoize;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Supplier;
+import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.Map;
@@ -26,14 +27,14 @@ public final class CliArguments {
 
   private static Map<CliMode, Parser<?>> createArgParsersRegistry(Memoized<TaskStore> taskStore) {
     return new RegistryBuilder()
-        .register(CliMode.HELP, () -> HelpArguments::parse)
-        .register(CliMode.LIST, () -> ListArguments::parse)
-        .register(CliMode.INFO, () -> new InfoArguments.Parser(taskStore))
-        .register(CliMode.ADD, () -> new AddArguments.Parser(taskStore))
-        .register(CliMode.REMOVE, () -> new RemoveArguments.Parser(taskStore))
-        .register(CliMode.AMEND, () -> new AmendArguments.Parser(taskStore))
-        .register(CliMode.COMPLETE, () -> new CompleteArguments.Parser(taskStore))
-        .register(CliMode.REOPEN, () -> new ReopenArguments.Parser(taskStore))
+        .register(CliMode.HELP, () -> HelpArguments::parse, Output::empty)
+        .register(CliMode.LIST, () -> ListArguments::parse, Output::empty)
+        .register(CliMode.INFO, () -> new InfoArguments.Parser(taskStore), Output::empty)
+        .register(CliMode.ADD, () -> new AddArguments.Parser(taskStore), Output::empty)
+        .register(CliMode.REMOVE, () -> new RemoveArguments.Parser(taskStore), Output::empty)
+        .register(CliMode.AMEND, () -> new AmendArguments.Parser(taskStore), Output::empty)
+        .register(CliMode.COMPLETE, () -> new CompleteArguments.Parser(taskStore), Output::empty)
+        .register(CliMode.REOPEN, () -> new ReopenArguments.Parser(taskStore), Output::empty)
         .build();
   }
 
@@ -100,7 +101,10 @@ public final class CliArguments {
   private static final class RegistryBuilder {
     private final MutableMap<CliMode, Parser<?>> registeredHandlers = HashMap.create();
 
-     RegistryBuilder register(CliMode mode, Supplier<? extends Parser<?>> parserSupplier) {
+     RegistryBuilder register(
+         CliMode mode,
+         Supplier<? extends Parser<?>> parserSupplier,
+         Supplier<? extends Output> helpDocumentation) {
       requireNonNull(mode);
       requireNonNull(parserSupplier);
       requireUnique(mode);
@@ -117,6 +121,26 @@ public final class CliArguments {
 
     ImmutableMap<CliMode, Parser<?>> build() {
       return ImmutableMap.copyOf(registeredHandlers);
+    }
+  }
+
+  private static final class ArgumentRegistration<T> {
+    private final Supplier<? extends Parser<T>> parserSupplier;
+    private final Supplier<? extends Output> helpDocumentation;
+
+    ArgumentRegistration(
+        Supplier<? extends Parser<T>> parserSupplier,
+        Supplier<? extends Output> helpDocumentation) {
+      this.parserSupplier = requireNonNull(parserSupplier);
+      this.helpDocumentation = requireNonNull(helpDocumentation);
+    }
+
+    Supplier<? extends Parser<T>> parserSupplier() {
+      return parserSupplier;
+    }
+
+    Supplier<? extends Output> helpDocumentation() {
+      return helpDocumentation;
     }
   }
 }
