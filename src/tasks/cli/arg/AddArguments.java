@@ -1,8 +1,6 @@
 package tasks.cli.arg;
 
-import static omnia.data.stream.Collectors.toList;
 import static tasks.cli.arg.CliUtils.extractTasksFrom;
-import static tasks.cli.arg.CliUtils.generateAggregateFailureMessage;
 import static tasks.cli.arg.CliUtils.getOptionValues;
 import static tasks.cli.arg.CliUtils.parseTaskIds;
 import static tasks.cli.arg.CliUtils.tryParse;
