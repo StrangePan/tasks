@@ -23,7 +23,7 @@ import tasks.model.TaskStore;
 /** Data structure for arguments passed into the command line. */
 public final class CliArguments {
 
-  private static Collection<ModeRegistration> createModeParserRegistry(
+  private static Collection<ModeRegistration> createCommandModeRegistry(
       Memoized<TaskStore> taskStore, Memoized<Set<String>> validModes) {
     return new RegistryBuilder()
         .register(
@@ -89,7 +89,7 @@ public final class CliArguments {
 
   public CliArguments(Memoized<TaskStore> taskStore) {
     Collection<ModeRegistration> registrations =
-        createModeParserRegistry(taskStore, memoize(this::modeNamesAndAliases));
+        createCommandModeRegistry(taskStore, memoize(this::modeNamesAndAliases));
 
     registrationsIndexedByAliases =
         registrations.stream()
