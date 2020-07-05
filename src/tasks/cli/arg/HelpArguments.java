@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 import static tasks.cli.arg.CliUtils.tryParse;
 
 import java.util.Optional;
+import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.Set;
 import org.apache.commons.cli.Options;
@@ -28,9 +29,9 @@ public final class HelpArguments {
   }
 
   static final class Parser implements CliArguments.Parser<HelpArguments> {
-    private final Set<String> validModes;
+    private final Memoized<Set<String>> validModes;
 
-    Parser(Set<String> validModes) {
+    Parser(Memoized<Set<String>> validModes) {
       this.validModes = requireNonNull(validModes);
     }
 
@@ -49,7 +50,7 @@ public final class HelpArguments {
     }
 
     private void assertModeIsValid(String mode) {
-      if (!validModes.contains(mode)) {
+      if (!validModes.value().contains(mode)) {
         throw new CliArguments.ArgumentFormatException(
             String.format("Command mode not recognized: %s", mode));
       }

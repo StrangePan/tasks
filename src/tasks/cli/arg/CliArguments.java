@@ -2,6 +2,7 @@ package tasks.cli.arg;
 
 import static java.util.Objects.requireNonNull;
 import static omnia.data.cache.Memoized.memoize;
+import static omnia.data.stream.Collectors.toImmutableMap;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -20,15 +21,26 @@ import tasks.model.TaskStore;
 /** Data structure for arguments passed into the command line. */
 public final class CliArguments {
 
-  private final Map<CliMode, ModeRegistration> registeredModes;
+  private static final Map<String, CliMode> modeAliases =
+      ImmutableMap.<String, CliMode>builder()
+          .putAll(aliasesFor(CliMode.HELP, "", "help"))
+          .putAll(aliasesFor(CliMode.LIST, "list", "ls", "l"))
+          .putAll(aliasesFor(CliMode.ADD, "add"))
+          .putAll(aliasesFor(CliMode.AMEND, "amend"))
+          .putAll(aliasesFor(CliMode.INFO, "info"))
+          .putAll(aliasesFor(CliMode.REMOVE, "remove", "rm"))
+          .putAll(aliasesFor(CliMode.COMPLETE, "complete"))
+          .putAll(aliasesFor(CliMode.REOPEN, "reopen"))
+          .build();
 
-  public CliArguments(Memoized<TaskStore> taskStore) {
-    registeredModes = createArgParsersRegistry(taskStore);
+  private static Map<String, CliMode> aliasesFor(CliMode mode, String...aliases) {
+    return Arrays.stream(aliases).collect(toImmutableMap(alias -> alias, unused -> mode));
   }
 
-  private static Map<CliMode, ModeRegistration> createArgParsersRegistry(Memoized<TaskStore> taskStore) {
+  private static Map<CliMode, ModeRegistration> createModeParserRegistry(
+      Memoized<TaskStore> taskStore, Memoized<Set<String>> validModes) {
     return new RegistryBuilder()
-        .register(CliMode.HELP, () -> new HelpArguments.Parser(Set.empty()), Output::empty)
+        .register(CliMode.HELP, () -> new HelpArguments.Parser(validModes), Output::empty)
         .register(CliMode.LIST, () -> ListArguments::parse, Output::empty)
         .register(CliMode.INFO, () -> new InfoArguments.Parser(taskStore), Output::empty)
         .register(CliMode.ADD, () -> new AddArguments.Parser(taskStore), Output::empty)
@@ -37,6 +49,12 @@ public final class CliArguments {
         .register(CliMode.COMPLETE, () -> new CompleteArguments.Parser(taskStore), Output::empty)
         .register(CliMode.REOPEN, () -> new ReopenArguments.Parser(taskStore), Output::empty)
         .build();
+  }
+
+  private final Map<CliMode, ModeRegistration> registeredModes;
+
+  public CliArguments(Memoized<TaskStore> taskStore) {
+    registeredModes = createModeParserRegistry(taskStore, memoize(modeAliases::keys));
   }
 
   public Object parse(String[] args) {
@@ -60,30 +78,8 @@ public final class CliArguments {
   }
 
   private static CliMode modeFromArgument(String arg) {
-    switch (arg) {
-      case "":
-      case "help":
-        return CliMode.HELP;
-      case "list":
-      case "ls":
-      case "l":
-        return CliMode.LIST;
-      case "add":
-        return CliMode.ADD;
-      case "amend":
-        return CliMode.AMEND;
-      case "info":
-        return CliMode.INFO;
-      case "remove":
-      case "rm":
-        return CliMode.REMOVE;
-      case "complete":
-        return CliMode.COMPLETE;
-      case "reopen":
-        return CliMode.REOPEN;
-      default:
-        throw new ArgumentFormatException("unrecognized mode " + arg);
-    }
+    return modeAliases.valueOf(arg)
+        .orElseThrow(() -> new ArgumentFormatException("unrecognized mode " + arg));
   }
 
   public static final class ArgumentFormatException extends RuntimeException {
