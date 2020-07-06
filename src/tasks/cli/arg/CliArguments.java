@@ -3,6 +3,7 @@ package tasks.cli.arg;
 import static java.util.Objects.requireNonNull;
 import static omnia.data.cache.Memoized.memoize;
 import static omnia.data.stream.Collectors.toImmutableMap;
+import static omnia.data.stream.Collectors.toImmutableSet;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -85,11 +86,11 @@ public final class CliArguments {
         .build();
   }
 
+  private final Collection<ModeRegistration> registrations;
   private final Map<String, ModeRegistration> registrationsIndexedByAliases;
 
   public CliArguments(Memoized<TaskStore> taskStore) {
-    Collection<ModeRegistration> registrations =
-        createCommandModeRegistry(taskStore, memoize(this::modeNamesAndAliases));
+    registrations = createCommandModeRegistry(taskStore, memoize(this::modeNamesAndAliases));
 
     registrationsIndexedByAliases =
         registrations.stream()
@@ -129,6 +130,16 @@ public final class CliArguments {
     return registrationsIndexedByAliases.valueOf(arg)
         .map(ModeRegistration::cliMode)
         .orElseThrow(() -> new ArgumentFormatException("unrecognized mode " + arg));
+  }
+
+  public Set<CommandDocumentation> commandDocumentation() {
+    return registrations.stream()
+        .map(
+            registration ->
+                new CommandDocumentation(
+                    registration.canonicalName(),
+                    ImmutableList.copyOf(registration.aliases())))
+        .collect(toImmutableSet());
   }
 
   public static final class ArgumentFormatException extends RuntimeException {

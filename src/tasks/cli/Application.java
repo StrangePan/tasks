@@ -24,7 +24,9 @@ final class Application {
     this.rawArgs = requireNonNull(rawArgs);
 
     argumentsParser = memoize(() -> new CliArguments(taskStore));
-    argumentHandler = memoize(() -> ArgumentHandlers.create(taskStore));
+    argumentHandler = memoize(() ->
+        ArgumentHandlers.create(
+            taskStore, memoize(argumentsParser.value()::commandDocumentation)));
   }
 
   void run() {
