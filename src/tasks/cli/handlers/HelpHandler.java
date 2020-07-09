@@ -7,11 +7,14 @@ import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import java.util.Comparator;
+import java.util.stream.Stream;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableList;
+import omnia.data.structure.immutable.ImmutableSet;
 import tasks.cli.arg.CommandDocumentation;
+import tasks.cli.arg.CommandDocumentation.ArgumentDocumentation;
 import tasks.cli.arg.HelpArguments;
 
 public final class HelpHandler implements ArgumentHandler<HelpArguments> {
@@ -33,7 +36,7 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
   }
 
   private Single<Output> getHelpOutputForSelf() {
-    return getOutputForCommandListing()
+    return getHelpOutputForCommandListing()
         .map(
             commandsOutput ->
                 Output.builder()
@@ -42,7 +45,7 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
                     .build());
   }
 
-  private Single<Output> getOutputForCommandListing() {
+  private Single<Output> getHelpOutputForCommandListing() {
     return Single.just(documentation)
         .map(Memoized::value)
         .flatMapObservable(Observable::fromIterable)
@@ -59,7 +62,62 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
   }
 
   private Single<Output> getHelpOutputForMode(String mode) {
-    return Single.just(Output.empty());
+    return Single.just(documentation)
+        .map(Memoized::value)
+        .flatMapObservable(Observable::fromIterable)
+        .filter(
+            documentation ->
+                ImmutableSet.builder()
+                    .add(documentation.canonicalName())
+                    .addAll(documentation.aliases())
+                    .build()
+                    .contains(mode))
+        .firstElement()
+        .map(HelpHandler::generateOutputFor)
+        .switchIfEmpty(getHelpOutputForSelf());
   }
 
+  private static Output generateOutputFor(CommandDocumentation documentation) {
+    return Output.builder()
+        .appendLine(headerLine(documentation))
+        .appendLine(aliasesLine(documentation))
+        .appendLine()
+        .appendLine(parameterLines(documentation))
+        .build();
+  }
+
+  private static Output headerLine(CommandDocumentation documentation) {
+    return Output.builder().append("Command: ").append(documentation.canonicalName()).build();
+  }
+
+  private static Output aliasesLine(CommandDocumentation documentation) {
+    return documentation.aliases().isPopulated()
+        ? Output.builder()
+            .append("Aliases: ")
+            .append(
+                documentation.aliases()
+                    .stream()
+                    .collect(joining(", ")))
+            .build()
+        : Output.empty();
+  }
+
+  private static Output parameterLines(CommandDocumentation documentation) {
+    return Observable.fromIterable(documentation.arguments())
+        .map(HelpHandler::parameterLine)
+        .collectInto(Output.builder(), Output.Builder::appendLine)
+        .map(Output.Builder::build)
+        .blockingGet();
+  }
+
+  private static Output parameterLine(ArgumentDocumentation documentation) {
+    return Output.builder()
+        .appendLine(
+            Stream.concat(
+                Stream.of("--" + documentation.canonicalName()),
+                documentation.shortFlags().stream().map(flag -> "-" + flag))
+            .collect(joining(", ")))
+        .appendLine(documentation.description())
+        .build();
+  }
 }

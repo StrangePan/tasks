@@ -138,7 +138,8 @@ public final class CliArguments {
             registration ->
                 new CommandDocumentation(
                     registration.canonicalName(),
-                    ImmutableList.copyOf(registration.aliases())))
+                    ImmutableList.copyOf(registration.aliases()),
+                    ImmutableSet.empty()))
         .collect(toImmutableSet());
   }
 
