@@ -48,7 +48,7 @@ public final class CliArguments {
             ModeRegistration.builder()
                 .cliMode(CliMode.INFO)
                 .canonicalName("info")
-                .aliases()
+                .aliases("i")
                 .parser(() -> new InfoArguments.Parser(taskStore))
                 .helpDocumentation(Output::empty))
         .register(
