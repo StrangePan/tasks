@@ -5,8 +5,11 @@ import static omnia.data.cache.Memoized.memoize;
 import static omnia.data.stream.Collectors.toImmutableMap;
 import static omnia.data.stream.Collectors.toImmutableSet;
 
+import io.reactivex.Single;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
@@ -89,6 +92,7 @@ public final class CliArguments {
   private final Collection<ModeRegistration> registrations;
   private final Map<String, ModeRegistration> registrationsIndexedByAliases;
   private final Map<CliMode, ModeRegistration> registrationsIndexedByMode;
+  private final ModeRegistration fallback;
 
   public CliArguments(Memoized<TaskStore> taskStore) {
     registrations = createCommandModeRegistry(taskStore, memoize(this::modeNamesAndAliases));
@@ -104,6 +108,9 @@ public final class CliArguments {
 
     registrationsIndexedByMode =
         registrations.stream().collect(toImmutableMap(ModeRegistration::cliMode));
+
+    //noinspection OptionalGetWithoutIsPresent
+    this.fallback = registrationsIndexedByMode.valueOf(CliMode.HELP).get();
   }
 
   private Set<String> modeNamesAndAliases() {
@@ -111,29 +118,29 @@ public final class CliArguments {
   }
 
   public Object parse(String[] args) {
-
     // Parameter validation
     requireNonNull(args);
     if (Arrays.stream(args).anyMatch(Objects::isNull)) {
       throw new IllegalArgumentException("arg cannot contain null");
     }
 
-    List<String> argsList = ImmutableList.copyOf(args);
-
-    // Determine what mode we're in. This will affect what flags are available and what they mean.
-    String modeArgument = argsList.isPopulated() ? argsList.itemAt(0) : "";
-    CliMode mode = modeFromArgument(modeArgument);
-
-    return registrationsIndexedByMode.valueOf(mode)
-        .map(ModeRegistration::parserSupplier)
-        .map(parser -> parser.parse(args))
-        .orElseThrow(() -> new AssertionError("no commands matched. this should never happen."));
+    return Single.just(
+        Pair.of(
+            args,
+            Optional.of(args)
+                .filter(a -> a.length > 0)
+                .map(a -> a[0])
+                .flatMap(this::registrationFromArgument)))
+        .map(
+            pair -> pair.second().isPresent()
+                ? pair.map(Function.identity(), Optional::get)
+                : Pair.of(new String[0], fallback))
+        .map(pair -> pair.second().parserSupplier().parse(pair.first()))
+        .blockingGet();
   }
 
-  private CliMode modeFromArgument(String arg) {
-    return registrationsIndexedByAliases.valueOf(arg)
-        .map(ModeRegistration::cliMode)
-        .orElseThrow(() -> new ArgumentFormatException("unrecognized mode " + arg));
+  private Optional<ModeRegistration> registrationFromArgument(String arg) {
+    return registrationsIndexedByAliases.valueOf(arg);
   }
 
   public Set<CommandDocumentation> commandDocumentation() {
