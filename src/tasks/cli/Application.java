@@ -41,7 +41,7 @@ final class Application {
   private Maybe<Object> parseCliArguments(Maybe<String[]> args) {
     return args
         .map(a -> argumentsParser.value().parse(a))
-        .doOnError(e -> System.out.println(e.getMessage()))
+        .doOnError(Throwable::printStackTrace)
         .onErrorComplete();
   }
 

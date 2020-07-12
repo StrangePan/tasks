@@ -88,6 +88,7 @@ public final class CliArguments {
 
   private final Collection<ModeRegistration> registrations;
   private final Map<String, ModeRegistration> registrationsIndexedByAliases;
+  private final Map<CliMode, ModeRegistration> registrationsIndexedByMode;
 
   public CliArguments(Memoized<TaskStore> taskStore) {
     registrations = createCommandModeRegistry(taskStore, memoize(this::modeNamesAndAliases));
@@ -100,6 +101,9 @@ public final class CliArguments {
                         .stream()
                         .map(alias -> Pair.of(alias, registration)))
             .collect(toImmutableMap());
+
+    registrationsIndexedByMode =
+        registrations.stream().collect(toImmutableMap(ModeRegistration::cliMode));
   }
 
   private Set<String> modeNamesAndAliases() {
@@ -120,10 +124,10 @@ public final class CliArguments {
     String modeArgument = argsList.isPopulated() ? argsList.itemAt(0) : "";
     CliMode mode = modeFromArgument(modeArgument);
 
-    return registrationsIndexedByAliases.valueOf(mode)
+    return registrationsIndexedByMode.valueOf(mode)
         .map(ModeRegistration::parserSupplier)
         .map(parser -> parser.parse(args))
-        .orElseThrow(AssertionError::new);
+        .orElseThrow(() -> new AssertionError("no commands matched. this should never happen."));
   }
 
   private CliMode modeFromArgument(String arg) {
