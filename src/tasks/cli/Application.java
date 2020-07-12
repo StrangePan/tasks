@@ -41,8 +41,16 @@ final class Application {
   private Maybe<Object> parseCliArguments(Maybe<String[]> args) {
     return args
         .map(a -> argumentsParser.value().parse(a))
-        .doOnError(Throwable::printStackTrace)
+        .doOnError(Application::handleParseError)
         .onErrorComplete();
+  }
+
+  private static void handleParseError(Throwable throwable) {
+    if (throwable instanceof CliArguments.ArgumentFormatException) {
+      System.out.println(throwable.getMessage());
+    } else {
+        throwable.printStackTrace();
+    }
   }
 
   private Maybe<Completable> handleCliArguments(Maybe<Object> args) {
