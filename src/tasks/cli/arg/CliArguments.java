@@ -27,60 +27,60 @@ import tasks.model.TaskStore;
 /** Data structure for arguments passed into the command line. */
 public final class CliArguments {
 
-  private static Collection<ModeRegistration> createCommandModeRegistry(
+  private static Collection<CommandRegistration> createCommandModeRegistry(
       Memoized<TaskStore> taskStore, Memoized<Set<String>> validModes) {
     return new RegistryBuilder()
         .register(
-            ModeRegistration.builder()
+            CommandRegistration.builder()
                 .cliMode(CliMode.HELP)
                 .canonicalName("help")
                 .aliases()
                 .parser(() -> new HelpArguments.Parser(validModes))
                 .helpDocumentation(Output::empty))
         .register(
-            ModeRegistration.builder()
+            CommandRegistration.builder()
                 .cliMode(CliMode.LIST)
                 .canonicalName("list")
                 .aliases("ls", "l")
                 .parser(() -> ListArguments::parse)
                 .helpDocumentation(Output::empty))
         .register(
-            ModeRegistration.builder()
+            CommandRegistration.builder()
                 .cliMode(CliMode.INFO)
                 .canonicalName("info")
                 .aliases("i")
                 .parser(() -> new InfoArguments.Parser(taskStore))
                 .helpDocumentation(Output::empty))
         .register(
-            ModeRegistration.builder()
+            CommandRegistration.builder()
                 .cliMode(CliMode.ADD)
                 .canonicalName("add")
                 .aliases()
                 .parser(() -> new AddArguments.Parser(taskStore))
                 .helpDocumentation(Output::empty))
         .register(
-            ModeRegistration.builder()
+            CommandRegistration.builder()
                 .cliMode(CliMode.REMOVE)
                 .canonicalName("remove")
                 .aliases("rm")
                 .parser(() -> new RemoveArguments.Parser(taskStore))
                 .helpDocumentation(Output::empty))
         .register(
-            ModeRegistration.builder()
+            CommandRegistration.builder()
                 .cliMode(CliMode.AMEND)
                 .canonicalName("amend")
                 .aliases()
                 .parser(() -> new AmendArguments.Parser(taskStore))
                 .helpDocumentation(Output::empty))
         .register(
-            ModeRegistration.builder()
+            CommandRegistration.builder()
                 .cliMode(CliMode.COMPLETE)
                 .canonicalName("complete")
                 .aliases()
                 .parser(() -> new CompleteArguments.Parser(taskStore))
                 .helpDocumentation(Output::empty))
         .register(
-            ModeRegistration.builder()
+            CommandRegistration.builder()
                 .cliMode(CliMode.REOPEN)
                 .canonicalName("reopen")
                 .aliases()
@@ -89,10 +89,10 @@ public final class CliArguments {
         .build();
   }
 
-  private final Collection<ModeRegistration> registrations;
-  private final Map<String, ModeRegistration> registrationsIndexedByAliases;
-  private final Map<CliMode, ModeRegistration> registrationsIndexedByMode;
-  private final ModeRegistration fallback;
+  private final Collection<CommandRegistration> registrations;
+  private final Map<String, CommandRegistration> registrationsIndexedByAliases;
+  private final Map<CliMode, CommandRegistration> registrationsIndexedByMode;
+  private final CommandRegistration fallback;
 
   public CliArguments(Memoized<TaskStore> taskStore) {
     registrations = createCommandModeRegistry(taskStore, memoize(this::modeNamesAndAliases));
@@ -107,7 +107,7 @@ public final class CliArguments {
             .collect(toImmutableMap());
 
     registrationsIndexedByMode =
-        registrations.stream().collect(toImmutableMap(ModeRegistration::cliMode));
+        registrations.stream().collect(toImmutableMap(CommandRegistration::cliMode));
 
     //noinspection OptionalGetWithoutIsPresent
     this.fallback = registrationsIndexedByMode.valueOf(CliMode.HELP).get();
@@ -139,7 +139,7 @@ public final class CliArguments {
         .blockingGet();
   }
 
-  private Optional<ModeRegistration> registrationFromArgument(String arg) {
+  private Optional<CommandRegistration> registrationFromArgument(String arg) {
     return registrationsIndexedByAliases.valueOf(arg);
   }
 
@@ -169,9 +169,9 @@ public final class CliArguments {
   }
 
   private static final class RegistryBuilder {
-    private final MutableMap<CliMode, ModeRegistration> registeredHandlers = HashMap.create();
+    private final MutableMap<CliMode, CommandRegistration> registeredHandlers = HashMap.create();
 
-     RegistryBuilder register(ModeRegistration registration) {
+     RegistryBuilder register(CommandRegistration registration) {
        requireNonNull(registration);
        requireUnique(registration.cliMode());
        registeredHandlers.putMapping(registration.cliMode(), registration);
@@ -184,19 +184,19 @@ public final class CliArguments {
       }
     }
 
-    Set<ModeRegistration> build() {
+    Set<CommandRegistration> build() {
       return ImmutableSet.copyOf(registeredHandlers.values());
     }
   }
 
-  private static final class ModeRegistration {
+  private static final class CommandRegistration {
     private final CliMode cliMode;
     private final String canonicalName;
     private final Collection<String> aliases;
     private final Memoized<Parser<?>> parser;
     private final Memoized<Output> helpDocumentation;
 
-    private ModeRegistration(
+    private CommandRegistration(
         CliMode cliMode,
         String canonicalName,
         Collection<String> aliases,
@@ -263,7 +263,7 @@ public final class CliArguments {
     }
 
     interface Builder4 {
-      ModeRegistration helpDocumentation(Supplier<? extends Output> helpDocumentation);
+      CommandRegistration helpDocumentation(Supplier<? extends Output> helpDocumentation);
     }
 
     static Builder0 builder() {
@@ -272,7 +272,7 @@ public final class CliArguments {
             (Builder2) aliases ->
                 (Builder3) parserSupplier ->
                     (Builder4) helpDocumentation ->
-                        new ModeRegistration(
+                        new CommandRegistration(
                             cliMode,
                             canonicalName,
                             ImmutableList.copyOf(aliases),
