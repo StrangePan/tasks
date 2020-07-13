@@ -35,6 +35,8 @@ public final class CliArguments {
                 .cliMode(CliMode.HELP)
                 .canonicalName("help")
                 .aliases()
+                .parameters(new SingleStringParameter())
+                .options(ImmutableList.empty())
                 .parser(() -> new HelpArguments.Parser(validModes))
                 .helpDocumentation(Output::empty))
         .register(
@@ -42,6 +44,26 @@ public final class CliArguments {
                 .cliMode(CliMode.LIST)
                 .canonicalName("list")
                 .aliases("ls", "l")
+                .parameters(new NoParameters())
+                .options(
+                    ImmutableList.of(
+                        new FlagOption(
+                            "blocked",
+                            "b",
+                            "Setting this flag lists tasks that are uncompleted, but blocked by "
+                                + "other tasks"),
+                        new FlagOption(
+                            "completed",
+                            "c",
+                            "Setting this flag lists tasks that are already marked as completed."),
+                        new FlagOption(
+                            "unblocked",
+                            "u",
+                            "Setting this flag lists tasks that are unblocked. This is the default."),
+                        new FlagOption(
+                            "all",
+                            "a",
+                            "Setting this flag lists all tags.")))
                 .parser(() -> ListArguments::parse)
                 .helpDocumentation(Output::empty))
         .register(
@@ -49,6 +71,8 @@ public final class CliArguments {
                 .cliMode(CliMode.INFO)
                 .canonicalName("info")
                 .aliases("i")
+                .parameters(new RepeatedTasksParameters())
+                .options(ImmutableList.empty())
                 .parser(() -> new InfoArguments.Parser(taskStore))
                 .helpDocumentation(Output::empty))
         .register(
@@ -56,6 +80,21 @@ public final class CliArguments {
                 .cliMode(CliMode.ADD)
                 .canonicalName("add")
                 .aliases()
+                .parameters(new SingleStringParameter())
+                .options(
+                    ImmutableList.of(
+                        new RepeatableOption(
+                            new TaskOption(
+                                "after",
+                                "a",
+                                "The tasks this one comes after. This list empty tasks will be "
+                                    + "blocking this task.")),
+                        new RepeatableOption(
+                            new TaskOption(
+                                "before",
+                                "b",
+                                "The tasks this one comes before. This list empty tasks will be "
+                                    + "unblocked by this task."))))
                 .parser(() -> new AddArguments.Parser(taskStore))
                 .helpDocumentation(Output::empty))
         .register(
@@ -63,6 +102,8 @@ public final class CliArguments {
                 .cliMode(CliMode.REMOVE)
                 .canonicalName("remove")
                 .aliases("rm")
+                .parameters(new RepeatedTasksParameters())
+                .options(ImmutableList.empty())
                 .parser(() -> new RemoveArguments.Parser(taskStore))
                 .helpDocumentation(Output::empty))
         .register(
@@ -70,6 +111,45 @@ public final class CliArguments {
                 .cliMode(CliMode.AMEND)
                 .canonicalName("amend")
                 .aliases()
+                .parameters(new SingleTaskParameter())
+                .options(
+                    ImmutableList.of(
+                        new StringOption(
+                            "description",
+                            "m",
+                            "Edit the task label."),
+                        new RepeatableOption(
+                            new TaskOption(
+                                "after",
+                                "a",
+                                "Sets this task as blocked by another task. Clears the previous "
+                                    + "blocking tasks.")),
+                        new RepeatableOption(
+                            new TaskOption(
+                                "addafter",
+                                "aa",
+                                "Adds another task as blocking this one.")),
+                        new RepeatableOption(
+                            new TaskOption(
+                                "rmafter",
+                                "ra",
+                                "Removes another task as blocking this one.")),
+                        new RepeatableOption(
+                            new TaskOption(
+                                "before",
+                                "b",
+                                "Sets this task as blocking another task. Clears the previous "
+                                    + "blocked tasks.")),
+                        new RepeatableOption(
+                            new TaskOption(
+                                "addbefore",
+                                "ab",
+                                "Adds another task as being blocked by this one.")),
+                        new RepeatableOption(
+                            new TaskOption(
+                                "rmbefore",
+                                "rb",
+                                "Removes another task as being blocked by this one."))))
                 .parser(() -> new AmendArguments.Parser(taskStore))
                 .helpDocumentation(Output::empty))
         .register(
@@ -77,6 +157,8 @@ public final class CliArguments {
                 .cliMode(CliMode.COMPLETE)
                 .canonicalName("complete")
                 .aliases()
+                .parameters(new RepeatedTasksParameters())
+                .options(ImmutableList.empty())
                 .parser(() -> new CompleteArguments.Parser(taskStore))
                 .helpDocumentation(Output::empty))
         .register(
@@ -84,6 +166,8 @@ public final class CliArguments {
                 .cliMode(CliMode.REOPEN)
                 .canonicalName("reopen")
                 .aliases()
+                .parameters(new RepeatedTasksParameters())
+                .options(ImmutableList.empty())
                 .parser(() -> new ReopenArguments.Parser(taskStore))
                 .helpDocumentation(Output::empty))
         .build();
@@ -91,7 +175,6 @@ public final class CliArguments {
 
   private final Collection<CommandRegistration> registrations;
   private final Map<String, CommandRegistration> registrationsIndexedByAliases;
-  private final Map<CliMode, CommandRegistration> registrationsIndexedByMode;
   private final CommandRegistration fallback;
 
   public CliArguments(Memoized<TaskStore> taskStore) {
@@ -106,11 +189,12 @@ public final class CliArguments {
                         .map(alias -> Pair.of(alias, registration)))
             .collect(toImmutableMap());
 
-    registrationsIndexedByMode =
-        registrations.stream().collect(toImmutableMap(CommandRegistration::cliMode));
-
     //noinspection OptionalGetWithoutIsPresent
-    this.fallback = registrationsIndexedByMode.valueOf(CliMode.HELP).get();
+    this.fallback =
+        registrations.stream()
+            .filter(registration -> registration.cliMode() == CliMode.HELP)
+            .findFirst()
+            .get();
   }
 
   private Set<String> modeNamesAndAliases() {
@@ -259,10 +343,18 @@ public final class CliArguments {
     }
 
     interface Builder3 {
-      Builder4 parser(Supplier<? extends Parser<?>> parserSupplier);
+      Builder4 parameters(Object parameters);
     }
 
     interface Builder4 {
+      Builder5 options(Collection<?> options);
+    }
+
+    interface Builder5 {
+      Builder6 parser(Supplier<? extends Parser<?>> parserSupplier);
+    }
+
+    interface Builder6 {
       CommandRegistration helpDocumentation(Supplier<? extends Output> helpDocumentation);
     }
 
@@ -270,14 +362,78 @@ public final class CliArguments {
       return cliMode ->
           (Builder1) canonicalName ->
             (Builder2) aliases ->
-                (Builder3) parserSupplier ->
-                    (Builder4) helpDocumentation ->
-                        new CommandRegistration(
-                            cliMode,
-                            canonicalName,
-                            ImmutableList.copyOf(aliases),
-                            parserSupplier,
-                            helpDocumentation);
+                (Builder3) parameters ->
+                    (Builder4) arguments ->
+                        (Builder5) parserSupplier ->
+                            (Builder6) helpDocumentation ->
+                                new CommandRegistration(
+                                    cliMode,
+                                    canonicalName,
+                                    ImmutableList.copyOf(aliases),
+                                    parserSupplier,
+                                    helpDocumentation);
     }
   }
+
+  private static class Option {
+    private final String longName;
+    private final String shortName;
+    private final String description;
+
+    Option(String longName, String shortName, String description) {
+      this.longName = longName;
+      this.shortName = shortName;
+      this.description = description;
+    }
+
+    String longName() {
+      return longName;
+    }
+
+    String shortName() {
+      return shortName;
+    }
+
+    String description() {
+      return description;
+    }
+  }
+
+  private static class TaskOption extends Option {
+    TaskOption(String longName, String shortName, String description) {
+      super(longName, shortName, description);
+    }
+  }
+
+  private static class StringOption extends Option {
+    StringOption(String longName, String shortName, String description) {
+      super(longName, shortName, description);
+    }
+  }
+
+  private static class FlagOption extends Option {
+    FlagOption(String longName, String shortName, String description) {
+      super(longName, shortName, description);
+    }
+  }
+
+  private static class RepeatableOption {
+    private final Object option;
+
+    RepeatableOption(Object option) {
+      this.option = option;
+    }
+
+    Object argument() {
+      return option;
+    }
+  }
+
+  private static class NoParameters {}
+
+  private static class SingleTaskParameter {}
+
+  private static class RepeatedTasksParameters {}
+
+  private static class SingleStringParameter {}
 }
