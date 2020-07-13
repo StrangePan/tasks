@@ -81,9 +81,14 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
     return Output.builder()
         .appendLine(headerLine(documentation))
         .appendLine(aliasesLine(documentation))
-        .appendLine()
-        .appendLine(parameterLines(documentation))
+        .appendLine(prependWithBlankLine(parameterLines(documentation)))
         .build();
+  }
+
+  private static Output prependWithBlankLine(Output output) {
+    return output.isPopulated()
+        ? Output.builder().appendLine().appendLine(output).build()
+        : Output.empty();
   }
 
   private static Output headerLine(CommandDocumentation documentation) {

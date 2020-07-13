@@ -34,7 +34,7 @@ public final class CliArguments {
             ModeRegistration.builder()
                 .cliMode(CliMode.HELP)
                 .canonicalName("help")
-                .aliases("")
+                .aliases()
                 .parser(() -> new HelpArguments.Parser(validModes))
                 .helpDocumentation(Output::empty))
         .register(

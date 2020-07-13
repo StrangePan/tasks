@@ -41,7 +41,7 @@ public final class HelpArguments {
 
       Optional<String> mode =
           parsedArgs.count() > 1
-              ? Optional.of(parsedArgs.itemAt(0))
+              ? Optional.of(parsedArgs.itemAt(1))
               : Optional.empty();
 
       mode.ifPresent(this::assertModeIsValid);
