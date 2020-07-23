@@ -41,7 +41,7 @@ public final class CliArguments {
                 .parameters(ImmutableList.of(new StringParameter(NOT_REPEATABLE)))
                 .options(ImmutableList.empty())
                 .parser(() -> new HelpArguments.Parser(validModes))
-                .helpDocumentation(""))
+                .helpDocumentation("Retrieve the help documentation for a specific command."))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.LIST)
@@ -73,7 +73,9 @@ public final class CliArguments {
                             "Setting this flag lists all tags.",
                             NOT_REPEATABLE)))
                 .parser(() -> ListArguments::parse)
-                .helpDocumentation(""))
+                .helpDocumentation(
+                    "List all tasks that are currently unblocked. Can be configured with flags to "
+                        + "list blocked tasks, completed tasks, or all tasks."))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.INFO)
@@ -82,7 +84,7 @@ public final class CliArguments {
                 .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
                 .options(ImmutableList.empty())
                 .parser(() -> new InfoArguments.Parser(taskStore))
-                .helpDocumentation(""))
+                .helpDocumentation("Lists "))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.ADD)
@@ -104,7 +106,7 @@ public final class CliArguments {
                                 + "unblocked by this task.",
                             REPEATABLE)))
                 .parser(() -> new AddArguments.Parser(taskStore))
-                .helpDocumentation(""))
+                .helpDocumentation("Create a new task."))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.REMOVE)
@@ -113,7 +115,10 @@ public final class CliArguments {
                 .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
                 .options(ImmutableList.empty())
                 .parser(() -> new RemoveArguments.Parser(taskStore))
-                .helpDocumentation(""))
+                .helpDocumentation(
+                    "Delete a task altogether. THIS CANNOT BE UNDONE. It is recommended that tasks "
+                        + "be marked as completed rather than deleted, or amended if their content "
+                        + "needs to change."))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.AMEND)
@@ -160,7 +165,9 @@ public final class CliArguments {
                             "Removes another task as being blocked by this one.",
                             REPEATABLE)))
                 .parser(() -> new AmendArguments.Parser(taskStore))
-                .helpDocumentation(""))
+                .helpDocumentation(
+                    "Makes changes to an existing task. Can be used to change the task "
+                        + "description, or to add/remove blocking/blocked tasks."))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.COMPLETE)
@@ -169,7 +176,9 @@ public final class CliArguments {
                 .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
                 .options(ImmutableList.empty())
                 .parser(() -> new CompleteArguments.Parser(taskStore))
-                .helpDocumentation(""))
+                .helpDocumentation(
+                    "Mark one or more tasks as complete. This can be undone with the reopen "
+                        + "command."))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.REOPEN)
@@ -178,7 +187,9 @@ public final class CliArguments {
                 .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
                 .options(ImmutableList.empty())
                 .parser(() -> new ReopenArguments.Parser(taskStore))
-                .helpDocumentation(""))
+                .helpDocumentation(
+                    "Reopens one or more completed tasks. This can be undone with the complete "
+                        + "command."))
         .build();
   }
 
