@@ -14,7 +14,7 @@ import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
 import tasks.cli.arg.CommandDocumentation;
-import tasks.cli.arg.CommandDocumentation.ArgumentDocumentation;
+import tasks.cli.arg.CommandDocumentation.OptionDocumentation;
 import tasks.cli.arg.HelpArguments;
 
 public final class HelpHandler implements ArgumentHandler<HelpArguments> {
@@ -108,14 +108,14 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
   }
 
   private static Output parameterLines(CommandDocumentation documentation) {
-    return Observable.fromIterable(documentation.arguments())
+    return Observable.fromIterable(documentation.options())
         .map(HelpHandler::parameterLine)
         .collectInto(Output.builder(), Output.Builder::appendLine)
         .map(Output.Builder::build)
         .blockingGet();
   }
 
-  private static Output parameterLine(ArgumentDocumentation documentation) {
+  private static Output parameterLine(OptionDocumentation documentation) {
     return Output.builder()
         .appendLine(
             Stream.concat(
