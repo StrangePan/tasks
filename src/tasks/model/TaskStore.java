@@ -3,6 +3,7 @@ package tasks.model;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Maybe;
+import io.reactivex.Single;
 import java.util.function.Function;
 import omnia.data.structure.Set;
 
@@ -28,7 +29,8 @@ public interface TaskStore {
 
   Flowable<Set<Task>> allTasksMatchingCliPrefix(String prefix);
 
-  Completable createTask(String label, Function<? super TaskBuilder, ? extends TaskBuilder> builder);
+  Single<Task> createTask(
+      String label, Function<? super TaskBuilder, ? extends TaskBuilder> builder);
 
   Completable mutateTask(Task task, Function<? super TaskMutator, ? extends TaskMutator> mutation);
 

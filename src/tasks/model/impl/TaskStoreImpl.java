@@ -145,14 +145,16 @@ public final class TaskStoreImpl implements TaskStore {
   }
 
   @Override
-  public Completable createTask(String label, Function<? super TaskBuilder, ? extends TaskBuilder> builder) {
+  public Single<Task> createTask(
+      String label, Function<? super TaskBuilder, ? extends TaskBuilder> builder) {
     return Single.just(new TaskBuilderImpl(this, label))
         .<TaskBuilder>map(builder::apply)
-        .flatMapCompletable(taskBuilder -> Completable.fromAction(() -> applyBuilder(taskBuilder)))
+        .flatMap(taskBuilder -> Single.fromCallable(() -> applyBuilder(taskBuilder)))
+        .map(this::toTask)
         .cache();
   }
 
-  private void applyBuilder(TaskBuilder builder) {
+  private TaskId applyBuilder(TaskBuilder builder) {
     TaskBuilderImpl builderImpl = validateBuilder(builder);
     TaskData data = new TaskData(builderImpl.completed(), builderImpl.label());
     TaskId id = generateId();
@@ -160,6 +162,7 @@ public final class TaskStoreImpl implements TaskStore {
     taskGraph.addNode(id);
     builderImpl.blockingTasks().forEach(blockingTask -> taskGraph.addEdge(id, blockingTask));
     builderImpl.blockedTasks().forEach(blockedTask -> taskGraph.addEdge(blockedTask, id));
+    return id;
   }
 
   TaskBuilderImpl validateBuilder(TaskBuilder builder) {
