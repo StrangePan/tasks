@@ -27,6 +27,9 @@ import tasks.model.TaskStore;
 /** Data structure for arguments passed into the command line. */
 public final class CliArguments {
 
+  private static final boolean REPEATABLE = true;
+  private static final boolean NOT_REPEATABLE = false;
+
   private static Collection<CommandRegistration> createCommandModeRegistry(
       Memoized<TaskStore> taskStore, Memoized<Set<String>> validModes) {
     return new RegistryBuilder()
@@ -51,20 +54,24 @@ public final class CliArguments {
                             "blocked",
                             "b",
                             "Setting this flag lists tasks that are uncompleted, but blocked by "
-                                + "other tasks"),
+                                + "other tasks",
+                            NOT_REPEATABLE),
                         new FlagOption(
                             "completed",
                             "c",
-                            "Setting this flag lists tasks that are already marked as completed."),
+                            "Setting this flag lists tasks that are already marked as completed.",
+                            NOT_REPEATABLE),
                         new FlagOption(
                             "unblocked",
                             "u",
                             "Setting this flag lists tasks that are unblocked. This is the "
-                                + "default."),
+                                + "default.",
+                            NOT_REPEATABLE),
                         new FlagOption(
                             "all",
                             "a",
-                            "Setting this flag lists all tags.")))
+                            "Setting this flag lists all tags.",
+                            NOT_REPEATABLE)))
                 .parser(() -> ListArguments::parse)
                 .helpDocumentation(Output::empty))
         .register(
@@ -84,18 +91,18 @@ public final class CliArguments {
                 .parameters(new SingleStringParameter())
                 .options(
                     ImmutableList.of(
-                        new RepeatableOption(
-                            new TaskOption(
-                                "after",
-                                "a",
-                                "The tasks this one comes after. This list empty tasks will be "
-                                    + "blocking this task.")),
-                        new RepeatableOption(
-                            new TaskOption(
-                                "before",
-                                "b",
-                                "The tasks this one comes before. This list empty tasks will be "
-                                    + "unblocked by this task."))))
+                        new TaskOption(
+                            "after",
+                            "a",
+                            "The tasks this one comes after. This list empty tasks will be "
+                                + "blocking this task.",
+                            REPEATABLE),
+                        new TaskOption(
+                            "before",
+                            "b",
+                            "The tasks this one comes before. This list empty tasks will be "
+                                + "unblocked by this task.",
+                            REPEATABLE)))
                 .parser(() -> new AddArguments.Parser(taskStore))
                 .helpDocumentation(Output::empty))
         .register(
@@ -118,39 +125,40 @@ public final class CliArguments {
                         new StringOption(
                             "description",
                             "m",
-                            "Edit the task label."),
-                        new RepeatableOption(
-                            new TaskOption(
-                                "after",
-                                "a",
-                                "Sets this task as blocked by another task. Clears the previous "
-                                    + "blocking tasks.")),
-                        new RepeatableOption(
-                            new TaskOption(
-                                "addafter",
-                                "aa",
-                                "Adds another task as blocking this one.")),
-                        new RepeatableOption(
-                            new TaskOption(
-                                "rmafter",
-                                "ra",
-                                "Removes another task as blocking this one.")),
-                        new RepeatableOption(
-                            new TaskOption(
-                                "before",
-                                "b",
-                                "Sets this task as blocking another task. Clears the previous "
-                                    + "blocked tasks.")),
-                        new RepeatableOption(
-                            new TaskOption(
-                                "addbefore",
-                                "ab",
-                                "Adds another task as being blocked by this one.")),
-                        new RepeatableOption(
-                            new TaskOption(
-                                "rmbefore",
-                                "rb",
-                                "Removes another task as being blocked by this one."))))
+                            "Edit the task label.",
+                            NOT_REPEATABLE),
+                        new TaskOption(
+                            "after",
+                            "a",
+                            "Sets this task as blocked by another task. Clears the previous "
+                                + "blocking tasks.",
+                            REPEATABLE),
+                        new TaskOption(
+                            "addafter",
+                            "aa",
+                            "Adds another task as blocking this one.",
+                            REPEATABLE),
+                        new TaskOption(
+                            "rmafter",
+                            "ra",
+                            "Removes another task as blocking this one.",
+                            REPEATABLE),
+                        new TaskOption(
+                            "before",
+                            "b",
+                            "Sets this task as blocking another task. Clears the previous "
+                                + "blocked tasks.",
+                            REPEATABLE),
+                        new TaskOption(
+                            "addbefore",
+                            "ab",
+                            "Adds another task as being blocked by this one.",
+                            REPEATABLE),
+                        new TaskOption(
+                            "rmbefore",
+                            "rb",
+                            "Removes another task as being blocked by this one.",
+                            REPEATABLE)))
                 .parser(() -> new AmendArguments.Parser(taskStore))
                 .helpDocumentation(Output::empty))
         .register(
@@ -398,11 +406,13 @@ public final class CliArguments {
     private final String longName;
     private final String shortName;
     private final String description;
+    private final boolean repeatable;
 
-    Option(String longName, String shortName, String description) {
+    Option(String longName, String shortName, String description, boolean repeatable) {
       this.longName = longName;
       this.shortName = shortName;
       this.description = description;
+      this.repeatable = repeatable;
     }
 
     String longName() {
@@ -416,35 +426,27 @@ public final class CliArguments {
     String description() {
       return description;
     }
+
+    boolean isRepeatable() {
+      return repeatable;
+    }
   }
 
   private static class TaskOption extends Option {
-    TaskOption(String longName, String shortName, String description) {
-      super(longName, shortName, description);
+    TaskOption(String longName, String shortName, String description, boolean repeatable) {
+      super(longName, shortName, description, repeatable);
     }
   }
 
   private static class StringOption extends Option {
-    StringOption(String longName, String shortName, String description) {
-      super(longName, shortName, description);
+    StringOption(String longName, String shortName, String description, boolean repeatable) {
+      super(longName, shortName, description, repeatable);
     }
   }
 
   private static class FlagOption extends Option {
-    FlagOption(String longName, String shortName, String description) {
-      super(longName, shortName, description);
-    }
-  }
-
-  private static class RepeatableOption {
-    private final Object option;
-
-    RepeatableOption(Object option) {
-      this.option = option;
-    }
-
-    Object argument() {
-      return option;
+    FlagOption(String longName, String shortName, String description, boolean repeatable) {
+      super(longName, shortName, description, repeatable);
     }
   }
 
