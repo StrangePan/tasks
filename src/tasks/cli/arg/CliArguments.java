@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
 import omnia.data.structure.List;
@@ -37,7 +38,7 @@ public final class CliArguments {
                 .cliMode(CliMode.HELP)
                 .canonicalName("help")
                 .aliases()
-                .parameters(ImmutableList.of(new StringParameter(NOT_REPEATABLE)))
+                .parameters(ImmutableList.of(new StringParameter("command", NOT_REPEATABLE)))
                 .options(ImmutableList.empty())
                 .parser(() -> new HelpArguments.Parser(validModes))
                 .helpDocumentation("Retrieve the help documentation for a specific command."))
@@ -92,7 +93,7 @@ public final class CliArguments {
                 .cliMode(CliMode.ADD)
                 .canonicalName("add")
                 .aliases()
-                .parameters(ImmutableList.of(new StringParameter(NOT_REPEATABLE)))
+                .parameters(ImmutableList.of(new StringParameter("description", NOT_REPEATABLE)))
                 .options(
                     ImmutableList.of(
                         new TaskOption(
@@ -133,7 +134,8 @@ public final class CliArguments {
                             "description",
                             "m",
                             "Set the task description.",
-                            NOT_REPEATABLE),
+                            NOT_REPEATABLE,
+                            "description"),
                         new TaskOption(
                             "after",
                             "a",
@@ -260,10 +262,28 @@ public final class CliArguments {
     return new CommandDocumentation(
         registration.canonicalName(),
         ImmutableList.copyOf(registration.aliases()),
+        toParameterRepresentation(registration),
         registration.description(),
         registration.options().stream()
             .map(CliArguments::toOptionDocumentation)
             .collect(toImmutableSet()));
+  }
+
+  private static Optional<String> toParameterRepresentation(CommandRegistration registration) {
+    return registration.parameters().isPopulated()
+        ? Optional.of(
+            registration.parameters().stream()
+              .map(CliArguments::toParameterRepresentation)
+              .collect(Collectors.joining(" ")))
+        : Optional.empty();
+  }
+
+  private static String toParameterRepresentation(Parameter parameter) {
+    return "<" + parameter.description() + (parameter.isRepeatable() ? "..." : "") + ">";
+  }
+
+  private static Optional<String> toParameterRepresentation(Option option) {
+    return option.parameterRepresentation().map(rep -> "<" + rep + ">");
   }
 
   private static CommandDocumentation.OptionDocumentation toOptionDocumentation(Option option) {
@@ -271,7 +291,8 @@ public final class CliArguments {
         option.longName(),
         option.shortName(),
         option.description(),
-        option.isRepeatable());
+        option.isRepeatable(),
+        toParameterRepresentation(option));
   }
 
   public static final class ArgumentFormatException extends RuntimeException {
@@ -434,12 +455,19 @@ public final class CliArguments {
     private final String shortName;
     private final String description;
     private final boolean repeatable;
+    private final Optional<String> parameterRepresentation;
 
-    Option(String longName, String shortName, String description, boolean repeatable) {
-      this.longName = longName;
-      this.shortName = shortName;
-      this.description = description;
+    Option(
+        String longName,
+        String shortName,
+        String description,
+        boolean repeatable,
+        Optional<String> parameterRepresentation) {
+      this.longName = requireNonNull(longName);
+      this.shortName = requireNonNull(shortName);
+      this.description = requireNonNull(description);
       this.repeatable = repeatable;
+      this.parameterRepresentation = requireNonNull(parameterRepresentation);
     }
 
     String longName() {
@@ -457,31 +485,46 @@ public final class CliArguments {
     boolean isRepeatable() {
       return repeatable;
     }
+
+    Optional<String> parameterRepresentation() {
+      return parameterRepresentation;
+    }
   }
 
   private static class TaskOption extends Option {
     TaskOption(String longName, String shortName, String description, boolean repeatable) {
-      super(longName, shortName, description, repeatable);
+      super(longName, shortName, description, repeatable, Optional.of("task"));
     }
   }
 
   private static class StringOption extends Option {
-    StringOption(String longName, String shortName, String description, boolean repeatable) {
-      super(longName, shortName, description, repeatable);
+    StringOption(
+        String longName,
+        String shortName,
+        String description,
+        boolean repeatable,
+        String semanticDescription) {
+      super(longName, shortName, description, repeatable, Optional.of(semanticDescription));
     }
   }
 
   private static class FlagOption extends Option {
     FlagOption(String longName, String shortName, String description, boolean repeatable) {
-      super(longName, shortName, description, repeatable);
+      super(longName, shortName, description, repeatable, Optional.empty());
     }
   }
 
   private static class Parameter {
+    private final String description;
     private final boolean repeatable;
 
-    Parameter(boolean repeatable) {
+    Parameter(String description, boolean repeatable) {
+      this.description = requireNonNull(description);
       this.repeatable = repeatable;
+    }
+
+    String description() {
+      return description;
     }
 
     boolean isRepeatable() {
@@ -491,13 +534,13 @@ public final class CliArguments {
 
   private static class TaskParameter extends Parameter {
     TaskParameter(boolean repeatable) {
-      super(repeatable);
+      super("task", repeatable);
     }
   }
 
   private static class StringParameter extends Parameter {
-    StringParameter(boolean repeatable) {
-      super(repeatable);
+    StringParameter(String semanticName, boolean repeatable) {
+      super(semanticName, repeatable);
     }
   }
 }

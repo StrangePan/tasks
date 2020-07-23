@@ -81,6 +81,7 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
     return Output.builder()
         .appendLine(headerLine(documentation))
         .appendLine(aliasesLine(documentation))
+        .appendLine(usageLine(documentation))
         .appendLine(documentation.description(), 2)
         .appendLine(prependWithBlankLine(parameterLines(documentation)))
         .build();
@@ -108,6 +109,14 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
         : Output.empty();
   }
 
+  private static Output usageLine(CommandDocumentation documentation) {
+    return Output.builder().append("Usage:   ")
+        .append(documentation.canonicalName())
+        .append(documentation.parameterRepresentation().map(r -> " " + r).orElse(""))
+        .append(documentation.options().isPopulated() ? " [options...]" : "")
+        .build();
+  }
+
   private static Output parameterLines(CommandDocumentation documentation) {
     return Observable.fromIterable(documentation.options())
         .map(HelpHandler::parameterLine)
@@ -122,7 +131,8 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
             Stream.concat(
                 Stream.of("--" + documentation.canonicalName()),
                 Stream.of("-" + documentation.shortFlag()))
-            .collect(joining(", "))
+            .collect(joining(","))
+                + (documentation.parameterRepresentation().map(r -> " " + r).orElse(""))
                 + (documentation.isRepeatable() ? " [+]" : ""),
             2)
         .appendLine(documentation.description(), 4)
