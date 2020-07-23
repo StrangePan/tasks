@@ -3,10 +3,10 @@
     <output-path>$PROJECT_DIR$/out/artifacts/cli</output-path>
     <root id="archive" name="cli.jar">
       <element id="module-output" name="tasks" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/io/reactivex/rxjava2/rxjava/2.2.15/rxjava-2.2.15.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/reactivestreams/reactive-streams/1.0.3/reactive-streams-1.0.3.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/commons-cli/commons-cli/1.4/commons-cli-1.4.jar" path-in-jar="/" />
       <element id="module-output" name="omnia" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/commons-cli-1.4.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/reactive-streams-1.0.3.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/rxjava-2.2.15.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>

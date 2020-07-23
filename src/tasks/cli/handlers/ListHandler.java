@@ -1,28 +1,40 @@
 package tasks.cli.handlers;
 
-import io.reactivex.Flowable;
-import omnia.data.structure.Set;
+import static java.util.Objects.requireNonNull;
+
+import io.reactivex.Completable;
+import omnia.data.cache.Memoized;
+import omnia.data.structure.immutable.ImmutableSet;
 import tasks.cli.arg.ListArguments;
-import tasks.model.Task;
 import tasks.model.TaskStore;
 
 public final class ListHandler implements ArgumentHandler<ListArguments> {
+  private final Memoized<TaskStore> taskStore;
+
+  ListHandler(Memoized<TaskStore> taskStore) {
+    this.taskStore = requireNonNull(taskStore);
+  }
+
   @Override
-  public void handle(ListArguments arguments) {
-    TaskStore taskStore = HandlerUtil.loadTaskStore();
+  public Completable handle(ListArguments arguments) {
+    TaskStore taskStore = this.taskStore.value();
 
-    print("unblocked tasks:", arguments.isUnblockedSet() ?  stringify(taskStore.allTasksWithoutOpenBlockers()) : "");
-    print("blocked tasks:", arguments.isBlockedSet() ? stringify(taskStore.allTasksWithOpenBlockers()) : "");
-    print("completed tasks:", arguments.isCompletedSet() ? stringify(taskStore.completedTasks()) : "");
-  }
+    HandlerUtil.printIfPopulated(
+        "unblocked tasks:",
+        arguments.isUnblockedSet()
+            ? taskStore.allTasksWithoutOpenBlockers().blockingFirst()
+            : ImmutableSet.empty());
+    HandlerUtil.printIfPopulated(
+        "blocked tasks:",
+        arguments.isBlockedSet()
+            ? taskStore.allTasksWithOpenBlockers().blockingFirst()
+            : ImmutableSet.empty());
+    HandlerUtil.printIfPopulated(
+        "completed tasks:",
+        arguments.isCompletedSet()
+            ? taskStore.completedTasks().blockingFirst()
+            : ImmutableSet.empty());
 
-  private static String stringify(Flowable<Set<Task>> tasks) {
-    return HandlerUtil.stringify(tasks.blockingFirst());
-  }
-
-  private static void print(String prefix, String message) {
-    if (!message.isEmpty()) {
-      System.out.println(prefix + message);
-    }
+    return Completable.complete();
   }
 }

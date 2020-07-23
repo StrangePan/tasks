@@ -1,14 +1,18 @@
 package tasks.cli.arg;
 
+import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
-import tasks.cli.CliTaskId;
+import tasks.model.Task;
+import tasks.model.TaskStore;
 
 public final class ReopenArguments extends SimpleArguments {
-  private ReopenArguments(List<CliTaskId> tasks) {
+  protected ReopenArguments(List<Task> tasks) {
     super(tasks);
   }
 
-  static ReopenArguments parse(String[] args) {
-    return SimpleArguments.parse(args, ReopenArguments::new);
+  static final class Parser extends SimpleArguments.Parser<ReopenArguments> {
+    protected Parser(Memoized<TaskStore> taskStore) {
+      super(taskStore, ReopenArguments::new);
+    }
   }
 }

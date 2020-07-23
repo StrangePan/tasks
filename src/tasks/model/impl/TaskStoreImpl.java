@@ -1,6 +1,7 @@
 package tasks.model.impl;
 
 import static java.util.Objects.requireNonNull;
+import static omnia.data.stream.Collectors.toImmutableSet;
 import static omnia.data.stream.Collectors.toSet;
 
 import io.reactivex.Completable;
@@ -104,6 +105,19 @@ public final class TaskStoreImpl implements TaskStore {
   @Override
   public Flowable<Set<Task>> completedTasks() {
     return tasksFromNodesMatching(this::isCompleted);
+  }
+
+  @Override
+  public Flowable<Set<Task>> allTasksMatchingCliPrefix(String prefix) {
+    requireNonNull(prefix);
+    return taskGraph.observe()
+        .states()
+        .map(Graph::contents)
+        .map(contents ->
+            contents.stream()
+                .filter(id -> id.toString().regionMatches(0, prefix, 0, prefix.length()))
+                .map(this::toTask)
+                .collect(toImmutableSet()));
   }
 
   private boolean isCompleted(Graph.Node<? extends TaskId> node) {

@@ -3,6 +3,7 @@ package tasks.model;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import java.util.function.Function;
+import omnia.cli.out.Output;
 import omnia.data.structure.Set;
 import omnia.data.structure.observable.ObservableSet;
 
@@ -31,4 +32,6 @@ public interface Task {
   }
 
   Completable mutate(Function<? super TaskMutator, ? extends TaskMutator> mutator);
+
+  Output render();
 }

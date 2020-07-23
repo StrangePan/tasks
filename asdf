@@ -1,0 +1,18 @@
+# version 1
+# tasks
+14a00nhsddz4;true;Output formatting;
+7ri8li86wfeo;false;Output unblocked tasks when completing a task;
+aiv2qznibj7k;false;Redesign amend argument;
+cystb0f3sk5c;false;Move command registration to individual command definition classes;
+h5kiwq5wnb40;false;Output task ID when creating tasks;
+13g106gz8dqm8;true;Output indentation;
+147s85hhpdou8;true;Help documentation;
+170qeiiadyl1c;false;Add verbosity option to amend command;
+19ywwqj6ys1ds;false;Add commands for modifying blockers;
+1so5tz4jow35s;false;Refactor commands to use same source of truth for registration as parsing;
+1u8yjlsmv79q8;false;Add graph output;
+1usblv8kvafi8;false;Add task bookmarks;
+# dependencies
+cystb0f3sk5c;147s85hhpdou8;
+147s85hhpdou8;14a00nhsddz4;
+1so5tz4jow35s;cystb0f3sk5c;

@@ -26,6 +26,8 @@ public interface TaskStore {
 
   Flowable<Set<Task>> completedTasks();
 
+  Flowable<Set<Task>> allTasksMatchingCliPrefix(String prefix);
+
   Completable createTask(String label, Function<? super TaskBuilder, ? extends TaskBuilder> builder);
 
   Completable mutateTask(Task task, Function<? super TaskMutator, ? extends TaskMutator> mutation);
