@@ -287,7 +287,7 @@ public final class CliArguments {
     private final String canonicalName;
     private final Collection<String> aliases;
     private final Object parameters;
-    private final Collection<Object> options;
+    private final Collection<Option> options;
     private final Memoized<Parser<?>> parser;
     private final Memoized<Output> helpDocumentation;
 
@@ -296,7 +296,7 @@ public final class CliArguments {
         String canonicalName,
         Collection<String> aliases,
         Object parameters,
-        Collection<?> options,
+        Collection<Option> options,
         Supplier<? extends Parser<?>> parserSupplier,
         Supplier<? extends Output> helpDocumentation) {
       requireNonNull(cliMode);
@@ -339,7 +339,7 @@ public final class CliArguments {
       return parameters;
     }
 
-    Collection<Object> options() {
+    Collection<Option> options() {
       return options;
     }
 
@@ -372,7 +372,7 @@ public final class CliArguments {
     }
 
     interface Builder4 {
-      Builder5 options(Collection<?> options);
+      Builder5 options(Collection<Option> options);
     }
 
     interface Builder5 {

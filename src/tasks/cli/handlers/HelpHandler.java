@@ -120,7 +120,7 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
         .appendLine(
             Stream.concat(
                 Stream.of("--" + documentation.canonicalName()),
-                documentation.shortFlag().stream().map(flag -> "-" + flag))
+                Stream.of("-" + documentation.shortFlag()))
             .collect(joining(", ")))
         .appendLine(documentation.description())
         .build();
