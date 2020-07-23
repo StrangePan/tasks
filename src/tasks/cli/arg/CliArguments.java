@@ -41,7 +41,7 @@ public final class CliArguments {
                 .parameters(ImmutableList.of(new StringParameter(NOT_REPEATABLE)))
                 .options(ImmutableList.empty())
                 .parser(() -> new HelpArguments.Parser(validModes))
-                .helpDocumentation(Output::empty))
+                .helpDocumentation(""))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.LIST)
@@ -73,7 +73,7 @@ public final class CliArguments {
                             "Setting this flag lists all tags.",
                             NOT_REPEATABLE)))
                 .parser(() -> ListArguments::parse)
-                .helpDocumentation(Output::empty))
+                .helpDocumentation(""))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.INFO)
@@ -82,7 +82,7 @@ public final class CliArguments {
                 .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
                 .options(ImmutableList.empty())
                 .parser(() -> new InfoArguments.Parser(taskStore))
-                .helpDocumentation(Output::empty))
+                .helpDocumentation(""))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.ADD)
@@ -104,7 +104,7 @@ public final class CliArguments {
                                 + "unblocked by this task.",
                             REPEATABLE)))
                 .parser(() -> new AddArguments.Parser(taskStore))
-                .helpDocumentation(Output::empty))
+                .helpDocumentation(""))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.REMOVE)
@@ -113,7 +113,7 @@ public final class CliArguments {
                 .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
                 .options(ImmutableList.empty())
                 .parser(() -> new RemoveArguments.Parser(taskStore))
-                .helpDocumentation(Output::empty))
+                .helpDocumentation(""))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.AMEND)
@@ -160,7 +160,7 @@ public final class CliArguments {
                             "Removes another task as being blocked by this one.",
                             REPEATABLE)))
                 .parser(() -> new AmendArguments.Parser(taskStore))
-                .helpDocumentation(Output::empty))
+                .helpDocumentation(""))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.COMPLETE)
@@ -169,7 +169,7 @@ public final class CliArguments {
                 .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
                 .options(ImmutableList.empty())
                 .parser(() -> new CompleteArguments.Parser(taskStore))
-                .helpDocumentation(Output::empty))
+                .helpDocumentation(""))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.REOPEN)
@@ -178,7 +178,7 @@ public final class CliArguments {
                 .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
                 .options(ImmutableList.empty())
                 .parser(() -> new ReopenArguments.Parser(taskStore))
-                .helpDocumentation(Output::empty))
+                .helpDocumentation(""))
         .build();
   }
 
@@ -246,6 +246,7 @@ public final class CliArguments {
     return new CommandDocumentation(
         registration.canonicalName(),
         ImmutableList.copyOf(registration.aliases()),
+        registration.description(),
         registration.options().stream()
             .map(CliArguments::toOptionDocumentation)
             .collect(toImmutableSet()));
@@ -297,26 +298,26 @@ public final class CliArguments {
     private final CliMode cliMode;
     private final String canonicalName;
     private final Collection<String> aliases;
+    private final String description;
     private final Collection<Parameter> parameters;
     private final Collection<Option> options;
     private final Memoized<Parser<?>> parser;
-    private final Memoized<Output> helpDocumentation;
 
     private CommandRegistration(
         CliMode cliMode,
         String canonicalName,
         Collection<String> aliases,
+        String description,
         Collection<Parameter> parameters,
         Collection<Option> options,
-        Supplier<? extends Parser<?>> parserSupplier,
-        Supplier<? extends Output> helpDocumentation) {
+        Supplier<? extends Parser<?>> parserSupplier) {
       requireNonNull(cliMode);
       requireNonNull(canonicalName);
       requireNonNull(aliases);
+      requireNonNull(description);
       requireNonNull(parameters);
       requireNonNull(options);
       requireNonNull(parserSupplier);
-      requireNonNull(helpDocumentation);
 
       if (aliases.contains(canonicalName)) {
         throw new IllegalArgumentException("aliases cannot contain the canonical name");
@@ -328,10 +329,10 @@ public final class CliArguments {
       this.cliMode = cliMode;
       this.canonicalName = canonicalName;
       this.aliases = ImmutableList.copyOf(aliases);
+      this.description = description;
       this.parameters = parameters;
       this.options = ImmutableList.copyOf(options);
       this.parser = memoize(parserSupplier);
-      this.helpDocumentation = memoize(helpDocumentation);
     }
 
     CliMode cliMode() {
@@ -344,6 +345,10 @@ public final class CliArguments {
 
     Collection<String> aliases() {
       return aliases;
+    }
+
+    String description() {
+      return description;
     }
 
     Collection<Parameter> parameters() {
@@ -360,10 +365,6 @@ public final class CliArguments {
 
     Parser<?> parserSupplier() {
       return parser.value();
-    }
-
-    Output helpDocumentation() {
-      return helpDocumentation.value();
     }
 
     interface Builder0 {
@@ -391,7 +392,7 @@ public final class CliArguments {
     }
 
     interface Builder6 {
-      CommandRegistration helpDocumentation(Supplier<? extends Output> helpDocumentation);
+      CommandRegistration helpDocumentation(String description);
     }
 
     static Builder0 builder() {
@@ -401,15 +402,15 @@ public final class CliArguments {
                 (Builder3) parameters ->
                     (Builder4) arguments ->
                         (Builder5) parserSupplier ->
-                            (Builder6) helpDocumentation ->
+                            (Builder6) description ->
                                 new CommandRegistration(
                                     cliMode,
                                     canonicalName,
                                     ImmutableList.copyOf(aliases),
+                                    description,
                                     parameters,
                                     arguments,
-                                    parserSupplier,
-                                    helpDocumentation);
+                                    parserSupplier);
     }
   }
 

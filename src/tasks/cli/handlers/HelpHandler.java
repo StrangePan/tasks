@@ -81,6 +81,7 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
     return Output.builder()
         .appendLine(headerLine(documentation))
         .appendLine(aliasesLine(documentation))
+        .appendLine(documentation.description(), 2)
         .appendLine(prependWithBlankLine(parameterLines(documentation)))
         .build();
   }
@@ -121,8 +122,8 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
             Stream.concat(
                 Stream.of("--" + documentation.canonicalName()),
                 Stream.of("-" + documentation.shortFlag()))
-            .collect(joining(", ")))
-        .appendLine(documentation.description())
+            .collect(joining(", ")), 2)
+        .appendLine(documentation.description(), 4)
         .build();
   }
 }

@@ -10,12 +10,17 @@ import omnia.data.structure.immutable.ImmutableSet;
 public final class CommandDocumentation {
   private final String canonicalName;
   private final ImmutableList<String> aliases;
+  private final String description;
   private final ImmutableSet<OptionDocumentation> options;
 
   public CommandDocumentation(
-      String canonicalName, List<String> aliases, Set<OptionDocumentation> options) {
+      String canonicalName,
+      List<String> aliases,
+      String description,
+      Set<OptionDocumentation> options) {
     this.canonicalName = requireNonNull(canonicalName);
     this.aliases = ImmutableList.copyOf(requireNonNull(aliases));
+    this.description = requireNonNull(description);
     this.options = ImmutableSet.copyOf(requireNonNull(options));
   }
 
@@ -25,6 +30,10 @@ public final class CommandDocumentation {
 
   public ImmutableList<String> aliases() {
     return aliases;
+  }
+
+  public String description() {
+    return description;
   }
 
   public ImmutableSet<OptionDocumentation> options() {
