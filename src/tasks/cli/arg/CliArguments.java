@@ -11,7 +11,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
 import omnia.data.structure.List;
@@ -53,29 +52,30 @@ public final class CliArguments {
                         new FlagOption(
                             "blocked",
                             "b",
-                            "Setting this flag lists tasks that are uncompleted, but blocked by "
-                                + "other tasks",
+                            "List all tasks that are uncompleted, but blocked by other tasks. Can "
+                                + "be combined with other flags.",
                             NOT_REPEATABLE),
                         new FlagOption(
                             "completed",
                             "c",
-                            "Setting this flag lists tasks that are already marked as completed.",
+                            "List all tasks already marked as completed. Can be combined with "
+                                + "other flags.",
                             NOT_REPEATABLE),
                         new FlagOption(
                             "unblocked",
                             "u",
-                            "Setting this flag lists tasks that are unblocked. This is the "
-                                + "default.",
+                            "List all unblocked tasks. Can be combined with other flags.",
                             NOT_REPEATABLE),
                         new FlagOption(
                             "all",
                             "a",
-                            "Setting this flag lists all tags.",
+                            "Lists all tasks, regardless of state.",
                             NOT_REPEATABLE)))
                 .parser(() -> ListArguments::parse)
                 .helpDocumentation(
-                    "List all tasks that are currently unblocked. Can be configured with flags to "
-                        + "list blocked tasks, completed tasks, or all tasks."))
+                    "Prints a list of tasks. By default, only lists uncompleted tasks that are "
+                        + "unblocked. Can also list only blocked tasks, only completed tasks, any "
+                        + "combination of the three, or all tasks."))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.INFO)
@@ -84,7 +84,9 @@ public final class CliArguments {
                 .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
                 .options(ImmutableList.empty())
                 .parser(() -> new InfoArguments.Parser(taskStore))
-                .helpDocumentation("Lists "))
+                .helpDocumentation(
+                    "Prints all known information about a particular task, including its "
+                        + "description, all tasks blocking it, and all tasks it is blocking."))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.ADD)
@@ -116,9 +118,9 @@ public final class CliArguments {
                 .options(ImmutableList.empty())
                 .parser(() -> new RemoveArguments.Parser(taskStore))
                 .helpDocumentation(
-                    "Delete a task altogether. THIS CANNOT BE UNDONE. It is recommended that tasks "
-                        + "be marked as completed rather than deleted, or amended if their content "
-                        + "needs to change."))
+                    "Completely deletes a task. THIS CANNOT BE UNDONE. It is recommended that "
+                        + "tasks be marked as completed rather than deleted, or amended if their "
+                        + "content needs to change."))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.AMEND)
@@ -166,8 +168,8 @@ public final class CliArguments {
                             REPEATABLE)))
                 .parser(() -> new AmendArguments.Parser(taskStore))
                 .helpDocumentation(
-                    "Makes changes to an existing task. Can be used to change the task "
-                        + "description, or to add/remove blocking/blocked tasks."))
+                    "Changes an existing task. Can be used to change the task description or to "
+                        + "add/remove blocking/blocked tasks."))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.COMPLETE)
