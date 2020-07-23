@@ -38,7 +38,7 @@ public final class CliArguments {
                 .cliMode(CliMode.HELP)
                 .canonicalName("help")
                 .aliases()
-                .parameters(new SingleStringParameter())
+                .parameters(ImmutableList.of(new StringParameter(NOT_REPEATABLE)))
                 .options(ImmutableList.empty())
                 .parser(() -> new HelpArguments.Parser(validModes))
                 .helpDocumentation(Output::empty))
@@ -47,7 +47,7 @@ public final class CliArguments {
                 .cliMode(CliMode.LIST)
                 .canonicalName("list")
                 .aliases("ls", "l")
-                .parameters(new NoParameters())
+                .parameters(ImmutableList.empty())
                 .options(
                     ImmutableList.of(
                         new FlagOption(
@@ -79,7 +79,7 @@ public final class CliArguments {
                 .cliMode(CliMode.INFO)
                 .canonicalName("info")
                 .aliases("i")
-                .parameters(new RepeatedTasksParameters())
+                .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
                 .options(ImmutableList.empty())
                 .parser(() -> new InfoArguments.Parser(taskStore))
                 .helpDocumentation(Output::empty))
@@ -88,7 +88,7 @@ public final class CliArguments {
                 .cliMode(CliMode.ADD)
                 .canonicalName("add")
                 .aliases()
-                .parameters(new SingleStringParameter())
+                .parameters(ImmutableList.of(new StringParameter(NOT_REPEATABLE)))
                 .options(
                     ImmutableList.of(
                         new TaskOption(
@@ -110,7 +110,7 @@ public final class CliArguments {
                 .cliMode(CliMode.REMOVE)
                 .canonicalName("remove")
                 .aliases("rm")
-                .parameters(new RepeatedTasksParameters())
+                .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
                 .options(ImmutableList.empty())
                 .parser(() -> new RemoveArguments.Parser(taskStore))
                 .helpDocumentation(Output::empty))
@@ -119,7 +119,7 @@ public final class CliArguments {
                 .cliMode(CliMode.AMEND)
                 .canonicalName("amend")
                 .aliases()
-                .parameters(new SingleTaskParameter())
+                .parameters(ImmutableList.of(new TaskParameter(NOT_REPEATABLE)))
                 .options(
                     ImmutableList.of(
                         new StringOption(
@@ -166,7 +166,7 @@ public final class CliArguments {
                 .cliMode(CliMode.COMPLETE)
                 .canonicalName("complete")
                 .aliases()
-                .parameters(new RepeatedTasksParameters())
+                .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
                 .options(ImmutableList.empty())
                 .parser(() -> new CompleteArguments.Parser(taskStore))
                 .helpDocumentation(Output::empty))
@@ -175,7 +175,7 @@ public final class CliArguments {
                 .cliMode(CliMode.REOPEN)
                 .canonicalName("reopen")
                 .aliases()
-                .parameters(new RepeatedTasksParameters())
+                .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
                 .options(ImmutableList.empty())
                 .parser(() -> new ReopenArguments.Parser(taskStore))
                 .helpDocumentation(Output::empty))
@@ -286,7 +286,7 @@ public final class CliArguments {
     private final CliMode cliMode;
     private final String canonicalName;
     private final Collection<String> aliases;
-    private final Object parameters;
+    private final Collection<Parameter> parameters;
     private final Collection<Option> options;
     private final Memoized<Parser<?>> parser;
     private final Memoized<Output> helpDocumentation;
@@ -295,7 +295,7 @@ public final class CliArguments {
         CliMode cliMode,
         String canonicalName,
         Collection<String> aliases,
-        Object parameters,
+        Collection<Parameter> parameters,
         Collection<Option> options,
         Supplier<? extends Parser<?>> parserSupplier,
         Supplier<? extends Output> helpDocumentation) {
@@ -335,7 +335,7 @@ public final class CliArguments {
       return aliases;
     }
 
-    Object parameters() {
+    Collection<Parameter> parameters() {
       return parameters;
     }
 
@@ -368,7 +368,7 @@ public final class CliArguments {
     }
 
     interface Builder3 {
-      Builder4 parameters(Object parameters);
+      Builder4 parameters(Collection<Parameter> parameters);
     }
 
     interface Builder4 {
@@ -450,11 +450,27 @@ public final class CliArguments {
     }
   }
 
-  private static class NoParameters {}
+  private static class Parameter {
+    private final boolean repeatable;
 
-  private static class SingleTaskParameter {}
+    Parameter(boolean repeatable) {
+      this.repeatable = repeatable;
+    }
 
-  private static class RepeatedTasksParameters {}
+    boolean isRepeatable() {
+      return repeatable;
+    }
+  }
 
-  private static class SingleStringParameter {}
+  private static class TaskParameter extends Parameter {
+    TaskParameter(boolean repeatable) {
+      super(repeatable);
+    }
+  }
+
+  private static class StringParameter extends Parameter {
+    StringParameter(boolean repeatable) {
+      super(repeatable);
+    }
+  }
 }
