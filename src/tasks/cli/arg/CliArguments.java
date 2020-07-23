@@ -69,7 +69,7 @@ public final class CliArguments {
                         new FlagOption(
                             "all",
                             "a",
-                            "Lists all tasks, regardless of state.",
+                            "Lists all tasks. A shortcut for all other flags put together.",
                             NOT_REPEATABLE)))
                 .parser(() -> ListArguments::parse)
                 .helpDocumentation(
@@ -98,17 +98,17 @@ public final class CliArguments {
                         new TaskOption(
                             "after",
                             "a",
-                            "The tasks this one comes after. This list empty tasks will be "
-                                + "blocking this task.",
+                            "The tasks this one comes after. Tasks listed here will be blocking "
+                                + "this task.",
                             REPEATABLE),
                         new TaskOption(
                             "before",
                             "b",
-                            "The tasks this one comes before. This list empty tasks will be "
-                                + "unblocked by this task.",
+                            "The tasks this one comes before. Tasks listed here will be blocked by "
+                                + "this task.",
                             REPEATABLE)))
                 .parser(() -> new AddArguments.Parser(taskStore))
-                .helpDocumentation("Create a new task."))
+                .helpDocumentation("Creates a new task."))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.REMOVE)
@@ -132,13 +132,13 @@ public final class CliArguments {
                         new StringOption(
                             "description",
                             "m",
-                            "Edit the task label.",
+                            "Set the task description.",
                             NOT_REPEATABLE),
                         new TaskOption(
                             "after",
                             "a",
-                            "Sets this task as blocked by another task. Clears the previous "
-                                + "blocking tasks.",
+                            "Sets this task as coming after another task. Tasks listed here will "
+                                + "be blocking this task. Removes all previous blocking tasks.",
                             REPEATABLE),
                         new TaskOption(
                             "addafter",
@@ -153,8 +153,8 @@ public final class CliArguments {
                         new TaskOption(
                             "before",
                             "b",
-                            "Sets this task as blocking another task. Clears the previous "
-                                + "blocked tasks.",
+                            "Sets this task as coming before another task. Tasks listed here will "
+                                + "be blocked by this task. Removes all previous blocked tasks.",
                             REPEATABLE),
                         new TaskOption(
                             "addbefore",
@@ -180,7 +180,8 @@ public final class CliArguments {
                 .parser(() -> new CompleteArguments.Parser(taskStore))
                 .helpDocumentation(
                     "Mark one or more tasks as complete. This can be undone with the reopen "
-                        + "command."))
+                        + "command. When a task is completed, other tasks it was blocking may "
+                        + "become unblocked."))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.REOPEN)
