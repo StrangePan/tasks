@@ -238,13 +238,24 @@ public final class CliArguments {
 
   public Set<CommandDocumentation> commandDocumentation() {
     return registrations.stream()
-        .map(
-            registration ->
-                new CommandDocumentation(
-                    registration.canonicalName(),
-                    ImmutableList.copyOf(registration.aliases()),
-                    ImmutableSet.empty()))
+        .map(CliArguments::toCommandDocumentation)
         .collect(toImmutableSet());
+  }
+
+  private static CommandDocumentation toCommandDocumentation(CommandRegistration registration) {
+    return new CommandDocumentation(
+        registration.canonicalName(),
+        ImmutableList.copyOf(registration.aliases()),
+        registration.options().stream()
+            .map(CliArguments::toOptionDocumentation)
+            .collect(toImmutableSet()));
+  }
+
+  private static CommandDocumentation.OptionDocumentation toOptionDocumentation(Option option) {
+    return new CommandDocumentation.OptionDocumentation(
+        option.longName(),
+        option.shortName(),
+        option.description());
   }
 
   public static final class ArgumentFormatException extends RuntimeException {
