@@ -59,7 +59,8 @@ public final class CliArguments {
                         new FlagOption(
                             "unblocked",
                             "u",
-                            "Setting this flag lists tasks that are unblocked. This is the default."),
+                            "Setting this flag lists tasks that are unblocked. This is the "
+                                + "default."),
                         new FlagOption(
                             "all",
                             "a",
@@ -277,6 +278,8 @@ public final class CliArguments {
     private final CliMode cliMode;
     private final String canonicalName;
     private final Collection<String> aliases;
+    private final Object parameters;
+    private final Collection<Object> options;
     private final Memoized<Parser<?>> parser;
     private final Memoized<Output> helpDocumentation;
 
@@ -284,11 +287,15 @@ public final class CliArguments {
         CliMode cliMode,
         String canonicalName,
         Collection<String> aliases,
+        Object parameters,
+        Collection<?> options,
         Supplier<? extends Parser<?>> parserSupplier,
         Supplier<? extends Output> helpDocumentation) {
       requireNonNull(cliMode);
       requireNonNull(canonicalName);
       requireNonNull(aliases);
+      requireNonNull(parameters);
+      requireNonNull(options);
       requireNonNull(parserSupplier);
       requireNonNull(helpDocumentation);
 
@@ -302,6 +309,8 @@ public final class CliArguments {
       this.cliMode = cliMode;
       this.canonicalName = canonicalName;
       this.aliases = ImmutableList.copyOf(aliases);
+      this.parameters = parameters;
+      this.options = ImmutableList.copyOf(options);
       this.parser = memoize(parserSupplier);
       this.helpDocumentation = memoize(helpDocumentation);
     }
@@ -316,6 +325,14 @@ public final class CliArguments {
 
     Collection<String> aliases() {
       return aliases;
+    }
+
+    Object parameters() {
+      return parameters;
+    }
+
+    Collection<Object> options() {
+      return options;
     }
 
     List<String> canonicalNameAndAliases() {
@@ -370,6 +387,8 @@ public final class CliArguments {
                                     cliMode,
                                     canonicalName,
                                     ImmutableList.copyOf(aliases),
+                                    parameters,
+                                    arguments,
                                     parserSupplier,
                                     helpDocumentation);
     }

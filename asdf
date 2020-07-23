@@ -4,7 +4,7 @@
 7ri8li86wfeo;false;Output unblocked tasks when completing a task;
 aiv2qznibj7k;false;Redesign amend argument;
 h5kiwq5wnb40;false;Output task ID when creating tasks;
-13g106gz8dqm8;false;Output indentation;
+13g106gz8dqm8;true;Output indentation;
 147s85hhpdou8;false;Help documentation;
 170qeiiadyl1c;false;Add verbosity option to amend command;
 19ywwqj6ys1ds;false;Add commands for modifying blockers;

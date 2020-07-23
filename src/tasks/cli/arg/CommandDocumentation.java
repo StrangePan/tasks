@@ -33,15 +33,15 @@ public final class CommandDocumentation {
 
   public static final class ArgumentDocumentation {
     private final String canonicalName;
-    private final ImmutableList<String> shortFlags;
+    private final String shortFlag;
     private final String description;
 
     public ArgumentDocumentation(
         String canonicalName,
-        ImmutableList<String> shortFlags,
+        String shortFlag,
         String description) {
       this.canonicalName = requireNonNull(canonicalName);
-      this.shortFlags = requireNonNull(shortFlags);
+      this.shortFlag = requireNonNull(shortFlag);
       this.description = requireNonNull(description);
     }
 
@@ -49,8 +49,8 @@ public final class CommandDocumentation {
       return canonicalName;
     }
 
-    public ImmutableList<String> shortFlags() {
-      return shortFlags;
+    public String shortFlag() {
+      return shortFlag;
     }
 
     public String description() {
