@@ -44,14 +44,17 @@ public final class CommandDocumentation {
     private final String canonicalName;
     private final String shortFlag;
     private final String description;
+    private final boolean repeatable;
 
     public OptionDocumentation(
         String canonicalName,
         String shortFlag,
-        String description) {
+        String description,
+        boolean repeatable) {
       this.canonicalName = requireNonNull(canonicalName);
       this.shortFlag = requireNonNull(shortFlag);
       this.description = requireNonNull(description);
+      this.repeatable = repeatable;
     }
 
     public String canonicalName() {
@@ -64,6 +67,10 @@ public final class CommandDocumentation {
 
     public String description() {
       return description;
+    }
+
+    public boolean isRepeatable() {
+      return repeatable;
     }
   }
 }

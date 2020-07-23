@@ -122,7 +122,9 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
             Stream.concat(
                 Stream.of("--" + documentation.canonicalName()),
                 Stream.of("-" + documentation.shortFlag()))
-            .collect(joining(", ")), 2)
+            .collect(joining(", "))
+                + (documentation.isRepeatable() ? " [+]" : ""),
+            2)
         .appendLine(documentation.description(), 4)
         .build();
   }

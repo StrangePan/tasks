@@ -267,7 +267,8 @@ public final class CliArguments {
     return new CommandDocumentation.OptionDocumentation(
         option.longName(),
         option.shortName(),
-        option.description());
+        option.description(),
+        option.isRepeatable());
   }
 
   public static final class ArgumentFormatException extends RuntimeException {
