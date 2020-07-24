@@ -9,7 +9,7 @@ import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableMap;
 import omnia.data.structure.mutable.HashMap;
 import omnia.data.structure.mutable.MutableMap;
-import tasks.cli.arg.AddArguments;
+import tasks.cli.command.add.AddArguments;
 import tasks.cli.arg.AmendArguments;
 import tasks.cli.arg.CompleteArguments;
 import tasks.cli.arg.HelpArguments;
@@ -18,6 +18,7 @@ import tasks.cli.arg.ListArguments;
 import tasks.cli.arg.RemoveArguments;
 import tasks.cli.arg.ReopenArguments;
 import tasks.cli.arg.CommandDocumentation;
+import tasks.cli.command.add.AddHandler;
 import tasks.model.TaskStore;
 
 public final class ArgumentHandlers implements ArgumentHandler<Object> {

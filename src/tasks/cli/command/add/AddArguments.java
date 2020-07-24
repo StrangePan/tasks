@@ -1,4 +1,4 @@
-package tasks.cli.arg;
+package tasks.cli.command.add;
 
 import static tasks.cli.arg.CliUtils.extractTasksFrom;
 import static tasks.cli.arg.CliUtils.getOptionValues;
@@ -12,6 +12,7 @@ import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import tasks.cli.arg.CliArguments;
 import tasks.cli.arg.CliUtils.ParseResult;
 import tasks.model.Task;
 import tasks.model.TaskStore;
@@ -43,10 +44,10 @@ public final class AddArguments {
     return blockedTasks;
   }
 
-  static final class Parser implements CliArguments.Parser<AddArguments> {
+  public static final class Parser implements CliArguments.Parser<AddArguments> {
     private final Memoized<TaskStore> taskStore;
 
-    Parser(Memoized<TaskStore> taskStore) {
+    public Parser(Memoized<TaskStore> taskStore) {
       this.taskStore = taskStore;
     }
 

@@ -22,6 +22,7 @@ import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.HashMap;
 import omnia.data.structure.mutable.MutableMap;
+import tasks.cli.command.add.AddArguments;
 import tasks.model.TaskStore;
 
 /** Data structure for arguments passed into the command line. */
@@ -296,7 +297,7 @@ public final class CliArguments {
   }
 
   public static final class ArgumentFormatException extends RuntimeException {
-    ArgumentFormatException(String reason) {
+    public ArgumentFormatException(String reason) {
       super(reason);
     }
 
@@ -305,7 +306,7 @@ public final class CliArguments {
     }
   }
 
-  interface Parser<T> {
+  public interface Parser<T> {
     T parse(String[] args);
   }
 

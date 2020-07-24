@@ -1,4 +1,4 @@
-package tasks.cli.handlers;
+package tasks.cli.command.add;
 
 import static java.util.Objects.requireNonNull;
 
@@ -8,7 +8,9 @@ import io.reactivex.Single;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableSet;
-import tasks.cli.arg.AddArguments;
+import tasks.cli.command.add.AddArguments;
+import tasks.cli.handlers.ArgumentHandler;
+import tasks.cli.handlers.HandlerException;
 import tasks.model.Task;
 import tasks.model.TaskBuilder;
 import tasks.model.TaskStore;
@@ -16,7 +18,7 @@ import tasks.model.TaskStore;
 public final class AddHandler implements ArgumentHandler<AddArguments> {
   private final Memoized<TaskStore> taskStore;
 
-  AddHandler(Memoized<TaskStore> taskStore) {
+  public AddHandler(Memoized<TaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 

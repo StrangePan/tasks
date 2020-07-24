@@ -17,10 +17,10 @@ import org.apache.commons.cli.ParseException;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
-final class CliUtils {
+public final class CliUtils {
   private CliUtils() {}
 
-  static CommandLine tryParse(String[] args, Options options) {
+  public static CommandLine tryParse(String[] args, Options options) {
     try {
       return new DefaultParser().parse(options, args, /* stopAtNonOption= */ false);
     } catch (ParseException e) {
@@ -28,7 +28,7 @@ final class CliUtils {
     }
   }
 
-  static List<ParseResult<Task>> parseTaskIds(List<String> userInputs, TaskStore taskStore) {
+  public static List<ParseResult<Task>> parseTaskIds(List<String> userInputs, TaskStore taskStore) {
     return userInputs.stream()
         .map(userInput -> parseTaskId(userInput, taskStore))
         .collect(toList());
@@ -50,7 +50,7 @@ final class CliUtils {
     return taskStore.allTasksMatchingCliPrefix(userInput).blockingFirst();
   }
 
-  static void validateParsedTasks(Collection<? extends ParseResult<?>> parseResults) {
+  public static void validateParsedTasks(Collection<? extends ParseResult<?>> parseResults) {
     generateAggregateFailureMessage(parseResults)
         .ifPresent(message -> {
           throw new CliArguments.ArgumentFormatException("Unable to parse task IDs:\n" + message);
@@ -67,11 +67,11 @@ final class CliUtils {
         .filter(message -> !message.isBlank());
   }
 
-  static List<Task> extractTasksFrom(List<ParseResult<Task>> tasks) {
+  public static List<Task> extractTasksFrom(List<ParseResult<Task>> tasks) {
     return tasks.stream().flatMap(result -> result.successResult().stream()).collect(toList());
   }
 
-  static final class ParseResult<T> {
+  public static final class ParseResult<T> {
     private final Optional<T> successResult;
     private final Optional<String> failureMessage;
 
@@ -97,7 +97,7 @@ final class CliUtils {
     }
   }
 
-  static List<String> getOptionValues(CommandLine commandLine, String opt) {
+  public static List<String> getOptionValues(CommandLine commandLine, String opt) {
     return ArrayList.of(
         Optional.ofNullable(requireNonNull(commandLine).getOptionValues(requireNonNull(opt)))
             .orElse(new String[0]));
