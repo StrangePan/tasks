@@ -34,17 +34,17 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
 
     TaskStore taskStore = this.taskStore.value();
 
-    // Construct the new task
-    taskStore.createTask(label, builder ->
+    // Construct the new task, commit to disk, print output
+    return taskStore.createTask(label, builder ->
         Single.just(builder)
           .flatMap(b ->
               Observable.fromIterable(blockingTasks).reduce(b, TaskBuilder::addBlockingTask))
           .flatMap(b ->
               Observable.fromIterable(blockedTasks).reduce(b, TaskBuilder::addBlockedTask))
         .blockingGet())
-        .blockingAwait();
-
-    // Construct a new task graph with the new task inserted and the new edges assembled
-    return taskStore.writeToDisk();
+        .flatMap(task -> taskStore.writeToDisk().toSingleDefault(task))
+        .map(task -> "task created: " + task)
+        .doOnSuccess(System.out::println)
+        .ignoreElement();
   }
 }

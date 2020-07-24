@@ -97,6 +97,19 @@ final class TaskImpl implements Task {
   }
 
   @Override
+  public Flowable<Boolean> isUnblocked() {
+    return query().tasksBlockingThis()
+        .flatMapSingle(
+            tasks ->
+                Observable.fromIterable(tasks)
+                    .flatMapSingle(task -> task.isCompleted().firstOrError())
+                    .map(isCompleted -> !isCompleted)
+                    .filter(isOpen -> isOpen)
+                    .first(/*or else*/ false))
+        .map(atLeastOneBlockingTaskIsOpen -> !atLeastOneBlockingTaskIsOpen);
+  }
+
+  @Override
   public Flowable<String> label() {
     return store().lookUp(id)
         .toSingle()
