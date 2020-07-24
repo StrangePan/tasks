@@ -20,6 +20,8 @@ public interface Task {
 
   Flowable<Boolean> isCompleted();
 
+  Flowable<Boolean> isUnblocked();
+
   Flowable<String> label();
 
   Query query();
