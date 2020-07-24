@@ -45,7 +45,7 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
     // mark incomplete tasks as complete
     return Observable.fromIterable(incompleteTasks)
         .concatMapCompletable(task -> task.mutate(mutator -> mutator.setCompleted(true)))
-        .andThen(Completable.defer(taskStore::writeToDisk))
+        .andThen(taskStore.writeToDisk())
         .andThen(findTasksBlockedBy(incompleteTasks))
         .compose(this::onlyTasksThatAreUnblocked)
         .doOnSuccess(a -> HandlerUtil.printIfPopulated("task(s) marked as completed:", incompleteTasks))

@@ -75,7 +75,7 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
 
     // okay, operation isn't ambiguous, task doesn't reference itself, and task ids are valid
     TaskStore taskStore = this.taskStore.value();
-    taskStore.mutateTask(
+    return taskStore.mutateTask(
         targetTask,
         mutator -> {
           arguments.description().ifPresent(mutator::setLabel);
@@ -93,9 +93,8 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
           arguments.blockedTasksToRemove().forEach(mutator::removeBlockedTask);
 
           return mutator;
-        }).blockingAwait();
-
-    return taskStore.writeToDisk()
+        })
+        .andThen(taskStore.writeToDisk())
         .doOnComplete(() -> System.out.println("task amended: " + targetTask));
   }
 }

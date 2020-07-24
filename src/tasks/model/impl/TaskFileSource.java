@@ -40,7 +40,10 @@ final class TaskFileSource {
     });
   }
 
-  Completable writeToFile(Pair<DirectedGraph<TaskId>, Map<TaskId, TaskData>> data) {
+  Completable writeToFile(
+      Pair<
+          ? extends DirectedGraph<? extends TaskId>,
+          ? extends Map<? extends TaskId, ? extends TaskData>> data) {
     return Completable.fromAction(() -> {
       try (BufferedWriter writer = new BufferedWriter(file.openWriter())) {
         serializeTaskData(data, writer);
@@ -135,7 +138,7 @@ final class TaskFileSource {
     }
   }
 
-  private void serializeTaskData(Pair<DirectedGraph<TaskId>, Map<TaskId, TaskData>> data, Writer writer) {
+  private void serializeTaskData(Pair<? extends DirectedGraph<? extends TaskId>, ? extends Map<? extends TaskId, ? extends TaskData>> data, Writer writer) {
     Observable.just(
             Observable.just("# version " + VERSION),
             Observable.just("# tasks"),
@@ -147,7 +150,7 @@ final class TaskFileSource {
         .blockingForEach(writer::write);
   }
 
-  private static Observable<String> serialize(Map<TaskId, TaskData> tasks) {
+  private static Observable<String> serialize(Map<? extends TaskId, ? extends TaskData> tasks) {
     return Single.just(tasks)
         .map(Map::entries)
         .flatMapObservable(Observable::fromIterable)
@@ -156,7 +159,7 @@ final class TaskFileSource {
         .map(TaskFileSource::serialize);
   }
 
-  private static String serialize(Pair<TaskId, TaskData> task) {
+  private static String serialize(Pair<? extends TaskId, ? extends TaskData> task) {
     return new StringBuilder()
         .append(serialize(task.first()))
         .append(TASK_FIELD_DELIMITER)
@@ -241,7 +244,7 @@ final class TaskFileSource {
     }
   }
 
-  private static Observable<String> serialize(DirectedGraph<TaskId> graph) {
+  private static Observable<String> serialize(DirectedGraph<? extends TaskId> graph) {
     return Single.just(graph)
         .map(DirectedGraph::nodes)
         .flatMapObservable(Observable::fromIterable)
@@ -250,7 +253,7 @@ final class TaskFileSource {
         .map(TaskFileSource::serialize);
   }
 
-  private static String serialize(DirectedGraph.DirectedNode<TaskId> node) {
+  private static String serialize(DirectedGraph.DirectedNode<? extends TaskId> node) {
     return new StringBuilder()
         .append(serialize(node.item()))
         .append(TASK_FIELD_DELIMITER)

@@ -29,7 +29,7 @@ import tasks.model.TaskStore;
 
 public final class TaskStoreImpl implements TaskStore {
 
-  private final TaskFileSource fileSource; // TODO
+  private final TaskFileSource fileSource;
   private final WritableObservableDirectedGraph<TaskId> taskGraph;
   private final MutableMap<TaskId, TaskData> taskData;
 
@@ -322,11 +322,10 @@ public final class TaskStoreImpl implements TaskStore {
 
   @Override
   public Completable writeToDisk() {
-    return taskGraph.observe()
-        .states()
-        .firstOrError()
-        .map(graph -> (DirectedGraph<TaskId>) graph)
-        .zipWith(Single.just((Map<TaskId, TaskData>) ImmutableMap.copyOf(taskData)), Pair::of)
+    return Single.zip(
+            taskGraph.observe().states().firstOrError(),
+            Single.fromCallable(() -> ImmutableMap.copyOf(taskData)),
+            Pair::of)
         .flatMapCompletable(fileSource::writeToFile)
         .cache();
   }

@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.joining;
 
 import io.reactivex.Completable;
 import io.reactivex.Observable;
+import io.reactivex.Single;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
 import tasks.cli.arg.RemoveArguments;
@@ -27,18 +28,13 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
       throw new HandlerException("no tasks specified");
     }
 
-    String report = "tasks removed:" + stringify(tasksToDelete);
-
     TaskStore taskStore = this.taskStore.value();
 
-    Observable.fromIterable(tasksToDelete)
+    return Observable.fromIterable(tasksToDelete)
         .concatMapCompletable(taskStore::deleteTask)
-        .blockingAwait();
-
-    taskStore.writeToDisk().blockingAwait();
-
-    System.out.println(report);
-    return Completable.complete();
+        .andThen(taskStore.writeToDisk())
+        .andThen(Single.just("tasks removed:" + stringify(tasksToDelete)))
+        .flatMapCompletable(report -> Completable.fromAction(() -> System.out.println(report)));
   }
 
   private static String stringify(Collection<Task> tasks) {

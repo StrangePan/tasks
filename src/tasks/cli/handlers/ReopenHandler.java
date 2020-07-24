@@ -38,13 +38,12 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
     // report tasks already open
     HandlerUtil.printIfPopulated("tasks already open:", alreadyOpenTasks);
 
-    // mark incomplete tasks as complete
-    Observable.fromIterable(completedTasks)
+    // mark incomplete tasks as complete and commit to disk
+    return Observable.fromIterable(completedTasks)
         .flatMapCompletable(task -> task.mutate(mutator -> mutator.setCompleted(false)))
-        .blockingAwait();
-
-    // write to disk
-    return taskStore.writeToDisk()
-        .doOnComplete(() -> HandlerUtil.printIfPopulated("task(s) reopened:", completedTasks));
+        .andThen(taskStore.writeToDisk())
+        .andThen(
+            Completable.fromAction(
+                () -> HandlerUtil.printIfPopulated("task(s) reopened:", completedTasks)));
   }
 }
