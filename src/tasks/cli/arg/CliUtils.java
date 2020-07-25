@@ -34,7 +34,7 @@ public final class CliUtils {
         .collect(toList());
   }
 
-  static ParseResult<Task> parseTaskId(String userInput, TaskStore taskStore) {
+  public static ParseResult<Task> parseTaskId(String userInput, TaskStore taskStore) {
     Set<Task> matchingTasks = getTasksMatching(userInput, taskStore);
     if (matchingTasks.count() > 1) {
       return ParseResult.failure(String.format("Ambiguous task ID: multiple tasks match '%s'", userInput));
@@ -88,7 +88,7 @@ public final class CliUtils {
       this.failureMessage = requireNonNull(failureMessage);
     }
 
-    Optional<T> successResult() {
+    public Optional<T> successResult() {
       return successResult;
     }
 
@@ -103,7 +103,7 @@ public final class CliUtils {
             .orElse(new String[0]));
   }
 
-  static Optional<String> getSingleOptionValue(CommandLine commandLine, String opt) {
+  public static Optional<String> getSingleOptionValue(CommandLine commandLine, String opt) {
     if (Optional.ofNullable(commandLine.getOptionValues(opt)).orElse(new String[0]).length > 1) {
       throw new CliArguments.ArgumentFormatException(
           String.format("Too many values provided for parameter '%s'", opt));

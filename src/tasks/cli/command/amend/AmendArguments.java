@@ -1,4 +1,4 @@
-package tasks.cli.arg;
+package tasks.cli.command.amend;
 
 import static java.util.Objects.requireNonNull;
 import static tasks.cli.arg.CliUtils.extractTasksFrom;
@@ -16,6 +16,7 @@ import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import tasks.cli.arg.CliArguments;
 import tasks.cli.arg.CliUtils.ParseResult;
 import tasks.model.Task;
 import tasks.model.TaskStore;
@@ -81,10 +82,10 @@ public final class AmendArguments {
     return blockedTasksToRemove;
   }
 
-  final static class Parser implements CliArguments.Parser<AmendArguments> {
+  public final static class Parser implements CliArguments.Parser<AmendArguments> {
     private final Memoized<TaskStore> taskStore;
 
-    Parser(Memoized<TaskStore> taskStore) {
+    public Parser(Memoized<TaskStore> taskStore) {
         this.taskStore = requireNonNull(taskStore);
     }
 
