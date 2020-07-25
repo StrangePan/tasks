@@ -15,7 +15,7 @@ import tasks.cli.command.complete.CompleteArguments;
 import tasks.cli.command.help.HelpArguments;
 import tasks.cli.command.info.InfoArguments;
 import tasks.cli.command.list.ListArguments;
-import tasks.cli.arg.RemoveArguments;
+import tasks.cli.command.remove.RemoveArguments;
 import tasks.cli.arg.ReopenArguments;
 import tasks.cli.arg.CommandDocumentation;
 import tasks.cli.command.add.AddHandler;
@@ -24,6 +24,7 @@ import tasks.cli.command.complete.CompleteHandler;
 import tasks.cli.command.help.HelpHandler;
 import tasks.cli.command.info.InfoHandler;
 import tasks.cli.command.list.ListHandler;
+import tasks.cli.command.remove.RemoveHandler;
 import tasks.model.TaskStore;
 
 public final class ArgumentHandlers implements ArgumentHandler<Object> {

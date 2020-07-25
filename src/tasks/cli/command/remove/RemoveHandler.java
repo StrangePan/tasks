@@ -1,4 +1,4 @@
-package tasks.cli.handlers;
+package tasks.cli.command.remove;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -8,14 +8,16 @@ import io.reactivex.Observable;
 import io.reactivex.Single;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
-import tasks.cli.arg.RemoveArguments;
+import tasks.cli.command.remove.RemoveArguments;
+import tasks.cli.handlers.ArgumentHandler;
+import tasks.cli.handlers.HandlerException;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
 public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
   private final Memoized<TaskStore> taskStore;
 
-  RemoveHandler(Memoized<TaskStore> taskStore) {
+  public RemoveHandler(Memoized<TaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 
