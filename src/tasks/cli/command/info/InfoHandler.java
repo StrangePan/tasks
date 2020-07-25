@@ -1,4 +1,4 @@
-package tasks.cli.handlers;
+package tasks.cli.command.info;
 
 import static java.util.stream.Collectors.joining;
 
@@ -6,7 +6,8 @@ import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import java.util.stream.Collectors;
 import omnia.data.structure.Set;
-import tasks.cli.arg.InfoArguments;
+import tasks.cli.handlers.ArgumentHandler;
+import tasks.cli.handlers.HandlerException;
 import tasks.model.Task;
 
 public final class InfoHandler implements ArgumentHandler<InfoArguments> {
