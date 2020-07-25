@@ -1,6 +1,8 @@
-package tasks.cli.handlers;
+package tasks.cli.command.complete;
 
 import static java.util.Objects.requireNonNull;
+import static tasks.cli.handlers.HandlerUtil.groupByCompletionState;
+import static tasks.cli.handlers.HandlerUtil.printIfPopulated;
 
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
@@ -10,7 +12,8 @@ import java.util.EnumMap;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableSet;
-import tasks.cli.arg.CompleteArguments;
+import tasks.cli.handlers.ArgumentHandler;
+import tasks.cli.handlers.HandlerException;
 import tasks.cli.handlers.HandlerUtil.CompletedState;
 import tasks.model.Task;
 import tasks.model.TaskStore;
@@ -18,7 +21,7 @@ import tasks.model.TaskStore;
 public final class CompleteHandler implements ArgumentHandler<CompleteArguments> {
   private final Memoized<TaskStore> taskStore;
 
-  CompleteHandler(Memoized<TaskStore> taskStore) {
+  public CompleteHandler(Memoized<TaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 
@@ -32,7 +35,7 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
     TaskStore taskStore = this.taskStore.value();
 
     EnumMap<CompletedState, Set<Task>> tasksGroupedByState =
-        HandlerUtil.groupByCompletionState(Observable.fromIterable(arguments.tasks()));
+        groupByCompletionState(Observable.fromIterable(arguments.tasks()));
 
     Set<Task> alreadyCompletedTasks =
         tasksGroupedByState.getOrDefault(CompletedState.COMPLETE, Set.empty());
@@ -40,7 +43,7 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
         tasksGroupedByState.getOrDefault(CompletedState.INCOMPLETE, Set.empty());
 
     // report tasks already completed
-    HandlerUtil.printIfPopulated("task(s) already marked as completed:", alreadyCompletedTasks);
+    printIfPopulated("task(s) already marked as completed:", alreadyCompletedTasks);
 
     // mark incomplete tasks as complete
     return Observable.fromIterable(incompleteTasks)
@@ -48,8 +51,8 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
         .andThen(taskStore.writeToDisk())
         .andThen(findTasksBlockedBy(incompleteTasks))
         .compose(this::onlyTasksThatAreUnblocked)
-        .doOnSuccess(a -> HandlerUtil.printIfPopulated("task(s) marked as completed:", incompleteTasks))
-        .doOnSuccess(newlyUnblockedTasks -> HandlerUtil.printIfPopulated("task(s) unblocked as a result:", newlyUnblockedTasks))
+        .doOnSuccess(a -> printIfPopulated("task(s) marked as completed:", incompleteTasks))
+        .doOnSuccess(newlyUnblockedTasks -> printIfPopulated("task(s) unblocked as a result:", newlyUnblockedTasks))
         .ignoreElement();
   }
 

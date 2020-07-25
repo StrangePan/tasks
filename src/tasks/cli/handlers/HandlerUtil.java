@@ -11,11 +11,11 @@ import omnia.data.structure.mutable.HashSet;
 import omnia.data.structure.mutable.MutableSet;
 import tasks.model.Task;
 
-final class HandlerUtil {
+public final class HandlerUtil {
 
   private HandlerUtil() {}
 
-  static EnumMap<CompletedState, Set<Task>> groupByCompletionState(
+  public static EnumMap<CompletedState, Set<Task>> groupByCompletionState(
       Observable<Task> tasks) {
     return tasks
         .map(task -> Pair.of(task.isCompleted().blockingFirst() ? CompletedState.COMPLETE : CompletedState.INCOMPLETE, task))
@@ -36,7 +36,7 @@ final class HandlerUtil {
         .blockingGet();
   }
 
-  static void printIfPopulated(String prefix, Collection<Task> tasks) {
+  public static void printIfPopulated(String prefix, Collection<Task> tasks) {
     if (tasks.isPopulated()) {
       System.out.print(stringifyIfPopulated(prefix, tasks).renderForTerminal());
     }
@@ -61,7 +61,7 @@ final class HandlerUtil {
         .blockingGet();
   }
 
-  enum CompletedState {
+  public enum CompletedState {
     COMPLETE,
     INCOMPLETE,
   }

@@ -15,7 +15,7 @@ import tasks.cli.arg.CliUtils.ParseResult;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
-abstract class SimpleArguments {
+public abstract class SimpleArguments {
   private final List<Task> tasks;
 
   protected SimpleArguments(List<Task> tasks) {
@@ -26,7 +26,7 @@ abstract class SimpleArguments {
     return tasks;
   }
 
-  static abstract class Parser<T extends SimpleArguments> implements CliArguments.Parser<T> {
+  public static abstract class Parser<T extends SimpleArguments> implements CliArguments.Parser<T> {
     private final Function<List<Task>, T> constructor;
     private final Memoized<TaskStore> taskStore;
 
