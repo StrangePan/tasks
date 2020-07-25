@@ -29,6 +29,7 @@ import tasks.cli.command.help.HelpArguments;
 import tasks.cli.command.info.InfoArguments;
 import tasks.cli.command.list.ListArguments;
 import tasks.cli.command.remove.RemoveArguments;
+import tasks.cli.command.reopen.ReopenArguments;
 import tasks.model.TaskStore;
 
 /** Data structure for arguments passed into the command line. */
