@@ -111,7 +111,7 @@ public final class CliUtils {
     return Optional.ofNullable(commandLine.getOptionValue(opt));
   }
 
-  static void assertNoExtraArgs(CommandLine commandLine) {
+  public static void assertNoExtraArgs(CommandLine commandLine) {
     if (commandLine.getArgList().size() > 1) {
       String unexpectedArgs =
           commandLine.getArgList()

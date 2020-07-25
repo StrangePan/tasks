@@ -27,6 +27,7 @@ import tasks.cli.command.amend.AmendArguments;
 import tasks.cli.command.complete.CompleteArguments;
 import tasks.cli.command.help.HelpArguments;
 import tasks.cli.command.info.InfoArguments;
+import tasks.cli.command.list.ListArguments;
 import tasks.model.TaskStore;
 
 /** Data structure for arguments passed into the command line. */

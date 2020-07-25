@@ -1,4 +1,4 @@
-package tasks.cli.arg;
+package tasks.cli.command.list;
 
 import static tasks.cli.arg.CliUtils.assertNoExtraArgs;
 import static tasks.cli.arg.CliUtils.tryParse;
@@ -30,7 +30,7 @@ public final class ListArguments {
     return isCompletedSet;
   }
 
-  static ListArguments parse(String[] args) {
+  public static ListArguments parse(String[] args) {
     /*
     First arg is assumed to be "ls" or an alias thereof
     No other unclassified arg allowed
