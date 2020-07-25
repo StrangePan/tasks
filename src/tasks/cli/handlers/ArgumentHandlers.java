@@ -12,7 +12,7 @@ import omnia.data.structure.mutable.MutableMap;
 import tasks.cli.command.add.AddArguments;
 import tasks.cli.command.amend.AmendArguments;
 import tasks.cli.command.complete.CompleteArguments;
-import tasks.cli.arg.HelpArguments;
+import tasks.cli.command.help.HelpArguments;
 import tasks.cli.arg.InfoArguments;
 import tasks.cli.arg.ListArguments;
 import tasks.cli.arg.RemoveArguments;
@@ -21,6 +21,7 @@ import tasks.cli.arg.CommandDocumentation;
 import tasks.cli.command.add.AddHandler;
 import tasks.cli.command.amend.AmendHandler;
 import tasks.cli.command.complete.CompleteHandler;
+import tasks.cli.command.help.HelpHandler;
 import tasks.model.TaskStore;
 
 public final class ArgumentHandlers implements ArgumentHandler<Object> {

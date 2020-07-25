@@ -1,4 +1,4 @@
-package tasks.cli.arg;
+package tasks.cli.command.help;
 
 import static java.util.Objects.requireNonNull;
 import static tasks.cli.arg.CliUtils.tryParse;
@@ -8,6 +8,7 @@ import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.Set;
 import org.apache.commons.cli.Options;
+import tasks.cli.arg.CliArguments;
 
 public final class HelpArguments {
   private final Optional<String> mode;
@@ -28,10 +29,10 @@ public final class HelpArguments {
     return mode;
   }
 
-  static final class Parser implements CliArguments.Parser<HelpArguments> {
+  public static final class Parser implements CliArguments.Parser<HelpArguments> {
     private final Memoized<Set<String>> validModes;
 
-    Parser(Memoized<Set<String>> validModes) {
+    public Parser(Memoized<Set<String>> validModes) {
       this.validModes = requireNonNull(validModes);
     }
 

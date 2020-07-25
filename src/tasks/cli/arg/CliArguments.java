@@ -25,6 +25,7 @@ import omnia.data.structure.mutable.MutableMap;
 import tasks.cli.command.add.AddArguments;
 import tasks.cli.command.amend.AmendArguments;
 import tasks.cli.command.complete.CompleteArguments;
+import tasks.cli.command.help.HelpArguments;
 import tasks.model.TaskStore;
 
 /** Data structure for arguments passed into the command line. */
