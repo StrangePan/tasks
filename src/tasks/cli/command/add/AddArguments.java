@@ -1,5 +1,7 @@
 package tasks.cli.command.add;
 
+import static tasks.cli.arg.CliArguments.Parameter.Repeatable.NOT_REPEATABLE;
+import static tasks.cli.arg.CliArguments.Parameter.Repeatable.REPEATABLE;
 import static tasks.cli.arg.CliUtils.extractTasksFrom;
 import static tasks.cli.arg.CliUtils.getOptionValues;
 import static tasks.cli.arg.CliUtils.parseTaskIds;
@@ -13,6 +15,9 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import tasks.cli.arg.CliArguments;
+import tasks.cli.arg.CliArguments.CommandRegistration;
+import tasks.cli.arg.CliArguments.TaskOption;
+import tasks.cli.arg.CliMode;
 import tasks.cli.arg.CliUtils.ParseResult;
 import tasks.model.Task;
 import tasks.model.TaskStore;
@@ -21,6 +26,30 @@ public final class AddArguments {
   private final String description;
   private final List<Task> blockingTasks;
   private final List<Task> blockedTasks;
+
+  public static CommandRegistration registration(Memoized<TaskStore> taskStore) {
+    return CommandRegistration.builder()
+        .cliMode(CliMode.ADD)
+        .canonicalName("add")
+        .aliases()
+        .parameters(ImmutableList.of(new CliArguments.StringParameter("description", NOT_REPEATABLE)))
+        .options(
+            ImmutableList.of(
+                new TaskOption(
+                    "after",
+                    "a",
+                    "The tasks this one comes after. Tasks listed here will be blocking "
+                        + "this task.",
+                    REPEATABLE),
+                new TaskOption(
+                    "before",
+                    "b",
+                    "The tasks this one comes before. Tasks listed here will be blocked by "
+                        + "this task.",
+                    REPEATABLE)))
+        .parser(() -> new AddArguments.Parser(taskStore))
+        .helpDocumentation("Creates a new task.");
+  }
 
   private AddArguments(
       String description, List<Task> blockingTasks, List<Task> blockedTasks) {

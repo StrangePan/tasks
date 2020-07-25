@@ -35,8 +35,8 @@ import tasks.model.TaskStore;
 /** Data structure for arguments passed into the command line. */
 public final class CliArguments {
 
-  private static final boolean REPEATABLE = true;
-  private static final boolean NOT_REPEATABLE = false;
+  private static final Parameter.Repeatable REPEATABLE = Parameter.Repeatable.REPEATABLE;
+  private static final Parameter.Repeatable NOT_REPEATABLE = Parameter.Repeatable.NOT_REPEATABLE;
 
   private static Collection<CommandRegistration> createCommandModeRegistry(
       Memoized<TaskStore> taskStore, Memoized<Set<String>> validModes) {
@@ -96,28 +96,7 @@ public final class CliArguments {
                 .helpDocumentation(
                     "Prints all known information about a particular task, including its "
                         + "description, all tasks blocking it, and all tasks it is blocking."))
-        .register(
-            CommandRegistration.builder()
-                .cliMode(CliMode.ADD)
-                .canonicalName("add")
-                .aliases()
-                .parameters(ImmutableList.of(new StringParameter("description", NOT_REPEATABLE)))
-                .options(
-                    ImmutableList.of(
-                        new TaskOption(
-                            "after",
-                            "a",
-                            "The tasks this one comes after. Tasks listed here will be blocking "
-                                + "this task.",
-                            REPEATABLE),
-                        new TaskOption(
-                            "before",
-                            "b",
-                            "The tasks this one comes before. Tasks listed here will be blocked by "
-                                + "this task.",
-                            REPEATABLE)))
-                .parser(() -> new AddArguments.Parser(taskStore))
-                .helpDocumentation("Creates a new task."))
+        .register(AddArguments.registration(taskStore))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.REMOVE)
@@ -338,7 +317,7 @@ public final class CliArguments {
     }
   }
 
-  private static final class CommandRegistration {
+  public static final class CommandRegistration {
     private final CliMode cliMode;
     private final String canonicalName;
     private final Collection<String> aliases;
@@ -411,35 +390,35 @@ public final class CliArguments {
       return parser.value();
     }
 
-    interface Builder0 {
+    public interface Builder0 {
       Builder1 cliMode(CliMode cliMode);
     }
 
-    interface Builder1 {
+    public interface Builder1 {
       Builder2 canonicalName(String canonicalName);
     }
 
-    interface Builder2 {
+    public interface Builder2 {
       Builder3 aliases(String...aliases);
     }
 
-    interface Builder3 {
+    public interface Builder3 {
       Builder4 parameters(Collection<Parameter> parameters);
     }
 
-    interface Builder4 {
+    public interface Builder4 {
       Builder5 options(Collection<Option> options);
     }
 
-    interface Builder5 {
+    public interface Builder5 {
       Builder6 parser(Supplier<? extends Parser<?>> parserSupplier);
     }
 
-    interface Builder6 {
+    public interface Builder6 {
       CommandRegistration helpDocumentation(String description);
     }
 
-    static Builder0 builder() {
+    public static Builder0 builder() {
       return cliMode ->
           (Builder1) canonicalName ->
             (Builder2) aliases ->
@@ -458,18 +437,18 @@ public final class CliArguments {
     }
   }
 
-  private static class Option {
+  public abstract static class Option {
     private final String longName;
     private final String shortName;
     private final String description;
-    private final boolean repeatable;
+    private final Parameter.Repeatable repeatable;
     private final Optional<String> parameterRepresentation;
 
     Option(
         String longName,
         String shortName,
         String description,
-        boolean repeatable,
+        Parameter.Repeatable repeatable,
         Optional<String> parameterRepresentation) {
       this.longName = requireNonNull(longName);
       this.shortName = requireNonNull(shortName);
@@ -491,7 +470,7 @@ public final class CliArguments {
     }
 
     boolean isRepeatable() {
-      return repeatable;
+      return repeatable == REPEATABLE;
     }
 
     Optional<String> parameterRepresentation() {
@@ -499,8 +478,8 @@ public final class CliArguments {
     }
   }
 
-  private static class TaskOption extends Option {
-    TaskOption(String longName, String shortName, String description, boolean repeatable) {
+  public static class TaskOption extends Option {
+    public TaskOption(String longName, String shortName, String description, Parameter.Repeatable repeatable) {
       super(longName, shortName, description, repeatable, Optional.of("task"));
     }
   }
@@ -510,23 +489,23 @@ public final class CliArguments {
         String longName,
         String shortName,
         String description,
-        boolean repeatable,
+        Parameter.Repeatable repeatable,
         String semanticDescription) {
       super(longName, shortName, description, repeatable, Optional.of(semanticDescription));
     }
   }
 
   private static class FlagOption extends Option {
-    FlagOption(String longName, String shortName, String description, boolean repeatable) {
+    FlagOption(String longName, String shortName, String description, Parameter.Repeatable repeatable) {
       super(longName, shortName, description, repeatable, Optional.empty());
     }
   }
 
-  private static class Parameter {
+  public abstract static class Parameter {
     private final String description;
-    private final boolean repeatable;
+    private final Repeatable repeatable;
 
-    Parameter(String description, boolean repeatable) {
+    Parameter(String description, Repeatable repeatable) {
       this.description = requireNonNull(description);
       this.repeatable = repeatable;
     }
@@ -536,18 +515,23 @@ public final class CliArguments {
     }
 
     boolean isRepeatable() {
-      return repeatable;
+      return repeatable == Repeatable.REPEATABLE;
+    }
+
+    public enum Repeatable {
+      REPEATABLE,
+      NOT_REPEATABLE,
     }
   }
 
   private static class TaskParameter extends Parameter {
-    TaskParameter(boolean repeatable) {
+    TaskParameter(Repeatable repeatable) {
       super("task", repeatable);
     }
   }
 
-  private static class StringParameter extends Parameter {
-    StringParameter(String semanticName, boolean repeatable) {
+  public static class StringParameter extends Parameter {
+    public StringParameter(String semanticName, Repeatable repeatable) {
       super(semanticName, repeatable);
     }
   }

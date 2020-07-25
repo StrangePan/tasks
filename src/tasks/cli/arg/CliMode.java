@@ -1,6 +1,6 @@
 package tasks.cli.arg;
 
-enum CliMode {
+public enum CliMode {
   HELP,
   LIST,
   INFO,
