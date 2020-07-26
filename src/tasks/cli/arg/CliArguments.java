@@ -97,18 +97,7 @@ public final class CliArguments {
                     "Prints all known information about a particular task, including its "
                         + "description, all tasks blocking it, and all tasks it is blocking."))
         .register(AddArguments.registration(taskStore))
-        .register(
-            CommandRegistration.builder()
-                .cliMode(CliMode.REMOVE)
-                .canonicalName("remove")
-                .aliases("rm")
-                .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
-                .options(ImmutableList.empty())
-                .parser(() -> new RemoveArguments.Parser(taskStore))
-                .helpDocumentation(
-                    "Completely deletes a task. THIS CANNOT BE UNDONE. It is recommended that "
-                        + "tasks be marked as completed rather than deleted, or amended if their "
-                        + "content needs to change."))
+        .register(RemoveArguments.registration(taskStore))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.AMEND)
@@ -524,8 +513,8 @@ public final class CliArguments {
     }
   }
 
-  private static class TaskParameter extends Parameter {
-    TaskParameter(Repeatable repeatable) {
+  public static class TaskParameter extends Parameter {
+    public TaskParameter(Repeatable repeatable) {
       super("task", repeatable);
     }
   }
