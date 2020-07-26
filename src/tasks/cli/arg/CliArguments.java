@@ -85,17 +85,7 @@ public final class CliArguments {
                     "Prints a list of tasks. By default, only lists uncompleted tasks that are "
                         + "unblocked. Can also list only blocked tasks, only completed tasks, any "
                         + "combination of the three, or all tasks."))
-        .register(
-            CommandRegistration.builder()
-                .cliMode(CliMode.INFO)
-                .canonicalName("info")
-                .aliases("i")
-                .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
-                .options(ImmutableList.empty())
-                .parser(() -> new InfoArguments.Parser(taskStore))
-                .helpDocumentation(
-                    "Prints all known information about a particular task, including its "
-                        + "description, all tasks blocking it, and all tasks it is blocking."))
+        .register(InfoArguments.registration(taskStore))
         .register(AddArguments.registration(taskStore))
         .register(RemoveArguments.registration(taskStore))
         .register(AmendArguments.registration(taskStore))
