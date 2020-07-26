@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.joining;
 import static omnia.data.stream.Collectors.toList;
 
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import omnia.data.structure.Collection;
 import omnia.data.structure.List;
@@ -97,6 +98,10 @@ public final class CliUtils {
     }
   }
 
+  public static List<String> getOptionValues(CommandLine commandLine, CliArguments.Option option) {
+    return getOptionValues(commandLine, option.shortName());
+  }
+
   public static List<String> getOptionValues(CommandLine commandLine, String opt) {
     return ImmutableList.copyOf(
         Optional.ofNullable(requireNonNull(commandLine).getOptionValues(requireNonNull(opt)))
@@ -112,15 +117,31 @@ public final class CliUtils {
   }
 
   public static void assertNoExtraArgs(CommandLine commandLine) {
-    if (commandLine.getArgList().size() > 1) {
-      String unexpectedArgs =
-          commandLine.getArgList()
-              .stream()
-              .skip(1)
-              .map(s -> String.format("'%s'", s))
-              .collect(joining(", "));
+    assertNoExtraArgs(commandLine, 0);
+  }
 
-      throw new CliArguments.ArgumentFormatException("Unexpected arguments given: " + unexpectedArgs);
+  public static void assertNoExtraArgs(
+      CommandLine commandLine, Collection<CliArguments.Parameter> parameters) {
+    computeMaxNumberOfCommandParameters(parameters)
+        .ifPresent(max -> assertNoExtraArgs(commandLine, max));
+  }
+
+  private static void assertNoExtraArgs(CommandLine commandLine, int maxNumberOfCommandParameters) {
+    if (commandLine.getArgList().size() - 1 > maxNumberOfCommandParameters) {
+      throw new CliArguments.ArgumentFormatException(
+          "Unexpected arguments given: "
+              + commandLine.getArgList()
+                  .stream()
+                  .skip(maxNumberOfCommandParameters)
+                  .map(s -> String.format("'%s'", s))
+                  .collect(joining(", ")));
     }
+  }
+
+  public static OptionalInt computeMaxNumberOfCommandParameters(
+      Collection<CliArguments.Parameter> parameters) {
+    return parameters.stream().anyMatch(CliArguments.Parameter::isRepeatable)
+        ? OptionalInt.empty()
+        : OptionalInt.of(parameters.count());
   }
 }

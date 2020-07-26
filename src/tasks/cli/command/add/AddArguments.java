@@ -9,6 +9,7 @@ import static tasks.cli.arg.CliUtils.parseTaskIds;
 import static tasks.cli.arg.CliUtils.tryParse;
 import static tasks.cli.arg.CliUtils.validateParsedTasks;
 
+import java.util.Optional;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
@@ -18,6 +19,7 @@ import tasks.cli.arg.CliArguments;
 import tasks.cli.arg.CliArguments.CommandRegistration;
 import tasks.cli.arg.CliArguments.TaskOption;
 import tasks.cli.arg.CliMode;
+import tasks.cli.arg.CliUtils;
 import tasks.cli.arg.CliUtils.ParseResult;
 import tasks.model.Task;
 import tasks.model.TaskStore;
@@ -32,7 +34,7 @@ public final class AddArguments {
         .cliMode(CliMode.ADD)
         .canonicalName("add")
         .aliases()
-        .parameters(ImmutableList.of(DESCRIPTION_PARAMETER.value()))
+        .parameters(COMMAND_PARAMETERS.value())
         .options(ImmutableList.of(AFTER_OPTION.value(), BEFORE_OPTION.value()))
         .parser(() -> new AddArguments.Parser(taskStore))
         .helpDocumentation("Creates a new task.");
@@ -40,6 +42,9 @@ public final class AddArguments {
 
   private static final Memoized<CliArguments.StringParameter> DESCRIPTION_PARAMETER =
       memoize(() -> new CliArguments.StringParameter("description", NOT_REPEATABLE));
+
+  private static final Memoized<ImmutableList<CliArguments.Parameter>> COMMAND_PARAMETERS =
+      memoize(() -> ImmutableList.of(DESCRIPTION_PARAMETER.value()));
 
   private static final Memoized<CliArguments.TaskOption> AFTER_OPTION =
       memoize(
@@ -102,23 +107,25 @@ public final class AddArguments {
       CommandLine commandLine = tryParse(args, options);
 
       List<String> argsList = List.masking(commandLine.getArgList());
-      if (argsList.count() < 2) {
-        throw new CliArguments.ArgumentFormatException("Task description not defined");
-      }
-      if (argsList.count() > 2) {
-        throw new CliArguments.ArgumentFormatException("Unexpected extra arguments");
-      }
+      String taskDescription = extractTaskDescriptionFrom(argsList)
+          .orElseThrow(
+              () -> new CliArguments.ArgumentFormatException("Task description not defined"));
+      CliUtils.assertNoExtraArgs(commandLine, COMMAND_PARAMETERS.value());
 
       List<ParseResult<Task>> afterTasks =
-          parseTaskIds(getOptionValues(commandLine, "a"), taskStore.value());
+          parseTaskIds(getOptionValues(commandLine, AFTER_OPTION.value()), taskStore.value());
       List<ParseResult<Task>> beforeTasks =
-          parseTaskIds(getOptionValues(commandLine, "b"), taskStore.value());
+          parseTaskIds(getOptionValues(commandLine, BEFORE_OPTION.value()), taskStore.value());
 
       validateParsedTasks(
           ImmutableList.<ParseResult<?>>builder().addAll(afterTasks).addAll(beforeTasks).build());
 
       return new AddArguments(
-          argsList.itemAt(1), extractTasksFrom(afterTasks), extractTasksFrom(beforeTasks));
+          taskDescription, extractTasksFrom(afterTasks), extractTasksFrom(beforeTasks));
     }
+  }
+
+  private static Optional<String> extractTaskDescriptionFrom(List<String> args) {
+    return args.count() < 2 ? Optional.empty() : Optional.of(args.itemAt(1));
   }
 }

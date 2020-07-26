@@ -387,7 +387,7 @@ public final class CliArguments {
       return description;
     }
 
-    boolean isRepeatable() {
+    public boolean isRepeatable() {
       return repeatable == Repeatable.REPEATABLE;
     }
 
