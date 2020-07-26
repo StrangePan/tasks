@@ -99,18 +99,7 @@ public final class CliArguments {
         .register(AddArguments.registration(taskStore))
         .register(RemoveArguments.registration(taskStore))
         .register(AmendArguments.registration(taskStore))
-        .register(
-            CommandRegistration.builder()
-                .cliMode(CliMode.COMPLETE)
-                .canonicalName("complete")
-                .aliases()
-                .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
-                .options(ImmutableList.empty())
-                .parser(() -> new CompleteArguments.Parser(taskStore))
-                .helpDocumentation(
-                    "Mark one or more tasks as complete. This can be undone with the reopen "
-                        + "command. When a task is completed, other tasks it was blocking may "
-                        + "become unblocked."))
+        .register(CompleteArguments.registration(taskStore))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.REOPEN)
