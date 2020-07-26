@@ -35,9 +35,6 @@ import tasks.model.TaskStore;
 /** Data structure for arguments passed into the command line. */
 public final class CliArguments {
 
-  private static final Parameter.Repeatable REPEATABLE = Parameter.Repeatable.REPEATABLE;
-  private static final Parameter.Repeatable NOT_REPEATABLE = Parameter.Repeatable.NOT_REPEATABLE;
-
   private static Collection<CommandRegistration> createCommandModeRegistry(
       Memoized<TaskStore> taskStore, Memoized<Set<String>> validModes) {
     return new RegistryBuilder()
@@ -337,7 +334,7 @@ public final class CliArguments {
     }
 
     boolean isRepeatable() {
-      return repeatable == REPEATABLE;
+      return repeatable == Parameter.Repeatable.REPEATABLE;
     }
 
     Optional<String> parameterRepresentation() {
