@@ -100,17 +100,7 @@ public final class CliArguments {
         .register(RemoveArguments.registration(taskStore))
         .register(AmendArguments.registration(taskStore))
         .register(CompleteArguments.registration(taskStore))
-        .register(
-            CommandRegistration.builder()
-                .cliMode(CliMode.REOPEN)
-                .canonicalName("reopen")
-                .aliases()
-                .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
-                .options(ImmutableList.empty())
-                .parser(() -> new ReopenArguments.Parser(taskStore))
-                .helpDocumentation(
-                    "Reopens one or more completed tasks. This can be undone with the complete "
-                        + "command."))
+        .register(ReopenArguments.registration(taskStore))
         .build();
   }
 
