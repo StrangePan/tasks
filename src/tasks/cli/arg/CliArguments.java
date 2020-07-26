@@ -38,13 +38,13 @@ public final class CliArguments {
   private static Collection<CommandRegistration> createCommandModeRegistry(
       Memoized<TaskStore> taskStore, Memoized<Set<String>> validModes) {
     return new RegistryBuilder()
-        .register(HelpArguments.registration(validModes))
-        .register(ListArguments.registration())
-        .register(InfoArguments.registration(taskStore))
         .register(AddArguments.registration(taskStore))
-        .register(RemoveArguments.registration(taskStore))
         .register(AmendArguments.registration(taskStore))
         .register(CompleteArguments.registration(taskStore))
+        .register(HelpArguments.registration(validModes))
+        .register(InfoArguments.registration(taskStore))
+        .register(ListArguments.registration())
+        .register(RemoveArguments.registration(taskStore))
         .register(ReopenArguments.registration(taskStore))
         .build();
   }
