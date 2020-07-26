@@ -321,23 +321,23 @@ public final class CliArguments {
       this.parameterRepresentation = requireNonNull(parameterRepresentation);
     }
 
-    String longName() {
+    public String longName() {
       return longName;
     }
 
-    String shortName() {
+    public String shortName() {
       return shortName;
     }
 
-    String description() {
+    public String description() {
       return description;
     }
 
-    boolean isRepeatable() {
+    public boolean isRepeatable() {
       return repeatable == Parameter.Repeatable.REPEATABLE;
     }
 
-    Optional<String> parameterRepresentation() {
+    public Optional<String> parameterRepresentation() {
       return parameterRepresentation;
     }
   }
@@ -345,6 +345,15 @@ public final class CliArguments {
   public static class TaskOption extends Option {
     public TaskOption(String longName, String shortName, String description, Parameter.Repeatable repeatable) {
       super(longName, shortName, description, repeatable, Optional.of("task"));
+    }
+
+    public org.apache.commons.cli.Option toCliOption() {
+      return org.apache.commons.cli.Option.builder(shortName())
+          .longOpt(longName())
+          .desc(description())
+          .optionalArg(false)
+          .numberOfArgs(1)
+          .build();
     }
   }
 

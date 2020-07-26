@@ -1,5 +1,6 @@
 package tasks.cli.command.add;
 
+import static omnia.data.cache.Memoized.memoize;
 import static tasks.cli.arg.CliArguments.Parameter.Repeatable.NOT_REPEATABLE;
 import static tasks.cli.arg.CliArguments.Parameter.Repeatable.REPEATABLE;
 import static tasks.cli.arg.CliUtils.extractTasksFrom;
@@ -12,7 +13,6 @@ import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import tasks.cli.arg.CliArguments;
 import tasks.cli.arg.CliArguments.CommandRegistration;
@@ -32,27 +32,32 @@ public final class AddArguments {
         .cliMode(CliMode.ADD)
         .canonicalName("add")
         .aliases()
-        .parameters(ImmutableList.of(new CliArguments.StringParameter("description", NOT_REPEATABLE)))
-        .options(
-            ImmutableList.of(
-                new TaskOption(
-                    "after",
-                    "a",
-                    "The tasks this one comes after. Tasks listed here will be blocking "
-                        + "this task.",
-                    REPEATABLE),
-                new TaskOption(
-                    "before",
-                    "b",
-                    "The tasks this one comes before. Tasks listed here will be blocked by "
-                        + "this task.",
-                    REPEATABLE)))
+        .parameters(ImmutableList.of(DESCRIPTION_PARAMETER.value()))
+        .options(ImmutableList.of(AFTER_OPTION.value(), BEFORE_OPTION.value()))
         .parser(() -> new AddArguments.Parser(taskStore))
         .helpDocumentation("Creates a new task.");
   }
 
-  private AddArguments(
-      String description, List<Task> blockingTasks, List<Task> blockedTasks) {
+  private static final Memoized<CliArguments.StringParameter> DESCRIPTION_PARAMETER =
+      memoize(() -> new CliArguments.StringParameter("description", NOT_REPEATABLE));
+
+  private static final Memoized<CliArguments.TaskOption> AFTER_OPTION =
+      memoize(
+          () -> new TaskOption(
+              "after",
+              "a",
+              "The tasks this one comes after. Tasks listed here will be blocking this task.",
+              REPEATABLE));
+
+  private static final Memoized<CliArguments.TaskOption> BEFORE_OPTION =
+      memoize(
+          () -> new TaskOption(
+              "before",
+              "b",
+              "The tasks this one comes before. Tasks listed here will be blocked by this task.",
+              REPEATABLE));
+
+  private AddArguments(String description, List<Task> blockingTasks, List<Task> blockedTasks) {
     this.description = description;
     this.blockingTasks = blockingTasks;
     this.blockedTasks = blockedTasks;
@@ -89,23 +94,10 @@ public final class AddArguments {
       optional befores
       optional afters
       */
-      Options options = new Options();
-      options.addOption(
-          Option.builder("a")
-              .longOpt("after")
-              .desc("The tasks this one comes after. This list empty tasks will be blocking this "
-                  + "task.")
-              .optionalArg(false)
-              .numberOfArgs(1)
-              .build());
-      options.addOption(
-          Option.builder("b")
-              .longOpt("before")
-              .desc("The tasks this one comes before. This list empty tasks will be unblocked by "
-                  + "this task.")
-              .optionalArg(false)
-              .numberOfArgs(1)
-              .build());
+      Options options =
+          new Options()
+              .addOption(AFTER_OPTION.value().toCliOption())
+              .addOption(BEFORE_OPTION.value().toCliOption());
 
       CommandLine commandLine = tryParse(args, options);
 

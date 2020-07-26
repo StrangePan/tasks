@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 import omnia.data.structure.Collection;
 import omnia.data.structure.List;
 import omnia.data.structure.Set;
-import omnia.data.structure.mutable.ArrayList;
+import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
@@ -98,7 +98,7 @@ public final class CliUtils {
   }
 
   public static List<String> getOptionValues(CommandLine commandLine, String opt) {
-    return ArrayList.of(
+    return ImmutableList.copyOf(
         Optional.ofNullable(requireNonNull(commandLine).getOptionValues(requireNonNull(opt)))
             .orElse(new String[0]));
   }
