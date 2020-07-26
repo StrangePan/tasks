@@ -50,41 +50,7 @@ public final class CliArguments {
                 .options(ImmutableList.empty())
                 .parser(() -> new HelpArguments.Parser(validModes))
                 .helpDocumentation("Retrieve the help documentation for a specific command."))
-        .register(
-            CommandRegistration.builder()
-                .cliMode(CliMode.LIST)
-                .canonicalName("list")
-                .aliases("ls", "l")
-                .parameters(ImmutableList.empty())
-                .options(
-                    ImmutableList.of(
-                        new FlagOption(
-                            "blocked",
-                            "b",
-                            "List all tasks that are uncompleted, but blocked by other tasks. Can "
-                                + "be combined with other flags.",
-                            NOT_REPEATABLE),
-                        new FlagOption(
-                            "completed",
-                            "c",
-                            "List all tasks already marked as completed. Can be combined with "
-                                + "other flags.",
-                            NOT_REPEATABLE),
-                        new FlagOption(
-                            "unblocked",
-                            "u",
-                            "List all unblocked tasks. Can be combined with other flags.",
-                            NOT_REPEATABLE),
-                        new FlagOption(
-                            "all",
-                            "a",
-                            "Lists all tasks. A shortcut for all other flags put together.",
-                            NOT_REPEATABLE)))
-                .parser(() -> ListArguments::parse)
-                .helpDocumentation(
-                    "Prints a list of tasks. By default, only lists uncompleted tasks that are "
-                        + "unblocked. Can also list only blocked tasks, only completed tasks, any "
-                        + "combination of the three, or all tasks."))
+        .register(ListArguments.registration())
         .register(InfoArguments.registration(taskStore))
         .register(AddArguments.registration(taskStore))
         .register(RemoveArguments.registration(taskStore))
@@ -404,8 +370,8 @@ public final class CliArguments {
     }
   }
 
-  private static class FlagOption extends Option {
-    FlagOption(String longName, String shortName, String description, Parameter.Repeatable repeatable) {
+  public static class FlagOption extends Option {
+    public FlagOption(String longName, String shortName, String description, Parameter.Repeatable repeatable) {
       super(longName, shortName, description, repeatable, Optional.empty());
     }
   }
