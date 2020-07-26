@@ -1,6 +1,8 @@
 package tasks.cli.command.amend;
 
 import static java.util.Objects.requireNonNull;
+import static tasks.cli.arg.CliArguments.Parameter.Repeatable.NOT_REPEATABLE;
+import static tasks.cli.arg.CliArguments.Parameter.Repeatable.REPEATABLE;
 import static tasks.cli.arg.CliUtils.extractTasksFrom;
 import static tasks.cli.arg.CliUtils.getOptionValues;
 import static tasks.cli.arg.CliUtils.getSingleOptionValue;
@@ -17,6 +19,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import tasks.cli.arg.CliArguments;
+import tasks.cli.arg.CliMode;
 import tasks.cli.arg.CliUtils.ParseResult;
 import tasks.model.Task;
 import tasks.model.TaskStore;
@@ -30,6 +33,58 @@ public final class AmendArguments {
   private final List<Task> blockedTasks;
   private final List<Task> blockedTasksToAdd;
   private final List<Task> blockedTasksToRemove;
+
+  public static CliArguments.CommandRegistration registration(Memoized<TaskStore> taskStore) {
+    return CliArguments.CommandRegistration.builder()
+        .cliMode(CliMode.AMEND)
+        .canonicalName("amend")
+        .aliases()
+        .parameters(ImmutableList.of(new CliArguments.TaskParameter(NOT_REPEATABLE)))
+        .options(
+            ImmutableList.of(
+                new CliArguments.StringOption(
+                    "description",
+                    "m",
+                    "Set the task description.",
+                    NOT_REPEATABLE,
+                    "description"),
+                new CliArguments.TaskOption(
+                    "after",
+                    "a",
+                    "Sets this task as coming after another task. Tasks listed here will "
+                        + "be blocking this task. Removes all previous blocking tasks.",
+                    REPEATABLE),
+                new CliArguments.TaskOption(
+                    "addafter",
+                    "aa",
+                    "Adds another task as blocking this one.",
+                    REPEATABLE),
+                new CliArguments.TaskOption(
+                    "rmafter",
+                    "ra",
+                    "Removes another task as blocking this one.",
+                    REPEATABLE),
+                new CliArguments.TaskOption(
+                    "before",
+                    "b",
+                    "Sets this task as coming before another task. Tasks listed here will "
+                        + "be blocked by this task. Removes all previous blocked tasks.",
+                    REPEATABLE),
+                new CliArguments.TaskOption(
+                    "addbefore",
+                    "ab",
+                    "Adds another task as being blocked by this one.",
+                    REPEATABLE),
+                new CliArguments.TaskOption(
+                    "rmbefore",
+                    "rb",
+                    "Removes another task as being blocked by this one.",
+                    REPEATABLE)))
+        .parser(() -> new AmendArguments.Parser(taskStore))
+        .helpDocumentation(
+            "Changes an existing task. Can be used to change the task description or to "
+                + "add/remove blocking/blocked tasks.");
+  }
 
   private AmendArguments(
       Task targetTask,

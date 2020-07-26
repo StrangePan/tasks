@@ -98,56 +98,7 @@ public final class CliArguments {
                         + "description, all tasks blocking it, and all tasks it is blocking."))
         .register(AddArguments.registration(taskStore))
         .register(RemoveArguments.registration(taskStore))
-        .register(
-            CommandRegistration.builder()
-                .cliMode(CliMode.AMEND)
-                .canonicalName("amend")
-                .aliases()
-                .parameters(ImmutableList.of(new TaskParameter(NOT_REPEATABLE)))
-                .options(
-                    ImmutableList.of(
-                        new StringOption(
-                            "description",
-                            "m",
-                            "Set the task description.",
-                            NOT_REPEATABLE,
-                            "description"),
-                        new TaskOption(
-                            "after",
-                            "a",
-                            "Sets this task as coming after another task. Tasks listed here will "
-                                + "be blocking this task. Removes all previous blocking tasks.",
-                            REPEATABLE),
-                        new TaskOption(
-                            "addafter",
-                            "aa",
-                            "Adds another task as blocking this one.",
-                            REPEATABLE),
-                        new TaskOption(
-                            "rmafter",
-                            "ra",
-                            "Removes another task as blocking this one.",
-                            REPEATABLE),
-                        new TaskOption(
-                            "before",
-                            "b",
-                            "Sets this task as coming before another task. Tasks listed here will "
-                                + "be blocked by this task. Removes all previous blocked tasks.",
-                            REPEATABLE),
-                        new TaskOption(
-                            "addbefore",
-                            "ab",
-                            "Adds another task as being blocked by this one.",
-                            REPEATABLE),
-                        new TaskOption(
-                            "rmbefore",
-                            "rb",
-                            "Removes another task as being blocked by this one.",
-                            REPEATABLE)))
-                .parser(() -> new AmendArguments.Parser(taskStore))
-                .helpDocumentation(
-                    "Changes an existing task. Can be used to change the task description or to "
-                        + "add/remove blocking/blocked tasks."))
+        .register(AmendArguments.registration(taskStore))
         .register(
             CommandRegistration.builder()
                 .cliMode(CliMode.COMPLETE)
@@ -473,8 +424,8 @@ public final class CliArguments {
     }
   }
 
-  private static class StringOption extends Option {
-    StringOption(
+  public static class StringOption extends Option {
+    public StringOption(
         String longName,
         String shortName,
         String description,
