@@ -41,15 +41,7 @@ public final class CliArguments {
   private static Collection<CommandRegistration> createCommandModeRegistry(
       Memoized<TaskStore> taskStore, Memoized<Set<String>> validModes) {
     return new RegistryBuilder()
-        .register(
-            CommandRegistration.builder()
-                .cliMode(CliMode.HELP)
-                .canonicalName("help")
-                .aliases()
-                .parameters(ImmutableList.of(new StringParameter("command", NOT_REPEATABLE)))
-                .options(ImmutableList.empty())
-                .parser(() -> new HelpArguments.Parser(validModes))
-                .helpDocumentation("Retrieve the help documentation for a specific command."))
+        .register(HelpArguments.registration(validModes))
         .register(ListArguments.registration())
         .register(InfoArguments.registration(taskStore))
         .register(AddArguments.registration(taskStore))
