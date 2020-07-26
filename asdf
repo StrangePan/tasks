@@ -1,10 +1,10 @@
 # version 1
 # tasks
 14a00nhsddz4;true;Output formatting;
-3ga3kmzl44cg;false;Put command definition into independent packages;
+3ga3kmzl44cg;true;Put command definition into independent packages;
 7ri8li86wfeo;true;Output unblocked tasks when completing a task;
 aiv2qznibj7k;false;Redesign amend command;
-cystb0f3sk5c;false;Move command registration to individual command definition classes;
+cystb0f3sk5c;true;Move command registration to individual command definition classes;
 h5kiwq5wnb40;true;Output task ID when creating tasks;
 13g106gz8dqm8;true;Output indentation;
 147s85hhpdou8;true;Help documentation;
