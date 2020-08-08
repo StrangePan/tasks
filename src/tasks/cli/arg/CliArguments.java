@@ -29,22 +29,23 @@ import tasks.cli.command.list.ListArguments;
 import tasks.cli.command.remove.RemoveArguments;
 import tasks.cli.command.reopen.ReopenArguments;
 import omnia.data.structure.tuple.Tuple;
+import tasks.model.Task;
 import tasks.model.TaskStore;
 
 /** Data structure for arguments passed into the command line. */
 public final class CliArguments {
 
   private static Collection<CommandRegistration> createCommandModeRegistry(
-      Memoized<TaskStore> taskStore, Memoized<Set<String>> validModes) {
+      Memoized<TaskStore> taskStore, Memoized<Set<String>> validModes, Memoized<Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
     return new RegistryBuilder()
         .register(AddArguments.registration(taskStore))
         .register(AmendArguments.registration(taskStore))
-        .register(CompleteArguments.registration(taskStore))
+        .register(CompleteArguments.registration(taskParser))
         .register(HelpArguments.registration(validModes))
-        .register(InfoArguments.registration(taskStore))
+        .register(InfoArguments.registration(taskParser))
         .register(ListArguments.registration())
-        .register(RemoveArguments.registration(taskStore))
-        .register(ReopenArguments.registration(taskStore))
+        .register(RemoveArguments.registration(taskParser))
+        .register(ReopenArguments.registration(taskParser))
         .build();
   }
 
@@ -53,7 +54,7 @@ public final class CliArguments {
   private final CommandRegistration fallback;
 
   public CliArguments(Memoized<TaskStore> taskStore) {
-    registrations = createCommandModeRegistry(taskStore, memoize(this::modeNamesAndAliases));
+    registrations = createCommandModeRegistry(taskStore, memoize(this::modeNamesAndAliases), memoize(() -> CliUtils.taskParser(taskStore)));
 
     registrationsIndexedByAliases =
         registrations.stream()
@@ -157,6 +158,14 @@ public final class CliArguments {
 
   public interface Parser<T> {
     T parse(String[] args);
+
+    default T parse(List<? extends String> args) {
+      String[] a = new String[args.count()];
+      for (int i = 0; i < args.count(); i++) {
+        a[i] = args.itemAt(i);
+      }
+      return parse(a);
+    }
   }
 
   private static final class RegistryBuilder {

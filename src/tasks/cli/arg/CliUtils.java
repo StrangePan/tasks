@@ -8,6 +8,7 @@ import io.reactivex.Observable;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
+import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
 import omnia.data.structure.List;
 import omnia.data.structure.Set;
@@ -28,6 +29,10 @@ public final class CliUtils {
     } catch (ParseException e) {
       throw new CliArguments.ArgumentFormatException("Unable to parse arguments: " + e.getMessage(), e);
     }
+  }
+
+  public static CliArguments.Parser<List<ParseResult<Task>>> taskParser(Memoized<TaskStore> taskStore) {
+    return (args) -> parseTaskIds(ImmutableList.copyOf(args).stream().skip(1).collect(toList()), taskStore.value());
   }
 
   public static List<ParseResult<Task>> parseTaskIds(List<String> userInputs, TaskStore taskStore) {

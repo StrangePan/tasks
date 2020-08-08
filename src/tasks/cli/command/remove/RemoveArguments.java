@@ -7,20 +7,20 @@ import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import tasks.cli.arg.CliArguments;
 import tasks.cli.arg.CliMode;
+import tasks.cli.arg.CliUtils;
 import tasks.cli.arg.SimpleArguments;
 import tasks.model.Task;
-import tasks.model.TaskStore;
 
 public final class RemoveArguments extends SimpleArguments {
 
-  public static CliArguments.CommandRegistration registration(Memoized<TaskStore> taskStore) {
+  public static CliArguments.CommandRegistration registration(Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
     return CliArguments.CommandRegistration.builder()
         .cliMode(CliMode.REMOVE)
         .canonicalName("remove")
         .aliases("rm")
         .parameters(ImmutableList.of(new CliArguments.TaskParameter(REPEATABLE)))
         .options(ImmutableList.empty())
-        .parser(() -> new RemoveArguments.Parser(taskStore))
+        .parser(() -> new RemoveArguments.Parser(taskParser))
         .helpDocumentation(
             "Completely deletes a task. THIS CANNOT BE UNDONE. It is recommended that "
                 + "tasks be marked as completed rather than deleted, or amended if their "
@@ -32,8 +32,8 @@ public final class RemoveArguments extends SimpleArguments {
   }
 
   public static final class Parser extends SimpleArguments.Parser<RemoveArguments> {
-    public Parser(Memoized<TaskStore> taskStore) {
-      super(taskStore, RemoveArguments::new);
+    public Parser(Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
+      super(taskParser, RemoveArguments::new);
     }
   }
 }

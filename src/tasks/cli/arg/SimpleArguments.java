@@ -7,7 +7,9 @@ import static tasks.cli.arg.CliUtils.parseTaskIds;
 import static tasks.cli.arg.CliUtils.tryParse;
 import static tasks.cli.arg.CliUtils.validateParsedTasks;
 
+import java.util.ArrayList;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import org.apache.commons.cli.Options;
@@ -28,11 +30,11 @@ public abstract class SimpleArguments {
 
   public static abstract class Parser<T extends SimpleArguments> implements CliArguments.Parser<T> {
     private final Function<List<Task>, T> constructor;
-    private final Memoized<TaskStore> taskStore;
+    private final Memoized<CliArguments.Parser<? extends List<ParseResult<Task>>>> taskParser;
 
-    protected Parser(Memoized<TaskStore> taskStore, Function<List<Task>, T> constructor) {
+    protected Parser(Memoized<CliArguments.Parser<? extends List<ParseResult<Task>>>> taskParser, Function<List<Task>, T> constructor) {
       this.constructor = requireNonNull(constructor);
-      this.taskStore = requireNonNull(taskStore);
+      this.taskParser = requireNonNull(taskParser);
     }
 
     @Override
@@ -46,9 +48,7 @@ public abstract class SimpleArguments {
         throw new CliArguments.ArgumentFormatException("No task IDs specified");
       }
 
-      TaskStore taskStore = this.taskStore.value();
-      List<ParseResult<Task>> parsedTasks =
-          parseTaskIds(argsList.stream().skip(1).collect(toList()), taskStore);
+      List<ParseResult<Task>> parsedTasks = taskParser.value().parse(argsList);
 
       validateParsedTasks(parsedTasks);
 
