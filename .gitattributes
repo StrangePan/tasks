@@ -1,4 +1,5 @@
 * text=auto
 *.sh text eol=lf
 tk eol=lf
+asdf eol=lf
 

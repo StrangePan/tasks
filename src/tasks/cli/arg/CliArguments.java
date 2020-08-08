@@ -339,6 +339,8 @@ public final class CliArguments {
     public Optional<String> parameterRepresentation() {
       return parameterRepresentation;
     }
+
+    public abstract org.apache.commons.cli.Option toCliOption();
   }
 
   public static class TaskOption extends Option {
@@ -346,6 +348,7 @@ public final class CliArguments {
       super(longName, shortName, description, repeatable, Optional.of("task"));
     }
 
+    @Override
     public org.apache.commons.cli.Option toCliOption() {
       return org.apache.commons.cli.Option.builder(shortName())
           .longOpt(longName())
@@ -365,11 +368,30 @@ public final class CliArguments {
         String semanticDescription) {
       super(longName, shortName, description, repeatable, Optional.of(semanticDescription));
     }
+
+    @Override
+    public org.apache.commons.cli.Option toCliOption() {
+      return org.apache.commons.cli.Option.builder(shortName())
+          .longOpt(longName())
+          .desc(description())
+          .optionalArg(false)
+          .numberOfArgs(1)
+          .build();
+    }
   }
 
   public static class FlagOption extends Option {
     public FlagOption(String longName, String shortName, String description, Parameter.Repeatable repeatable) {
       super(longName, shortName, description, repeatable, Optional.empty());
+    }
+
+    @Override
+    public org.apache.commons.cli.Option toCliOption() {
+      return org.apache.commons.cli.Option.builder(shortName())
+          .longOpt(longName())
+          .desc(description())
+          .numberOfArgs(0)
+          .build();
     }
   }
 

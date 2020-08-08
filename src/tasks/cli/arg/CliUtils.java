@@ -108,6 +108,10 @@ public final class CliUtils {
             .orElse(new String[0]));
   }
 
+  public static Optional<String> getSingleOptionValue(CommandLine commandLine, CliArguments.Option option) {
+    return getSingleOptionValue(commandLine, option.shortName());
+  }
+
   public static Optional<String> getSingleOptionValue(CommandLine commandLine, String opt) {
     if (Optional.ofNullable(commandLine.getOptionValues(opt)).orElse(new String[0]).length > 1) {
       throw new CliArguments.ArgumentFormatException(

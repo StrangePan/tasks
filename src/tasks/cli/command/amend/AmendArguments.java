@@ -1,6 +1,7 @@
 package tasks.cli.command.amend;
 
 import static java.util.Objects.requireNonNull;
+import static omnia.data.cache.Memoized.memoize;
 import static tasks.cli.arg.CliArguments.Parameter.Repeatable.NOT_REPEATABLE;
 import static tasks.cli.arg.CliArguments.Parameter.Repeatable.REPEATABLE;
 import static tasks.cli.arg.CliUtils.extractTasksFrom;
@@ -11,12 +12,12 @@ import static tasks.cli.arg.CliUtils.parseTaskIds;
 import static tasks.cli.arg.CliUtils.tryParse;
 import static tasks.cli.arg.CliUtils.validateParsedTasks;
 
+import io.reactivex.Observable;
 import java.util.Optional;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import tasks.cli.arg.CliArguments;
 import tasks.cli.arg.CliMode;
@@ -34,52 +35,83 @@ public final class AmendArguments {
   private final List<Task> blockedTasksToAdd;
   private final List<Task> blockedTasksToRemove;
 
+  private static final Memoized<CliArguments.StringOption> DESCRIPTION_OPTION =
+      memoize(
+          () -> new CliArguments.StringOption(
+              "description",
+              "m",
+              "Set the task description.",
+              NOT_REPEATABLE,
+              "description"));
+
+  private static final Memoized<CliArguments.TaskOption> AFTER_OPTION =
+      memoize(
+          () -> new CliArguments.TaskOption(
+              "after",
+              "a",
+              "Sets this task as coming after another task. Tasks listed here will "
+                  + "be blocking this task. Removes all previous blocking tasks.",
+              REPEATABLE));
+
+  private static final Memoized<CliArguments.TaskOption> ADD_AFTER_OPTION =
+      memoize(
+          () -> new CliArguments.TaskOption(
+              "addafter",
+              "aa",
+              "Adds another task as blocking this one.",
+              REPEATABLE));
+
+  private static final Memoized<CliArguments.TaskOption> REMOVE_AFTER_OPTION =
+      memoize(
+          () -> new CliArguments.TaskOption(
+              "rmafter",
+              "ra",
+              "Removes another task as blocking this one.",
+              REPEATABLE));
+
+  private static final Memoized<CliArguments.TaskOption> BEFORE_OPTION =
+      memoize(
+          () -> new CliArguments.TaskOption(
+              "before",
+              "b",
+              "Sets this task as coming before another task. Tasks listed here will "
+                  + "be blocked by this task. Removes all previous blocked tasks.",
+              REPEATABLE));
+
+  private static final Memoized<CliArguments.TaskOption> ADD_BEFORE_OPTION =
+      memoize(
+          () -> new CliArguments.TaskOption(
+              "addbefore",
+              "ab",
+              "Adds another task as being blocked by this one.",
+              REPEATABLE));
+
+  private static final Memoized<CliArguments.TaskOption> REMOVE_BEFORE_OPTION =
+      memoize(
+          () -> new CliArguments.TaskOption(
+              "rmbefore",
+              "rb",
+              "Removes another task as being blocked by this one.",
+              REPEATABLE));
+
+  private static final Memoized<ImmutableList<CliArguments.Option>> OPTIONS =
+      memoize(
+          () -> ImmutableList.of(
+              DESCRIPTION_OPTION.value(),
+              AFTER_OPTION.value(),
+              ADD_AFTER_OPTION.value(),
+              REMOVE_AFTER_OPTION.value(),
+              BEFORE_OPTION.value(),
+              ADD_BEFORE_OPTION.value(),
+              REMOVE_BEFORE_OPTION.value()));
+
   public static CliArguments.CommandRegistration registration(Memoized<TaskStore> taskStore) {
     return CliArguments.CommandRegistration.builder()
         .cliMode(CliMode.AMEND)
         .canonicalName("amend")
         .aliases()
         .parameters(ImmutableList.of(new CliArguments.TaskParameter(NOT_REPEATABLE)))
-        .options(
-            ImmutableList.of(
-                new CliArguments.StringOption(
-                    "description",
-                    "m",
-                    "Set the task description.",
-                    NOT_REPEATABLE,
-                    "description"),
-                new CliArguments.TaskOption(
-                    "after",
-                    "a",
-                    "Sets this task as coming after another task. Tasks listed here will "
-                        + "be blocking this task. Removes all previous blocking tasks.",
-                    REPEATABLE),
-                new CliArguments.TaskOption(
-                    "addafter",
-                    "aa",
-                    "Adds another task as blocking this one.",
-                    REPEATABLE),
-                new CliArguments.TaskOption(
-                    "rmafter",
-                    "ra",
-                    "Removes another task as blocking this one.",
-                    REPEATABLE),
-                new CliArguments.TaskOption(
-                    "before",
-                    "b",
-                    "Sets this task as coming before another task. Tasks listed here will "
-                        + "be blocked by this task. Removes all previous blocked tasks.",
-                    REPEATABLE),
-                new CliArguments.TaskOption(
-                    "addbefore",
-                    "ab",
-                    "Adds another task as being blocked by this one.",
-                    REPEATABLE),
-                new CliArguments.TaskOption(
-                    "rmbefore",
-                    "rb",
-                    "Removes another task as being blocked by this one.",
-                    REPEATABLE)))
+        .options(OPTIONS.value())
         .parser(() -> new AmendArguments.Parser(taskStore))
         .helpDocumentation(
             "Changes an existing task. Can be used to change the task description or to "
@@ -154,56 +186,11 @@ public final class AmendArguments {
       optional after=, after+=, and after-=. after= cannot be used with after+= and after-=.
       optional before=, before+=, and before-=. before= cannot be used with before+= and before-=.
       */
-      Options options = new Options();
-      options.addOption(
-          Option.builder("m")
-              .longOpt("description")
-              .desc("Edit the description empty the task. Leave blank to open in an editor")
-              .numberOfArgs(1)
-              .optionalArg(false)
-              .build());
-      options.addOption(
-          Option.builder("a")
-              .longOpt("after")
-              .desc("Sets this task as blocked by another task. Clears the previous blocking tasks.")
-              .numberOfArgs(1)
-              .optionalArg(false)
-              .build());
-      options.addOption(
-          Option.builder("aa")
-              .longOpt("addafter")
-              .desc("Adds another task as blocking this one.")
-              .numberOfArgs(1)
-              .optionalArg(false)
-              .build());
-      options.addOption(
-          Option.builder("ra")
-              .longOpt("rmafter")
-              .desc("Removes another task as blocking this one.")
-              .numberOfArgs(1)
-              .optionalArg(false)
-              .build());
-      options.addOption(
-          Option.builder("b")
-              .longOpt("before")
-              .desc("Sets this task as blocking another task. Clears the previous blocked tasks.")
-              .numberOfArgs(1)
-              .optionalArg(false)
-              .build());
-      options.addOption(
-          Option.builder("ab")
-              .longOpt("addbefore")
-              .desc("Adds another task as being blocked by this one.")
-              .numberOfArgs(1)
-              .optionalArg(false)
-              .build());
-      options.addOption(
-          Option.builder("rb")
-              .longOpt("rmbefore")
-              .desc("Removes another task as being blocked by this one.")
-              .numberOfArgs(1)
-              .optionalArg(false)
-              .build());
+      Options options =
+          Observable.fromIterable(OPTIONS.value())
+              .map(CliArguments.Option::toCliOption)
+              .collect(Options::new, Options::addOption)
+              .blockingGet();
 
       CommandLine commandLine = tryParse(args, options);
 
@@ -217,24 +204,22 @@ public final class AmendArguments {
 
       ParseResult<Task> targetTask = parseTaskId(argsList.itemAt(1), taskStore.value());
 
-      Optional<String> description1 = getSingleOptionValue(commandLine, "m");
-      List<ParseResult<Task>> afterTasks = parseTaskIds(getOptionValues(commandLine, "a"), taskStore.value());
-      List<ParseResult<Task>> afterTasksToAdd = parseTaskIds(getOptionValues(commandLine, "aa"), taskStore.value());
-      List<ParseResult<Task>> afterTasksToRemove = parseTaskIds(getOptionValues(commandLine, "ra"), taskStore.value());
-      List<ParseResult<Task>> beforeTasks = parseTaskIds(getOptionValues(commandLine, "b"), taskStore.value());
-      List<ParseResult<Task>> beforeTasksToAdd = parseTaskIds(getOptionValues(commandLine, "ab"), taskStore.value());
-      List<ParseResult<Task>> beforeTasksToRemove = parseTaskIds(getOptionValues(commandLine, "rb"), taskStore.value());
+      Optional<String> description1 = getSingleOptionValue(commandLine, DESCRIPTION_OPTION.value());
+      List<ParseResult<Task>> afterTasks = parseTaskIds(getOptionValues(commandLine, AFTER_OPTION.value()), taskStore.value());
+      List<ParseResult<Task>> afterTasksToAdd = parseTaskIds(getOptionValues(commandLine, ADD_AFTER_OPTION.value()), taskStore.value());
+      List<ParseResult<Task>> afterTasksToRemove = parseTaskIds(getOptionValues(commandLine, REMOVE_AFTER_OPTION.value()), taskStore.value());
+      List<ParseResult<Task>> beforeTasks = parseTaskIds(getOptionValues(commandLine, BEFORE_OPTION.value()), taskStore.value());
+      List<ParseResult<Task>> beforeTasksToAdd = parseTaskIds(getOptionValues(commandLine, ADD_BEFORE_OPTION.value()), taskStore.value());
+      List<ParseResult<Task>> beforeTasksToRemove = parseTaskIds(getOptionValues(commandLine, REMOVE_BEFORE_OPTION.value()), taskStore.value());
 
       if (afterTasks.isPopulated()
           && (afterTasksToAdd.isPopulated() || afterTasksToRemove.isPopulated())) {
-        throw new CliArguments.ArgumentFormatException(
-            "--after cannot be use with --addafter or --rmafter");
+        throwOptionsMustBeMutuallyExclusive(AFTER_OPTION, ADD_AFTER_OPTION, REMOVE_AFTER_OPTION);
       }
 
       if (beforeTasks.isPopulated()
           && (beforeTasksToAdd.isPopulated() || beforeTasksToRemove.isPopulated())) {
-        throw new CliArguments.ArgumentFormatException(
-            "--before cannot be use with --addbefore or --rmbefore");
+        throwOptionsMustBeMutuallyExclusive(BEFORE_OPTION, ADD_BEFORE_OPTION, REMOVE_BEFORE_OPTION);
       }
 
       if (description1.isEmpty()
@@ -268,5 +253,18 @@ public final class AmendArguments {
           extractTasksFrom(beforeTasksToAdd),
           extractTasksFrom(beforeTasksToRemove));
     }
+  }
+
+  private static void throwOptionsMustBeMutuallyExclusive(
+      Memoized<? extends CliArguments.Option> first,
+      Memoized<? extends CliArguments.Option> second,
+      Memoized<? extends CliArguments.Option> third) {
+    throw new CliArguments.ArgumentFormatException(
+        String.format(
+            "--%s cannot be used with --%s or --%s",
+            first.value().longName(),
+            second.value().longName(),
+            third.value().longName()));
+
   }
 }
