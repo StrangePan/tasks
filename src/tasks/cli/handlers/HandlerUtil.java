@@ -4,11 +4,11 @@ import io.reactivex.Observable;
 import java.util.EnumMap;
 import omnia.cli.out.Output;
 import omnia.data.structure.Collection;
-import omnia.data.structure.Pair;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.HashSet;
 import omnia.data.structure.mutable.MutableSet;
+import omnia.data.structure.tuple.Tuple;
 import tasks.model.Task;
 
 final class HandlerUtil {
@@ -18,13 +18,13 @@ final class HandlerUtil {
   static EnumMap<CompletedState, Set<Task>> groupByCompletionState(
       Observable<Task> tasks) {
     return tasks
-        .map(task -> Pair.of(task.isCompleted().blockingFirst() ? CompletedState.COMPLETE : CompletedState.INCOMPLETE, task))
+        .map(task -> Tuple.of(task.isCompleted().blockingFirst() ? CompletedState.COMPLETE : CompletedState.INCOMPLETE, task))
         .collectInto(
             new EnumMap<CompletedState, MutableSet<Task>>(CompletedState.class),
-            (map, taskPair) -> {
-              map.computeIfAbsent(taskPair.first(), c -> HashSet.create());
-              map.computeIfPresent(taskPair.first(), (state, set) -> {
-                set.add(taskPair.second());
+            (map, taskCouple) -> {
+              map.computeIfAbsent(taskCouple.first(), c -> HashSet.create());
+              map.computeIfPresent(taskCouple.first(), (state, set) -> {
+                set.add(taskCouple.second());
                 return set;
               });
             })
