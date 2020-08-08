@@ -35,11 +35,10 @@ import tasks.model.TaskStore;
 /** Data structure for arguments passed into the command line. */
 public final class CliArguments {
 
-  private static Collection<CommandRegistration> createCommandModeRegistry(
-      Memoized<TaskStore> taskStore, Memoized<Set<String>> validModes, Memoized<Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
+  private static Collection<CommandRegistration> createCommandModeRegistry(Memoized<Set<String>> validModes, Memoized<Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
     return new RegistryBuilder()
         .register(AddArguments.registration(taskParser))
-        .register(AmendArguments.registration(taskStore))
+        .register(AmendArguments.registration(taskParser))
         .register(CompleteArguments.registration(taskParser))
         .register(HelpArguments.registration(validModes))
         .register(InfoArguments.registration(taskParser))
@@ -54,7 +53,7 @@ public final class CliArguments {
   private final CommandRegistration fallback;
 
   public CliArguments(Memoized<TaskStore> taskStore) {
-    registrations = createCommandModeRegistry(taskStore, memoize(this::modeNamesAndAliases), memoize(() -> CliUtils.taskParser(taskStore)));
+    registrations = createCommandModeRegistry(memoize(this::modeNamesAndAliases), memoize(() -> CliUtils.taskListParser(taskStore)));
 
     registrationsIndexedByAliases =
         registrations.stream()

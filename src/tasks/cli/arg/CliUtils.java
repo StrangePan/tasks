@@ -31,8 +31,8 @@ public final class CliUtils {
     }
   }
 
-  public static CliArguments.Parser<List<ParseResult<Task>>> taskParser(Memoized<TaskStore> taskStore) {
-    return (args) -> parseTaskIds(ImmutableList.copyOf(args).stream().skip(1).collect(toList()), taskStore.value());
+  public static CliArguments.Parser<List<ParseResult<Task>>> taskListParser(Memoized<TaskStore> taskStore) {
+    return (args) -> parseTaskIds(ImmutableList.copyOf(args), taskStore.value());
   }
 
   public static List<ParseResult<Task>> parseTaskIds(List<String> userInputs, TaskStore taskStore) {

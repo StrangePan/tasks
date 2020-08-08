@@ -7,8 +7,6 @@ import static tasks.cli.arg.CliArguments.Parameter.Repeatable.REPEATABLE;
 import static tasks.cli.arg.CliUtils.extractTasksFrom;
 import static tasks.cli.arg.CliUtils.getOptionValues;
 import static tasks.cli.arg.CliUtils.getSingleOptionValue;
-import static tasks.cli.arg.CliUtils.parseTaskId;
-import static tasks.cli.arg.CliUtils.parseTaskIds;
 import static tasks.cli.arg.CliUtils.tryParse;
 import static tasks.cli.arg.CliUtils.validateParsedTasks;
 
@@ -23,7 +21,6 @@ import tasks.cli.arg.CliMode;
 import tasks.cli.arg.CliUtils;
 import tasks.cli.arg.CliUtils.ParseResult;
 import tasks.model.Task;
-import tasks.model.TaskStore;
 
 public final class AmendArguments {
   private final Task targetTask;
@@ -105,14 +102,14 @@ public final class AmendArguments {
               ADD_BEFORE_OPTION.value(),
               REMOVE_BEFORE_OPTION.value()));
 
-  public static CliArguments.CommandRegistration registration(Memoized<TaskStore> taskStore) {
+  public static CliArguments.CommandRegistration registration(Memoized<CliArguments.Parser<? extends List<ParseResult<Task>>>> taskParser) {
     return CliArguments.CommandRegistration.builder()
         .cliMode(CliMode.AMEND)
         .canonicalName("amend")
         .aliases()
         .parameters(ImmutableList.of(new CliArguments.TaskParameter(NOT_REPEATABLE)))
         .options(OPTIONS.value())
-        .parser(() -> new AmendArguments.Parser(taskStore))
+        .parser(() -> new AmendArguments.Parser(taskParser))
         .helpDocumentation(
             "Changes an existing task. Can be used to change the task description or to "
                 + "add/remove blocking/blocked tasks.");
@@ -170,10 +167,10 @@ public final class AmendArguments {
   }
 
   public final static class Parser implements CliArguments.Parser<AmendArguments> {
-    private final Memoized<TaskStore> taskStore;
+    private final Memoized<CliArguments.Parser<? extends List<ParseResult<Task>>>> taskParser;
 
-    public Parser(Memoized<TaskStore> taskStore) {
-        this.taskStore = requireNonNull(taskStore);
+    public Parser(Memoized<CliArguments.Parser<? extends List<ParseResult<Task>>>> taskParser) {
+        this.taskParser = requireNonNull(taskParser);
     }
 
     @Override
@@ -198,15 +195,15 @@ public final class AmendArguments {
         throw new CliArguments.ArgumentFormatException("Unexpected extra arguments");
       }
 
-      ParseResult<Task> targetTask = parseTaskId(argsList.itemAt(1), taskStore.value());
+      ParseResult<Task> targetTask = taskParser.value().parse(ImmutableList.of(argsList.itemAt(1))).itemAt(0);
 
       Optional<String> description1 = getSingleOptionValue(commandLine, DESCRIPTION_OPTION.value());
-      List<ParseResult<Task>> afterTasks = parseTaskIds(getOptionValues(commandLine, AFTER_OPTION.value()), taskStore.value());
-      List<ParseResult<Task>> afterTasksToAdd = parseTaskIds(getOptionValues(commandLine, ADD_AFTER_OPTION.value()), taskStore.value());
-      List<ParseResult<Task>> afterTasksToRemove = parseTaskIds(getOptionValues(commandLine, REMOVE_AFTER_OPTION.value()), taskStore.value());
-      List<ParseResult<Task>> beforeTasks = parseTaskIds(getOptionValues(commandLine, BEFORE_OPTION.value()), taskStore.value());
-      List<ParseResult<Task>> beforeTasksToAdd = parseTaskIds(getOptionValues(commandLine, ADD_BEFORE_OPTION.value()), taskStore.value());
-      List<ParseResult<Task>> beforeTasksToRemove = parseTaskIds(getOptionValues(commandLine, REMOVE_BEFORE_OPTION.value()), taskStore.value());
+      List<ParseResult<Task>> afterTasks = taskParser.value().parse(getOptionValues(commandLine, AFTER_OPTION.value()));
+      List<ParseResult<Task>> afterTasksToAdd = taskParser.value().parse(getOptionValues(commandLine, ADD_AFTER_OPTION.value()));
+      List<ParseResult<Task>> afterTasksToRemove = taskParser.value().parse(getOptionValues(commandLine, REMOVE_AFTER_OPTION.value()));
+      List<ParseResult<Task>> beforeTasks = taskParser.value().parse(getOptionValues(commandLine, BEFORE_OPTION.value()));
+      List<ParseResult<Task>> beforeTasksToAdd = taskParser.value().parse(getOptionValues(commandLine, ADD_BEFORE_OPTION.value()));
+      List<ParseResult<Task>> beforeTasksToRemove = taskParser.value().parse(getOptionValues(commandLine, REMOVE_BEFORE_OPTION.value()));
 
       if (afterTasks.isPopulated()
           && (afterTasksToAdd.isPopulated() || afterTasksToRemove.isPopulated())) {

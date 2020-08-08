@@ -8,6 +8,7 @@ import static tasks.cli.arg.CliUtils.tryParse;
 import static tasks.cli.arg.CliUtils.validateParsedTasks;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import omnia.data.cache.Memoized;
@@ -43,8 +44,8 @@ public abstract class SimpleArguments {
       1st param assumed to be "remove" or an alias for it.
       2nd+ params must be task IDs
       */
-      List<String> argsList = List.masking(tryParse(args, new Options()).getArgList());
-      if (argsList.count() < 2) {
+      List<String> argsList = List.masking(tryParse(Arrays.copyOfRange(args, 1, args.length), new Options()).getArgList());
+      if (argsList.count() < 1) {
         throw new CliArguments.ArgumentFormatException("No task IDs specified");
       }
 
