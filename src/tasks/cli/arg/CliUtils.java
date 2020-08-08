@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static omnia.data.stream.Collectors.toList;
 
+import io.reactivex.Observable;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
@@ -118,6 +119,13 @@ public final class CliUtils {
           String.format("Too many values provided for parameter '%s'", opt));
     }
     return Optional.ofNullable(commandLine.getOptionValue(opt));
+  }
+
+  public static Options toOptions(Iterable<? extends CliArguments.Option> options) {
+    return Observable.fromIterable(options)
+        .map(CliArguments.Option::toCliOption)
+        .collect(Options::new, Options::addOption)
+        .blockingGet();
   }
 
   public static void assertNoExtraArgs(CommandLine commandLine) {

@@ -29,17 +29,6 @@ public final class AddArguments {
   private final List<Task> blockingTasks;
   private final List<Task> blockedTasks;
 
-  public static CommandRegistration registration(Memoized<TaskStore> taskStore) {
-    return CommandRegistration.builder()
-        .cliMode(CliMode.ADD)
-        .canonicalName("add")
-        .aliases()
-        .parameters(COMMAND_PARAMETERS.value())
-        .options(ImmutableList.of(AFTER_OPTION.value(), BEFORE_OPTION.value()))
-        .parser(() -> new AddArguments.Parser(taskStore))
-        .helpDocumentation("Creates a new task.");
-  }
-
   private static final Memoized<CliArguments.StringParameter> DESCRIPTION_PARAMETER =
       memoize(() -> new CliArguments.StringParameter("description", NOT_REPEATABLE));
 
@@ -61,6 +50,20 @@ public final class AddArguments {
               "b",
               "The tasks this one comes before. Tasks listed here will be blocked by this task.",
               REPEATABLE));
+
+  private static final Memoized<ImmutableList<CliArguments.Option>> OPTIONS =
+      memoize(() -> ImmutableList.of(AFTER_OPTION.value(), BEFORE_OPTION.value()));
+
+  public static CommandRegistration registration(Memoized<TaskStore> taskStore) {
+    return CommandRegistration.builder()
+        .cliMode(CliMode.ADD)
+        .canonicalName("add")
+        .aliases()
+        .parameters(COMMAND_PARAMETERS.value())
+        .options(OPTIONS.value())
+        .parser(() -> new AddArguments.Parser(taskStore))
+        .helpDocumentation("Creates a new task.");
+  }
 
   private AddArguments(String description, List<Task> blockingTasks, List<Task> blockedTasks) {
     this.description = description;
@@ -99,10 +102,7 @@ public final class AddArguments {
       optional befores
       optional afters
       */
-      Options options =
-          new Options()
-              .addOption(AFTER_OPTION.value().toCliOption())
-              .addOption(BEFORE_OPTION.value().toCliOption());
+      Options options = CliUtils.toOptions(OPTIONS.value());
 
       CommandLine commandLine = tryParse(args, options);
 

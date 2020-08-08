@@ -12,7 +12,6 @@ import static tasks.cli.arg.CliUtils.parseTaskIds;
 import static tasks.cli.arg.CliUtils.tryParse;
 import static tasks.cli.arg.CliUtils.validateParsedTasks;
 
-import io.reactivex.Observable;
 import java.util.Optional;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
@@ -21,6 +20,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import tasks.cli.arg.CliArguments;
 import tasks.cli.arg.CliMode;
+import tasks.cli.arg.CliUtils;
 import tasks.cli.arg.CliUtils.ParseResult;
 import tasks.model.Task;
 import tasks.model.TaskStore;
@@ -186,11 +186,7 @@ public final class AmendArguments {
       optional after=, after+=, and after-=. after= cannot be used with after+= and after-=.
       optional before=, before+=, and before-=. before= cannot be used with before+= and before-=.
       */
-      Options options =
-          Observable.fromIterable(OPTIONS.value())
-              .map(CliArguments.Option::toCliOption)
-              .collect(Options::new, Options::addOption)
-              .blockingGet();
+      Options options = CliUtils.toOptions(OPTIONS.value());
 
       CommandLine commandLine = tryParse(args, options);
 
