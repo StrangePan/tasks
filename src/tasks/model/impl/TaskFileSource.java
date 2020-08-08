@@ -13,9 +13,10 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import omnia.data.structure.DirectedGraph;
 import omnia.data.structure.Map;
-import omnia.data.structure.Pair;
 import omnia.data.structure.immutable.ImmutableDirectedGraph;
 import omnia.data.structure.immutable.ImmutableMap;
+import omnia.data.structure.tuple.Couple;
+import omnia.data.structure.tuple.Tuple;
 import tasks.io.File;
 
 final class TaskFileSource {
@@ -32,7 +33,7 @@ final class TaskFileSource {
     this.file = file;
   }
 
-  Single<Pair<DirectedGraph<TaskId>, Map<TaskId, TaskData>>> readFromFile() {
+  Single<Couple<DirectedGraph<TaskId>, Map<TaskId, TaskData>>> readFromFile() {
     return Single.fromCallable(() -> {
       try (BufferedReader reader = new BufferedReader(file.openReader())) {
         return parseTaskData(reader);
@@ -41,7 +42,7 @@ final class TaskFileSource {
   }
 
   Completable writeToFile(
-      Pair<
+      Couple<
           ? extends DirectedGraph<? extends TaskId>,
           ? extends Map<? extends TaskId, ? extends TaskData>> data) {
     return Completable.fromAction(() -> {
@@ -51,7 +52,7 @@ final class TaskFileSource {
     });
   }
 
-  private static Pair<DirectedGraph<TaskId>, Map<TaskId, TaskData>> parseTaskData(BufferedReader reader) {
+  private static Couple<DirectedGraph<TaskId>, Map<TaskId, TaskData>> parseTaskData(BufferedReader reader) {
     return Single.just(reader)
         .map(BufferedReader::lines)
         .map(Stream::iterator)
@@ -124,8 +125,8 @@ final class TaskFileSource {
       // TODO: ensure unique ids
     }
 
-    Pair<DirectedGraph<TaskId>, Map<TaskId, TaskData>> build() {
-      return Pair.of(graph.build(), tasks.build());
+    Couple<DirectedGraph<TaskId>, Map<TaskId, TaskData>> build() {
+      return Tuple.of(graph.build(), tasks.build());
     }
   }
 
@@ -138,7 +139,7 @@ final class TaskFileSource {
     }
   }
 
-  private void serializeTaskData(Pair<? extends DirectedGraph<? extends TaskId>, ? extends Map<? extends TaskId, ? extends TaskData>> data, Writer writer) {
+  private void serializeTaskData(Couple<? extends DirectedGraph<? extends TaskId>, ? extends Map<? extends TaskId, ? extends TaskData>> data, Writer writer) {
     Observable.just(
             Observable.just("# version " + VERSION),
             Observable.just("# tasks"),
@@ -155,11 +156,11 @@ final class TaskFileSource {
         .map(Map::entries)
         .flatMapObservable(Observable::fromIterable)
         .sorted(Comparator.comparing(entry -> entry.key().asLong()))
-        .map(entry -> Pair.of(entry.key(), entry.value()))
+        .map(entry -> Tuple.of(entry.key(), entry.value()))
         .map(TaskFileSource::serialize);
   }
 
-  private static String serialize(Pair<? extends TaskId, ? extends TaskData> task) {
+  private static String serialize(Couple<? extends TaskId, ? extends TaskData> task) {
     return new StringBuilder()
         .append(serialize(task.first()))
         .append(TASK_FIELD_DELIMITER)

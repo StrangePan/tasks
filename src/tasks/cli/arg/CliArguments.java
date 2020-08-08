@@ -9,14 +9,12 @@ import io.reactivex.Single;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
 import omnia.data.structure.List;
 import omnia.data.structure.Map;
-import omnia.data.structure.Pair;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
@@ -30,6 +28,7 @@ import tasks.cli.command.info.InfoArguments;
 import tasks.cli.command.list.ListArguments;
 import tasks.cli.command.remove.RemoveArguments;
 import tasks.cli.command.reopen.ReopenArguments;
+import omnia.data.structure.tuple.Tuple;
 import tasks.model.TaskStore;
 
 /** Data structure for arguments passed into the command line. */
@@ -62,7 +61,7 @@ public final class CliArguments {
                 registration ->
                     registration.canonicalNameAndAliases()
                         .stream()
-                        .map(alias -> Pair.of(alias, registration)))
+                        .map(alias -> Tuple.of(alias, registration)))
             .collect(toImmutableMap());
 
     //noinspection OptionalGetWithoutIsPresent
@@ -85,17 +84,17 @@ public final class CliArguments {
     }
 
     return Single.just(
-        Pair.of(
+        Tuple.of(
             args,
             Optional.of(args)
                 .filter(a -> a.length > 0)
                 .map(a -> a[0])
                 .flatMap(this::registrationFromArgument)))
         .map(
-            pair -> pair.second().isPresent()
-                ? pair.map(Function.identity(), Optional::get)
-                : Pair.of(new String[0], fallback))
-        .map(pair -> pair.second().parserSupplier().parse(pair.first()))
+            couple -> couple.second().isPresent()
+                ? couple.mapSecond(Optional::get)
+                : Tuple.of(new String[0], fallback))
+        .map(couple -> couple.second().parserSupplier().parse(couple.first()))
         .blockingGet();
   }
 
