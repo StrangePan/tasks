@@ -14,13 +14,14 @@ import java.util.function.Predicate;
 import omnia.data.structure.DirectedGraph;
 import omnia.data.structure.Graph;
 import omnia.data.structure.Map;
-import omnia.data.structure.Pair;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableMap;
 import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.HashMap;
 import omnia.data.structure.mutable.MutableMap;
 import omnia.data.structure.observable.writable.WritableObservableDirectedGraph;
+import omnia.data.structure.tuple.Couple;
+import omnia.data.structure.tuple.Tuple;
 import tasks.io.File;
 import tasks.model.Task;
 import tasks.model.TaskBuilder;
@@ -35,7 +36,7 @@ public final class TaskStoreImpl implements TaskStore {
 
   public TaskStoreImpl(String filePath) {
     this.fileSource = new TaskFileSource(File.fromPath(filePath));
-    Pair<DirectedGraph<TaskId>, Map<TaskId, TaskData>> loadedData =
+    Couple<DirectedGraph<TaskId>, Map<TaskId, TaskData>> loadedData =
         fileSource.readFromFile().blockingGet();
     taskGraph = WritableObservableDirectedGraph.copyOf(loadedData.first());
     taskData = HashMap.copyOf(loadedData.second());
@@ -325,7 +326,7 @@ public final class TaskStoreImpl implements TaskStore {
     return Single.zip(
             taskGraph.observe().states().firstOrError(),
             Single.fromCallable(() -> ImmutableMap.copyOf(taskData)),
-            Pair::of)
+            Tuple::of)
         .flatMapCompletable(fileSource::writeToFile)
         .cache();
   }
