@@ -38,7 +38,7 @@ public final class CliArguments {
   private static Collection<CommandRegistration> createCommandModeRegistry(
       Memoized<TaskStore> taskStore, Memoized<Set<String>> validModes, Memoized<Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
     return new RegistryBuilder()
-        .register(AddArguments.registration(taskStore))
+        .register(AddArguments.registration(taskParser))
         .register(AmendArguments.registration(taskStore))
         .register(CompleteArguments.registration(taskParser))
         .register(HelpArguments.registration(validModes))

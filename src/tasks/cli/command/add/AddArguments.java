@@ -54,14 +54,14 @@ public final class AddArguments {
   private static final Memoized<ImmutableList<CliArguments.Option>> OPTIONS =
       memoize(() -> ImmutableList.of(AFTER_OPTION.value(), BEFORE_OPTION.value()));
 
-  public static CommandRegistration registration(Memoized<TaskStore> taskStore) {
+  public static CommandRegistration registration(Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
     return CommandRegistration.builder()
         .cliMode(CliMode.ADD)
         .canonicalName("add")
         .aliases()
         .parameters(COMMAND_PARAMETERS.value())
         .options(OPTIONS.value())
-        .parser(() -> new AddArguments.Parser(taskStore))
+        .parser(() -> new AddArguments.Parser(taskParser))
         .helpDocumentation("Creates a new task.");
   }
 
@@ -87,10 +87,10 @@ public final class AddArguments {
   }
 
   public static final class Parser implements CliArguments.Parser<AddArguments> {
-    private final Memoized<TaskStore> taskStore;
+    private final Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser;
 
-    public Parser(Memoized<TaskStore> taskStore) {
-      this.taskStore = taskStore;
+    public Parser(Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
+      this.taskParser = taskParser;
     }
 
     @Override
@@ -112,10 +112,8 @@ public final class AddArguments {
               () -> new CliArguments.ArgumentFormatException("Task description not defined"));
       CliUtils.assertNoExtraArgs(commandLine, COMMAND_PARAMETERS.value());
 
-      List<ParseResult<Task>> afterTasks =
-          parseTaskIds(getOptionValues(commandLine, AFTER_OPTION.value()), taskStore.value());
-      List<ParseResult<Task>> beforeTasks =
-          parseTaskIds(getOptionValues(commandLine, BEFORE_OPTION.value()), taskStore.value());
+      List<ParseResult<Task>> afterTasks = taskParser.value().parse(getOptionValues(commandLine, AFTER_OPTION.value()));
+      List<ParseResult<Task>> beforeTasks = taskParser.value().parse(getOptionValues(commandLine, BEFORE_OPTION.value()));
 
       validateParsedTasks(
           ImmutableList.<ParseResult<?>>builder().addAll(afterTasks).addAll(beforeTasks).build());
