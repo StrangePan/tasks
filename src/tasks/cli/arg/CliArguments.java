@@ -24,7 +24,7 @@ import tasks.cli.command.amend.AmendCommand;
 import tasks.cli.command.blockers.BlockersCommand;
 import tasks.cli.command.complete.CompleteCommand;
 import tasks.cli.command.help.HelpCommand;
-import tasks.cli.command.info.InfoArguments;
+import tasks.cli.command.info.InfoCommand;
 import tasks.cli.command.list.ListCommand;
 import tasks.cli.command.remove.RemoveArguments;
 import tasks.cli.command.reopen.ReopenArguments;
@@ -42,7 +42,7 @@ public final class CliArguments {
         .register(BlockersCommand.registration(taskParser))
         .register(CompleteCommand.registration(taskParser))
         .register(HelpCommand.registration(validModes))
-        .register(InfoArguments.registration(taskParser))
+        .register(InfoCommand.registration(taskParser))
         .register(ListCommand.registration())
         .register(RemoveArguments.registration(taskParser))
         .register(ReopenArguments.registration(taskParser))
