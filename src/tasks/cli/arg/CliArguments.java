@@ -22,7 +22,7 @@ import omnia.data.structure.mutable.MutableMap;
 import tasks.cli.command.add.AddCommand;
 import tasks.cli.command.amend.AmendCommand;
 import tasks.cli.command.blockers.BlockersCommand;
-import tasks.cli.command.complete.CompleteArguments;
+import tasks.cli.command.complete.CompleteCommand;
 import tasks.cli.command.help.HelpArguments;
 import tasks.cli.command.info.InfoArguments;
 import tasks.cli.command.list.ListCommand;
@@ -40,7 +40,7 @@ public final class CliArguments {
         .register(AddCommand.registration(taskParser))
         .register(AmendCommand.registration(taskParser))
         .register(BlockersCommand.registration(taskParser))
-        .register(CompleteArguments.registration(taskParser))
+        .register(CompleteCommand.registration(taskParser))
         .register(HelpArguments.registration(validModes))
         .register(InfoArguments.registration(taskParser))
         .register(ListCommand.registration())
