@@ -16,6 +16,7 @@ import tasks.cli.handlers.HandlerException;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
+/** Business logic for the Blockers command. */
 public final class BlockersHandler implements ArgumentHandler<BlockersArguments> {
   private final Memoized<TaskStore> taskStore;
 
@@ -44,7 +45,8 @@ public final class BlockersHandler implements ArgumentHandler<BlockersArguments>
         .ignoreElement();
   }
 
-  private Single<Couple<Set<Task>, Set<Task>>> mutateAndProduceBeforeAfterSnapshot(BlockersArguments arguments) {
+  private Single<Couple<Set<Task>, Set<Task>>> mutateAndProduceBeforeAfterSnapshot(
+      BlockersArguments arguments) {
     return getTasksBlocking(arguments.targetTask())
         .flatMap(
             blockingTasksBeforeMutation ->

@@ -8,13 +8,13 @@ import io.reactivex.Single;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableSet;
-import tasks.cli.command.add.AddArguments;
 import tasks.cli.handlers.ArgumentHandler;
 import tasks.cli.handlers.HandlerException;
 import tasks.model.Task;
 import tasks.model.TaskBuilder;
 import tasks.model.TaskStore;
 
+/** Business logic for the Add command. */
 public final class AddHandler implements ArgumentHandler<AddArguments> {
   private final Memoized<TaskStore> taskStore;
 

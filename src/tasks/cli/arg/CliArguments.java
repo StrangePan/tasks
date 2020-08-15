@@ -19,16 +19,16 @@ import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.HashMap;
 import omnia.data.structure.mutable.MutableMap;
-import tasks.cli.command.add.AddArguments;
-import tasks.cli.command.amend.AmendArguments;
-import tasks.cli.command.blockers.BlockersArguments;
-import tasks.cli.command.complete.CompleteArguments;
-import tasks.cli.command.help.HelpArguments;
-import tasks.cli.command.info.InfoArguments;
-import tasks.cli.command.list.ListArguments;
-import tasks.cli.command.remove.RemoveArguments;
-import tasks.cli.command.reopen.ReopenArguments;
 import omnia.data.structure.tuple.Tuple;
+import tasks.cli.command.add.AddCommand;
+import tasks.cli.command.amend.AmendCommand;
+import tasks.cli.command.blockers.BlockersCommand;
+import tasks.cli.command.complete.CompleteCommand;
+import tasks.cli.command.help.HelpCommand;
+import tasks.cli.command.info.InfoCommand;
+import tasks.cli.command.list.ListCommand;
+import tasks.cli.command.remove.RemoveCommand;
+import tasks.cli.command.reopen.ReopenCommand;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
@@ -37,15 +37,15 @@ public final class CliArguments {
 
   private static Collection<CommandRegistration> createCommandModeRegistry(Memoized<Set<String>> validModes, Memoized<Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
     return new RegistryBuilder()
-        .register(AddArguments.registration(taskParser))
-        .register(AmendArguments.registration(taskParser))
-        .register(BlockersArguments.registration(taskParser))
-        .register(CompleteArguments.registration(taskParser))
-        .register(HelpArguments.registration(validModes))
-        .register(InfoArguments.registration(taskParser))
-        .register(ListArguments.registration())
-        .register(RemoveArguments.registration(taskParser))
-        .register(ReopenArguments.registration(taskParser))
+        .register(AddCommand.registration(taskParser))
+        .register(AmendCommand.registration(taskParser))
+        .register(BlockersCommand.registration(taskParser))
+        .register(CompleteCommand.registration(taskParser))
+        .register(HelpCommand.registration(validModes))
+        .register(InfoCommand.registration(taskParser))
+        .register(ListCommand.registration())
+        .register(RemoveCommand.registration(taskParser))
+        .register(ReopenCommand.registration(taskParser))
         .build();
   }
 

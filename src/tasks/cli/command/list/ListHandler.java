@@ -6,14 +6,13 @@ import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import omnia.data.cache.Memoized;
-import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.tuple.Triple;
 import omnia.data.structure.tuple.Tuple;
-import tasks.cli.command.list.ListArguments;
 import tasks.cli.handlers.ArgumentHandler;
 import tasks.cli.handlers.HandlerUtil;
 import tasks.model.TaskStore;
 
+/** Business logic for the List command. */
 public final class ListHandler implements ArgumentHandler<ListArguments> {
   private final Memoized<TaskStore> taskStore;
 

@@ -8,12 +8,12 @@ import io.reactivex.Observable;
 import io.reactivex.Single;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
-import tasks.cli.command.remove.RemoveArguments;
 import tasks.cli.handlers.ArgumentHandler;
 import tasks.cli.handlers.HandlerException;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
+/** Business logic for the Remove command. */
 public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
   private final Memoized<TaskStore> taskStore;
 

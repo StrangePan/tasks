@@ -17,6 +17,7 @@ import tasks.cli.arg.CommandDocumentation;
 import tasks.cli.arg.CommandDocumentation.OptionDocumentation;
 import tasks.cli.handlers.ArgumentHandler;
 
+/** Business logic for the Help command. */
 public final class HelpHandler implements ArgumentHandler<HelpArguments> {
   private final Memoized<Set<CommandDocumentation>> documentation;
 

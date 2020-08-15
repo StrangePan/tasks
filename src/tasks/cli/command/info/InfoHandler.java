@@ -10,6 +10,7 @@ import tasks.cli.handlers.ArgumentHandler;
 import tasks.cli.handlers.HandlerException;
 import tasks.model.Task;
 
+/** Business logic for the Info command. */
 public final class InfoHandler implements ArgumentHandler<InfoArguments> {
   
   @Override
