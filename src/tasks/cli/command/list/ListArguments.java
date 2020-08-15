@@ -67,7 +67,7 @@ public final class ListArguments {
         .aliases("ls", "l")
         .parameters(ImmutableList.empty())
         .options(OPTIONS.value())
-        .parser(() -> ListArguments::parse)
+        .parser(Parser::new)
         .helpDocumentation(
             "Prints a list of tasks. By default, only lists uncompleted tasks that are "
                 + "unblocked. Can also list only blocked tasks, only completed tasks, any "
@@ -92,27 +92,31 @@ public final class ListArguments {
     return isCompletedSet;
   }
 
-  public static ListArguments parse(String[] args) {
-    /*
-    First arg is assumed to be "ls" or an alias thereof
-    No other unclassified arg allowed
-    optional --blocked flag
-    optional --completed flag
-    */
-    Options options = CliUtils.toOptions(OPTIONS.value());
+  public static final class Parser implements CliArguments.Parser<ListArguments> {
 
-    CommandLine commandLine = tryParse(args, options);
-    assertNoExtraArgs(commandLine);
+    @Override
+    public ListArguments parse(String[] args) {
+      /*
+      First arg is assumed to be "ls" or an alias thereof
+      No other unclassified arg allowed
+      optional --blocked flag
+      optional --completed flag
+      */
+      Options options = CliUtils.toOptions(OPTIONS.value());
 
-    boolean isAllSet = commandLine.hasOption(ALL_OPTION.value().shortName());
-    boolean isBlockedSet = isAllSet || commandLine.hasOption(BLOCKED_OPTION.value().shortName());
-    boolean isCompletedSet =
-        isAllSet || commandLine.hasOption(COMPLETED_OPTION.value().shortName());
-    boolean isUnblockedSet =
-        isAllSet
-            || commandLine.hasOption(UNBLOCKED_OPTION.value().shortName())
-            || (!isBlockedSet && !isCompletedSet);
+      CommandLine commandLine = tryParse(args, options);
+      assertNoExtraArgs(commandLine);
 
-    return new ListArguments(isUnblockedSet, isBlockedSet, isCompletedSet);
+      boolean isAllSet = commandLine.hasOption(ALL_OPTION.value().shortName());
+      boolean isBlockedSet = isAllSet || commandLine.hasOption(BLOCKED_OPTION.value().shortName());
+      boolean isCompletedSet =
+          isAllSet || commandLine.hasOption(COMPLETED_OPTION.value().shortName());
+      boolean isUnblockedSet =
+          isAllSet
+              || commandLine.hasOption(UNBLOCKED_OPTION.value().shortName())
+              || (!isBlockedSet && !isCompletedSet);
+
+      return new ListArguments(isUnblockedSet, isBlockedSet, isCompletedSet);
+    }
   }
 }
