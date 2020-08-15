@@ -21,7 +21,7 @@ import omnia.data.structure.mutable.HashMap;
 import omnia.data.structure.mutable.MutableMap;
 import tasks.cli.command.add.AddCommand;
 import tasks.cli.command.amend.AmendCommand;
-import tasks.cli.command.blockers.BlockersArguments;
+import tasks.cli.command.blockers.BlockersCommand;
 import tasks.cli.command.complete.CompleteArguments;
 import tasks.cli.command.help.HelpArguments;
 import tasks.cli.command.info.InfoArguments;
@@ -39,7 +39,7 @@ public final class CliArguments {
     return new RegistryBuilder()
         .register(AddCommand.registration(taskParser))
         .register(AmendCommand.registration(taskParser))
-        .register(BlockersArguments.registration(taskParser))
+        .register(BlockersCommand.registration(taskParser))
         .register(CompleteArguments.registration(taskParser))
         .register(HelpArguments.registration(validModes))
         .register(InfoArguments.registration(taskParser))
