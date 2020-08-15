@@ -20,7 +20,7 @@ import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.HashMap;
 import omnia.data.structure.mutable.MutableMap;
 import tasks.cli.command.add.AddCommand;
-import tasks.cli.command.amend.AmendArguments;
+import tasks.cli.command.amend.AmendCommand;
 import tasks.cli.command.blockers.BlockersArguments;
 import tasks.cli.command.complete.CompleteArguments;
 import tasks.cli.command.help.HelpArguments;
@@ -38,7 +38,7 @@ public final class CliArguments {
   private static Collection<CommandRegistration> createCommandModeRegistry(Memoized<Set<String>> validModes, Memoized<Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
     return new RegistryBuilder()
         .register(AddCommand.registration(taskParser))
-        .register(AmendArguments.registration(taskParser))
+        .register(AmendCommand.registration(taskParser))
         .register(BlockersArguments.registration(taskParser))
         .register(CompleteArguments.registration(taskParser))
         .register(HelpArguments.registration(validModes))
