@@ -26,7 +26,7 @@ import tasks.cli.command.complete.CompleteCommand;
 import tasks.cli.command.help.HelpCommand;
 import tasks.cli.command.info.InfoCommand;
 import tasks.cli.command.list.ListCommand;
-import tasks.cli.command.remove.RemoveArguments;
+import tasks.cli.command.remove.RemoveCommand;
 import tasks.cli.command.reopen.ReopenArguments;
 import omnia.data.structure.tuple.Tuple;
 import tasks.model.Task;
@@ -44,7 +44,7 @@ public final class CliArguments {
         .register(HelpCommand.registration(validModes))
         .register(InfoCommand.registration(taskParser))
         .register(ListCommand.registration())
-        .register(RemoveArguments.registration(taskParser))
+        .register(RemoveCommand.registration(taskParser))
         .register(ReopenArguments.registration(taskParser))
         .build();
   }
