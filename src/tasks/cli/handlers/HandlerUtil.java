@@ -1,8 +1,14 @@
 package tasks.cli.handlers;
 
+import static java.util.stream.Collectors.joining;
+import static omnia.data.stream.Collectors.toImmutableSet;
+
 import io.reactivex.Observable;
 import java.util.EnumMap;
+import java.util.Optional;
+import omnia.algorithm.SetAlgorithms;
 import omnia.cli.out.Output;
+import omnia.contract.Countable;
 import omnia.data.structure.Collection;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableSet;
@@ -37,9 +43,10 @@ public final class HandlerUtil {
   }
 
   public static void printIfPopulated(String prefix, Collection<Task> tasks) {
-    if (tasks.isPopulated()) {
-      System.out.print(stringifyIfPopulated(prefix, tasks).renderForTerminal());
-    }
+    Optional.of(stringifyIfPopulated(prefix, tasks))
+        .filter(Output::isPopulated)
+        .map(Output::renderForTerminal)
+        .ifPresent(System.out::print);
   }
 
   static Output stringifyIfPopulated(String prefix, Collection<Task> tasks) {
@@ -59,6 +66,20 @@ public final class HandlerUtil {
         .collectInto(Output.builder(), Output.Builder::appendLine)
         .map(Output.Builder::build)
         .blockingGet();
+  }
+
+  public static void verifyTasksAreMutuallyExclusive(
+      String failurePrefix, Collection<? extends Task> first, Collection<? extends Task> second) {
+    Optional.of(
+        SetAlgorithms.intersectionOf(ImmutableSet.copyOf(first), ImmutableSet.copyOf(second))
+            .stream()
+            .collect(toImmutableSet()))
+        .filter(Countable::isPopulated)
+        .map(ambiguousTasks -> ambiguousTasks.stream().map(Object::toString).collect(joining(", ")))
+        .map(ambiguousTasks -> failurePrefix + ambiguousTasks)
+        .ifPresent(message -> {
+          throw new HandlerException(message);
+        });
   }
 
   public enum CompletedState {

@@ -48,7 +48,8 @@ public final class BlockersArguments {
           () -> new CliArguments.TaskOption(
               "remove",
               "d",
-              "Removes another task from being a blocker.",
+              "Removes another task from being a blocker. Ignored if --"
+                  + CLEAR_OPTION.value().longName() + "is set.",
               REPEATABLE));
 
   private static final Memoized<ImmutableList<CliArguments.Option>> OPTIONS =
@@ -91,7 +92,7 @@ public final class BlockersArguments {
     return blockingTasksToAdd;
   }
 
-  public List<Task> getBlockingTasksToRemove() {
+  public List<Task> blockingTasksToRemove() {
     return blockingTasksToRemove;
   }
 
