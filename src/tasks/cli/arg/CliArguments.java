@@ -25,7 +25,7 @@ import tasks.cli.command.blockers.BlockersArguments;
 import tasks.cli.command.complete.CompleteArguments;
 import tasks.cli.command.help.HelpArguments;
 import tasks.cli.command.info.InfoArguments;
-import tasks.cli.command.list.ListArguments;
+import tasks.cli.command.list.ListCommand;
 import tasks.cli.command.remove.RemoveArguments;
 import tasks.cli.command.reopen.ReopenArguments;
 import omnia.data.structure.tuple.Tuple;
@@ -43,7 +43,7 @@ public final class CliArguments {
         .register(CompleteArguments.registration(taskParser))
         .register(HelpArguments.registration(validModes))
         .register(InfoArguments.registration(taskParser))
-        .register(ListArguments.registration())
+        .register(ListCommand.registration())
         .register(RemoveArguments.registration(taskParser))
         .register(ReopenArguments.registration(taskParser))
         .build();
