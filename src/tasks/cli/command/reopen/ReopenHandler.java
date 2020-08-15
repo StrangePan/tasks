@@ -1,4 +1,4 @@
-package tasks.cli.handlers;
+package tasks.cli.command.reopen;
 
 import static java.util.Objects.requireNonNull;
 
@@ -7,14 +7,16 @@ import io.reactivex.Observable;
 import java.util.EnumMap;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
-import tasks.cli.arg.ReopenArguments;
+import tasks.cli.handlers.ArgumentHandler;
+import tasks.cli.handlers.HandlerException;
+import tasks.cli.handlers.HandlerUtil;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
 public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
   private final Memoized<TaskStore> taskStore;
 
-  ReopenHandler(Memoized<TaskStore> taskStore) {
+  public ReopenHandler(Memoized<TaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 

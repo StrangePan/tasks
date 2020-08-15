@@ -20,180 +20,31 @@ import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.HashMap;
 import omnia.data.structure.mutable.MutableMap;
+import tasks.cli.command.add.AddArguments;
+import tasks.cli.command.amend.AmendArguments;
+import tasks.cli.command.complete.CompleteArguments;
+import tasks.cli.command.help.HelpArguments;
+import tasks.cli.command.info.InfoArguments;
+import tasks.cli.command.list.ListArguments;
+import tasks.cli.command.remove.RemoveArguments;
+import tasks.cli.command.reopen.ReopenArguments;
 import omnia.data.structure.tuple.Tuple;
+import tasks.model.Task;
 import tasks.model.TaskStore;
 
 /** Data structure for arguments passed into the command line. */
 public final class CliArguments {
 
-  private static final boolean REPEATABLE = true;
-  private static final boolean NOT_REPEATABLE = false;
-
-  private static Collection<CommandRegistration> createCommandModeRegistry(
-      Memoized<TaskStore> taskStore, Memoized<Set<String>> validModes) {
+  private static Collection<CommandRegistration> createCommandModeRegistry(Memoized<Set<String>> validModes, Memoized<Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
     return new RegistryBuilder()
-        .register(
-            CommandRegistration.builder()
-                .cliMode(CliMode.HELP)
-                .canonicalName("help")
-                .aliases()
-                .parameters(ImmutableList.of(new StringParameter("command", NOT_REPEATABLE)))
-                .options(ImmutableList.empty())
-                .parser(() -> new HelpArguments.Parser(validModes))
-                .helpDocumentation("Retrieve the help documentation for a specific command."))
-        .register(
-            CommandRegistration.builder()
-                .cliMode(CliMode.LIST)
-                .canonicalName("list")
-                .aliases("ls", "l")
-                .parameters(ImmutableList.empty())
-                .options(
-                    ImmutableList.of(
-                        new FlagOption(
-                            "blocked",
-                            "b",
-                            "List all tasks that are uncompleted, but blocked by other tasks. Can "
-                                + "be combined with other flags.",
-                            NOT_REPEATABLE),
-                        new FlagOption(
-                            "completed",
-                            "c",
-                            "List all tasks already marked as completed. Can be combined with "
-                                + "other flags.",
-                            NOT_REPEATABLE),
-                        new FlagOption(
-                            "unblocked",
-                            "u",
-                            "List all unblocked tasks. Can be combined with other flags.",
-                            NOT_REPEATABLE),
-                        new FlagOption(
-                            "all",
-                            "a",
-                            "Lists all tasks. A shortcut for all other flags put together.",
-                            NOT_REPEATABLE)))
-                .parser(() -> ListArguments::parse)
-                .helpDocumentation(
-                    "Prints a list of tasks. By default, only lists uncompleted tasks that are "
-                        + "unblocked. Can also list only blocked tasks, only completed tasks, any "
-                        + "combination of the three, or all tasks."))
-        .register(
-            CommandRegistration.builder()
-                .cliMode(CliMode.INFO)
-                .canonicalName("info")
-                .aliases("i")
-                .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
-                .options(ImmutableList.empty())
-                .parser(() -> new InfoArguments.Parser(taskStore))
-                .helpDocumentation(
-                    "Prints all known information about a particular task, including its "
-                        + "description, all tasks blocking it, and all tasks it is blocking."))
-        .register(
-            CommandRegistration.builder()
-                .cliMode(CliMode.ADD)
-                .canonicalName("add")
-                .aliases()
-                .parameters(ImmutableList.of(new StringParameter("description", NOT_REPEATABLE)))
-                .options(
-                    ImmutableList.of(
-                        new TaskOption(
-                            "after",
-                            "a",
-                            "The tasks this one comes after. Tasks listed here will be blocking "
-                                + "this task.",
-                            REPEATABLE),
-                        new TaskOption(
-                            "before",
-                            "b",
-                            "The tasks this one comes before. Tasks listed here will be blocked by "
-                                + "this task.",
-                            REPEATABLE)))
-                .parser(() -> new AddArguments.Parser(taskStore))
-                .helpDocumentation("Creates a new task."))
-        .register(
-            CommandRegistration.builder()
-                .cliMode(CliMode.REMOVE)
-                .canonicalName("remove")
-                .aliases("rm")
-                .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
-                .options(ImmutableList.empty())
-                .parser(() -> new RemoveArguments.Parser(taskStore))
-                .helpDocumentation(
-                    "Completely deletes a task. THIS CANNOT BE UNDONE. It is recommended that "
-                        + "tasks be marked as completed rather than deleted, or amended if their "
-                        + "content needs to change."))
-        .register(
-            CommandRegistration.builder()
-                .cliMode(CliMode.AMEND)
-                .canonicalName("amend")
-                .aliases()
-                .parameters(ImmutableList.of(new TaskParameter(NOT_REPEATABLE)))
-                .options(
-                    ImmutableList.of(
-                        new StringOption(
-                            "description",
-                            "m",
-                            "Set the task description.",
-                            NOT_REPEATABLE,
-                            "description"),
-                        new TaskOption(
-                            "after",
-                            "a",
-                            "Sets this task as coming after another task. Tasks listed here will "
-                                + "be blocking this task. Removes all previous blocking tasks.",
-                            REPEATABLE),
-                        new TaskOption(
-                            "addafter",
-                            "aa",
-                            "Adds another task as blocking this one.",
-                            REPEATABLE),
-                        new TaskOption(
-                            "rmafter",
-                            "ra",
-                            "Removes another task as blocking this one.",
-                            REPEATABLE),
-                        new TaskOption(
-                            "before",
-                            "b",
-                            "Sets this task as coming before another task. Tasks listed here will "
-                                + "be blocked by this task. Removes all previous blocked tasks.",
-                            REPEATABLE),
-                        new TaskOption(
-                            "addbefore",
-                            "ab",
-                            "Adds another task as being blocked by this one.",
-                            REPEATABLE),
-                        new TaskOption(
-                            "rmbefore",
-                            "rb",
-                            "Removes another task as being blocked by this one.",
-                            REPEATABLE)))
-                .parser(() -> new AmendArguments.Parser(taskStore))
-                .helpDocumentation(
-                    "Changes an existing task. Can be used to change the task description or to "
-                        + "add/remove blocking/blocked tasks."))
-        .register(
-            CommandRegistration.builder()
-                .cliMode(CliMode.COMPLETE)
-                .canonicalName("complete")
-                .aliases()
-                .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
-                .options(ImmutableList.empty())
-                .parser(() -> new CompleteArguments.Parser(taskStore))
-                .helpDocumentation(
-                    "Mark one or more tasks as complete. This can be undone with the reopen "
-                        + "command. When a task is completed, other tasks it was blocking may "
-                        + "become unblocked."))
-        .register(
-            CommandRegistration.builder()
-                .cliMode(CliMode.REOPEN)
-                .canonicalName("reopen")
-                .aliases()
-                .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
-                .options(ImmutableList.empty())
-                .parser(() -> new ReopenArguments.Parser(taskStore))
-                .helpDocumentation(
-                    "Reopens one or more completed tasks. This can be undone with the complete "
-                        + "command."))
+        .register(AddArguments.registration(taskParser))
+        .register(AmendArguments.registration(taskParser))
+        .register(CompleteArguments.registration(taskParser))
+        .register(HelpArguments.registration(validModes))
+        .register(InfoArguments.registration(taskParser))
+        .register(ListArguments.registration())
+        .register(RemoveArguments.registration(taskParser))
+        .register(ReopenArguments.registration(taskParser))
         .build();
   }
 
@@ -202,7 +53,7 @@ public final class CliArguments {
   private final CommandRegistration fallback;
 
   public CliArguments(Memoized<TaskStore> taskStore) {
-    registrations = createCommandModeRegistry(taskStore, memoize(this::modeNamesAndAliases));
+    registrations = createCommandModeRegistry(memoize(this::modeNamesAndAliases), memoize(() -> CliUtils.taskListParser(taskStore)));
 
     registrationsIndexedByAliases =
         registrations.stream()
@@ -240,10 +91,10 @@ public final class CliArguments {
                 .map(a -> a[0])
                 .flatMap(this::registrationFromArgument)))
         .map(
-            pair -> pair.second().isPresent()
-                ? pair.mapSecond(Optional::get)
+            couple -> couple.second().isPresent()
+                ? couple.mapSecond(Optional::get)
                 : Tuple.of(new String[0], fallback))
-        .map(pair -> pair.second().parserSupplier().parse(pair.first()))
+        .map(couple -> couple.second().parserSupplier().parse(couple.first()))
         .blockingGet();
   }
 
@@ -295,7 +146,7 @@ public final class CliArguments {
   }
 
   public static final class ArgumentFormatException extends RuntimeException {
-    ArgumentFormatException(String reason) {
+    public ArgumentFormatException(String reason) {
       super(reason);
     }
 
@@ -304,8 +155,16 @@ public final class CliArguments {
     }
   }
 
-  interface Parser<T> {
+  public interface Parser<T> {
     T parse(String[] args);
+
+    default T parse(List<? extends String> args) {
+      String[] a = new String[args.count()];
+      for (int i = 0; i < args.count(); i++) {
+        a[i] = args.itemAt(i);
+      }
+      return parse(a);
+    }
   }
 
   private static final class RegistryBuilder {
@@ -329,7 +188,7 @@ public final class CliArguments {
     }
   }
 
-  private static final class CommandRegistration {
+  public static final class CommandRegistration {
     private final CliMode cliMode;
     private final String canonicalName;
     private final Collection<String> aliases;
@@ -402,35 +261,35 @@ public final class CliArguments {
       return parser.value();
     }
 
-    interface Builder0 {
+    public interface Builder0 {
       Builder1 cliMode(CliMode cliMode);
     }
 
-    interface Builder1 {
+    public interface Builder1 {
       Builder2 canonicalName(String canonicalName);
     }
 
-    interface Builder2 {
+    public interface Builder2 {
       Builder3 aliases(String...aliases);
     }
 
-    interface Builder3 {
+    public interface Builder3 {
       Builder4 parameters(Collection<Parameter> parameters);
     }
 
-    interface Builder4 {
+    public interface Builder4 {
       Builder5 options(Collection<Option> options);
     }
 
-    interface Builder5 {
+    public interface Builder5 {
       Builder6 parser(Supplier<? extends Parser<?>> parserSupplier);
     }
 
-    interface Builder6 {
+    public interface Builder6 {
       CommandRegistration helpDocumentation(String description);
     }
 
-    static Builder0 builder() {
+    public static Builder0 builder() {
       return cliMode ->
           (Builder1) canonicalName ->
             (Builder2) aliases ->
@@ -449,18 +308,18 @@ public final class CliArguments {
     }
   }
 
-  private static class Option {
+  public abstract static class Option {
     private final String longName;
     private final String shortName;
     private final String description;
-    private final boolean repeatable;
+    private final Parameter.Repeatable repeatable;
     private final Optional<String> parameterRepresentation;
 
     Option(
         String longName,
         String shortName,
         String description,
-        boolean repeatable,
+        Parameter.Repeatable repeatable,
         Optional<String> parameterRepresentation) {
       this.longName = requireNonNull(longName);
       this.shortName = requireNonNull(shortName);
@@ -469,55 +328,86 @@ public final class CliArguments {
       this.parameterRepresentation = requireNonNull(parameterRepresentation);
     }
 
-    String longName() {
+    public String longName() {
       return longName;
     }
 
-    String shortName() {
+    public String shortName() {
       return shortName;
     }
 
-    String description() {
+    public String description() {
       return description;
     }
 
-    boolean isRepeatable() {
-      return repeatable;
+    public boolean isRepeatable() {
+      return repeatable == Parameter.Repeatable.REPEATABLE;
     }
 
-    Optional<String> parameterRepresentation() {
+    public Optional<String> parameterRepresentation() {
       return parameterRepresentation;
     }
+
+    public abstract org.apache.commons.cli.Option toCliOption();
   }
 
-  private static class TaskOption extends Option {
-    TaskOption(String longName, String shortName, String description, boolean repeatable) {
+  public static class TaskOption extends Option {
+    public TaskOption(String longName, String shortName, String description, Parameter.Repeatable repeatable) {
       super(longName, shortName, description, repeatable, Optional.of("task"));
+    }
+
+    @Override
+    public org.apache.commons.cli.Option toCliOption() {
+      return org.apache.commons.cli.Option.builder(shortName())
+          .longOpt(longName())
+          .desc(description())
+          .optionalArg(false)
+          .numberOfArgs(1)
+          .build();
     }
   }
 
-  private static class StringOption extends Option {
-    StringOption(
+  public static class StringOption extends Option {
+    public StringOption(
         String longName,
         String shortName,
         String description,
-        boolean repeatable,
+        Parameter.Repeatable repeatable,
         String semanticDescription) {
       super(longName, shortName, description, repeatable, Optional.of(semanticDescription));
     }
-  }
 
-  private static class FlagOption extends Option {
-    FlagOption(String longName, String shortName, String description, boolean repeatable) {
-      super(longName, shortName, description, repeatable, Optional.empty());
+    @Override
+    public org.apache.commons.cli.Option toCliOption() {
+      return org.apache.commons.cli.Option.builder(shortName())
+          .longOpt(longName())
+          .desc(description())
+          .optionalArg(false)
+          .numberOfArgs(1)
+          .build();
     }
   }
 
-  private static class Parameter {
-    private final String description;
-    private final boolean repeatable;
+  public static class FlagOption extends Option {
+    public FlagOption(String longName, String shortName, String description, Parameter.Repeatable repeatable) {
+      super(longName, shortName, description, repeatable, Optional.empty());
+    }
 
-    Parameter(String description, boolean repeatable) {
+    @Override
+    public org.apache.commons.cli.Option toCliOption() {
+      return org.apache.commons.cli.Option.builder(shortName())
+          .longOpt(longName())
+          .desc(description())
+          .numberOfArgs(0)
+          .build();
+    }
+  }
+
+  public abstract static class Parameter {
+    private final String description;
+    private final Repeatable repeatable;
+
+    Parameter(String description, Repeatable repeatable) {
       this.description = requireNonNull(description);
       this.repeatable = repeatable;
     }
@@ -526,19 +416,24 @@ public final class CliArguments {
       return description;
     }
 
-    boolean isRepeatable() {
-      return repeatable;
+    public boolean isRepeatable() {
+      return repeatable == Repeatable.REPEATABLE;
+    }
+
+    public enum Repeatable {
+      REPEATABLE,
+      NOT_REPEATABLE,
     }
   }
 
-  private static class TaskParameter extends Parameter {
-    TaskParameter(boolean repeatable) {
+  public static class TaskParameter extends Parameter {
+    public TaskParameter(Repeatable repeatable) {
       super("task", repeatable);
     }
   }
 
-  private static class StringParameter extends Parameter {
-    StringParameter(String semanticName, boolean repeatable) {
+  public static class StringParameter extends Parameter {
+    public StringParameter(String semanticName, Repeatable repeatable) {
       super(semanticName, repeatable);
     }
   }

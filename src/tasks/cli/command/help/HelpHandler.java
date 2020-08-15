@@ -1,4 +1,4 @@
-package tasks.cli.handlers;
+package tasks.cli.command.help;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -15,12 +15,12 @@ import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
 import tasks.cli.arg.CommandDocumentation;
 import tasks.cli.arg.CommandDocumentation.OptionDocumentation;
-import tasks.cli.arg.HelpArguments;
+import tasks.cli.handlers.ArgumentHandler;
 
 public final class HelpHandler implements ArgumentHandler<HelpArguments> {
   private final Memoized<Set<CommandDocumentation>> documentation;
 
-  HelpHandler(Memoized<Set<CommandDocumentation>> documentation) {
+  public HelpHandler(Memoized<Set<CommandDocumentation>> documentation) {
     this.documentation = requireNonNull(documentation);
   }
 

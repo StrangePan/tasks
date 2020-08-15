@@ -1,4 +1,4 @@
-package tasks.cli.handlers;
+package tasks.cli.command.amend;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -9,14 +9,16 @@ import omnia.algorithm.SetAlgorithms;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableSet;
-import tasks.cli.arg.AmendArguments;
+import tasks.cli.command.amend.AmendArguments;
+import tasks.cli.handlers.ArgumentHandler;
+import tasks.cli.handlers.HandlerException;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
 public final class AmendHandler implements ArgumentHandler<AmendArguments> {
   private final Memoized<TaskStore> taskStore;
 
-  AmendHandler(Memoized<TaskStore> taskStore) {
+  public AmendHandler(Memoized<TaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 
