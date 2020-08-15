@@ -2,21 +2,27 @@ package tasks.cli.arg;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
+import static omnia.data.stream.Collectors.toImmutableList;
+import static omnia.data.stream.Collectors.toImmutableSet;
 import static omnia.data.stream.Collectors.toList;
 
 import io.reactivex.Observable;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
+import omnia.algorithm.SetAlgorithms;
+import omnia.contract.Countable;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
 import omnia.data.structure.List;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableList;
+import omnia.data.structure.immutable.ImmutableSet;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import tasks.cli.handlers.HandlerException;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
@@ -78,8 +84,9 @@ public final class CliUtils {
         parseResults.stream()
             .map(ParseResult::failureMessage)
             .flatMap(Optional::stream)
-            .collect(Collectors.joining("\n")))
-        .filter(message -> !message.isBlank());
+            .collect(toImmutableList()))
+        .filter(Countable::isPopulated)
+        .map(failureMessages -> failureMessages.stream().collect(Collectors.joining("\n")));
   }
 
   public static List<Task> extractTasksFrom(List<ParseResult<Task>> tasks) {
@@ -110,6 +117,10 @@ public final class CliUtils {
     Optional<String> failureMessage() {
       return failureMessage;
     }
+  }
+
+  public static boolean getFlagPresence(CommandLine commandLine, CliArguments.FlagOption flagOption) {
+    return commandLine.hasOption(flagOption.shortName());
   }
 
   public static List<String> getOptionValues(CommandLine commandLine, CliArguments.Option option) {

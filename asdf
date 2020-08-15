@@ -3,18 +3,24 @@
 14a00nhsddz4;true;Output formatting;
 3ga3kmzl44cg;true;Put command definition into independent packages;
 7ri8li86wfeo;true;Output unblocked tasks when completing a task;
-aiv2qznibj7k;false;Redesign amend command;
+aiv2qznibj7k;false;Remove amend command;
 cystb0f3sk5c;true;Move command registration to individual command definition classes;
 h5kiwq5wnb40;true;Output task ID when creating tasks;
+kz3kwaxll8n4;false;Add reword command;
+lzvv3qy4wa9s;false;Move parsers out of arguments;
 13g106gz8dqm8;true;Output indentation;
 147s85hhpdou8;true;Help documentation;
+15r9jkmzl3u2o;false;Verify no graph cycles;
 170qeiiadyl1c;false;Add verbosity option to amend command;
-19ywwqj6ys1ds;false;Add commands for modifying blockers;
-1sj4wkz1nnpj4;false;Fix amend command loop checking;
+19ywwqj6ys1ds;true;Add commands for modifying blockers;
+1eudqjntygao0;false;Move taskstore teardown out of handlers;
+1omyqxbuc98n4;false;Add confirmation to remove command;
 1so5tz4jow35s;true;Refactor commands to use same source of truth for registration as parsing;
+1u4zo38nv3fgg;false;Add undo command;
 1u8yjlsmv79q8;false;Add graph output;
 1usblv8kvafi8;false;Add task bookmarks;
 # dependencies
+aiv2qznibj7k;kz3kwaxll8n4,19ywwqj6ys1ds;
 cystb0f3sk5c;3ga3kmzl44cg,147s85hhpdou8;
 147s85hhpdou8;14a00nhsddz4;
 1so5tz4jow35s;cystb0f3sk5c;

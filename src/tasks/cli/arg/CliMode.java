@@ -1,12 +1,13 @@
 package tasks.cli.arg;
 
 public enum CliMode {
-  HELP,
-  LIST,
-  INFO,
   ADD,
-  REMOVE,
   AMEND,
+  BLOCKERS,
   COMPLETE,
+  HELP,
+  INFO,
+  LIST,
+  REMOVE,
   REOPEN,
 }

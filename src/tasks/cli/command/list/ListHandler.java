@@ -3,8 +3,12 @@ package tasks.cli.command.list;
 import static java.util.Objects.requireNonNull;
 
 import io.reactivex.Completable;
+import io.reactivex.Observable;
+import io.reactivex.Single;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.immutable.ImmutableSet;
+import omnia.data.structure.tuple.Triple;
+import omnia.data.structure.tuple.Tuple;
 import tasks.cli.command.list.ListArguments;
 import tasks.cli.handlers.ArgumentHandler;
 import tasks.cli.handlers.HandlerUtil;
@@ -19,24 +23,26 @@ public final class ListHandler implements ArgumentHandler<ListArguments> {
 
   @Override
   public Completable handle(ListArguments arguments) {
-    TaskStore taskStore = this.taskStore.value();
-
-    HandlerUtil.printIfPopulated(
-        "unblocked tasks:",
-        arguments.isUnblockedSet()
-            ? taskStore.allTasksWithoutOpenBlockers().blockingFirst()
-            : ImmutableSet.empty());
-    HandlerUtil.printIfPopulated(
-        "blocked tasks:",
-        arguments.isBlockedSet()
-            ? taskStore.allTasksWithOpenBlockers().blockingFirst()
-            : ImmutableSet.empty());
-    HandlerUtil.printIfPopulated(
-        "completed tasks:",
-        arguments.isCompletedSet()
-            ? taskStore.completedTasks().blockingFirst()
-            : ImmutableSet.empty());
-
-    return Completable.complete();
+    return Single.fromCallable(taskStore::value)
+        .flatMapObservable(
+            store -> Observable.just(
+                Tuple.of(
+                    arguments.isUnblockedSet(),
+                    "unblocked tasks:",
+                    store.allTasksWithoutOpenBlockers().firstOrError()),
+                Tuple.of(
+                    arguments.isBlockedSet(),
+                    "blocked tasks:",
+                    store.allTasksWithOpenBlockers().firstOrError()),
+                Tuple.of(
+                    arguments.isCompletedSet(),
+                    "completed tasks:",
+                    store.completedTasks().firstOrError())))
+        .filter(Triple::first)
+        .map(Triple::dropFirst)
+        .concatMapEager(
+            couple -> couple.second().map(tasks -> Tuple.of(couple.first(), tasks)).toObservable())
+        .doOnNext(couple -> HandlerUtil.printIfPopulated(couple.first(), couple.second()))
+        .ignoreElements();
   }
 }

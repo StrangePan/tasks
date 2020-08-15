@@ -108,13 +108,14 @@ public final class ListArguments {
       CommandLine commandLine = tryParse(args, options);
       assertNoExtraArgs(commandLine);
 
-      boolean isAllSet = commandLine.hasOption(ALL_OPTION.value().shortName());
-      boolean isBlockedSet = isAllSet || commandLine.hasOption(BLOCKED_OPTION.value().shortName());
+      boolean isAllSet = CliUtils.getFlagPresence(commandLine, ALL_OPTION.value());
+      boolean isBlockedSet =
+          isAllSet || CliUtils.getFlagPresence(commandLine, BLOCKED_OPTION.value());
       boolean isCompletedSet =
-          isAllSet || commandLine.hasOption(COMPLETED_OPTION.value().shortName());
+          isAllSet || CliUtils.getFlagPresence(commandLine, COMPLETED_OPTION.value());
       boolean isUnblockedSet =
           isAllSet
-              || commandLine.hasOption(UNBLOCKED_OPTION.value().shortName())
+              || CliUtils.getFlagPresence(commandLine, UNBLOCKED_OPTION.value())
               || (!isBlockedSet && !isCompletedSet);
 
       return new ListArguments(isUnblockedSet, isBlockedSet, isCompletedSet);

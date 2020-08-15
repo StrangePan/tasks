@@ -11,6 +11,8 @@ import omnia.data.structure.mutable.HashMap;
 import omnia.data.structure.mutable.MutableMap;
 import tasks.cli.command.add.AddArguments;
 import tasks.cli.command.amend.AmendArguments;
+import tasks.cli.command.blockers.BlockersArguments;
+import tasks.cli.command.blockers.BlockersHandler;
 import tasks.cli.command.complete.CompleteArguments;
 import tasks.cli.command.help.HelpArguments;
 import tasks.cli.command.info.InfoArguments;
@@ -47,6 +49,7 @@ public final class ArgumentHandlers implements ArgumentHandler<Object> {
     return new RegistryBuilder()
         .register(AddArguments.class, () -> new AddHandler(taskStore))
         .register(AmendArguments.class, () -> new AmendHandler(taskStore))
+        .register(BlockersArguments.class, () -> new BlockersHandler(taskStore))
         .register(CompleteArguments.class, () -> new CompleteHandler(taskStore))
         .register(HelpArguments.class, () -> new HelpHandler(documentation))
         .register(InfoArguments.class, InfoHandler::new)

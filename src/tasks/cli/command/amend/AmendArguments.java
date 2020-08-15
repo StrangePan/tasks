@@ -197,7 +197,7 @@ public final class AmendArguments {
 
       ParseResult<Task> targetTask = taskParser.value().parse(ImmutableList.of(argsList.itemAt(1))).itemAt(0);
 
-      Optional<String> description1 = getSingleOptionValue(commandLine, DESCRIPTION_OPTION.value());
+      Optional<String> description = getSingleOptionValue(commandLine, DESCRIPTION_OPTION.value());
       List<ParseResult<Task>> afterTasks = taskParser.value().parse(getOptionValues(commandLine, AFTER_OPTION.value()));
       List<ParseResult<Task>> afterTasksToAdd = taskParser.value().parse(getOptionValues(commandLine, ADD_AFTER_OPTION.value()));
       List<ParseResult<Task>> afterTasksToRemove = taskParser.value().parse(getOptionValues(commandLine, REMOVE_AFTER_OPTION.value()));
@@ -215,7 +215,7 @@ public final class AmendArguments {
         throwOptionsMustBeMutuallyExclusive(BEFORE_OPTION, ADD_BEFORE_OPTION, REMOVE_BEFORE_OPTION);
       }
 
-      if (description1.isEmpty()
+      if (description.isEmpty()
           && !afterTasks.isPopulated()
           && !afterTasksToAdd.isPopulated()
           && !afterTasksToRemove.isPopulated()
@@ -238,7 +238,7 @@ public final class AmendArguments {
 
       return new AmendArguments(
           targetTask.successResult().get(),
-          description1,
+          description,
           extractTasksFrom(afterTasks),
           extractTasksFrom(afterTasksToAdd),
           extractTasksFrom(afterTasksToRemove),

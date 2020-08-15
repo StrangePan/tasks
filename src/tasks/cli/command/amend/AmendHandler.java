@@ -1,15 +1,11 @@
 package tasks.cli.command.amend;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
+import static tasks.cli.handlers.HandlerUtil.verifyTasksAreMutuallyExclusive;
 
 import io.reactivex.Completable;
-import java.util.Optional;
-import omnia.algorithm.SetAlgorithms;
 import omnia.data.cache.Memoized;
-import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableSet;
-import tasks.cli.command.amend.AmendArguments;
 import tasks.cli.handlers.ArgumentHandler;
 import tasks.cli.handlers.HandlerException;
 import tasks.model.Task;
@@ -24,61 +20,38 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
 
   @Override
   public Completable handle(AmendArguments arguments) {
-    Task targetTask = arguments.targetTask();
-
-    // nifty trick for limiting the scope of variables
-    {
-      Set<Task> allSpecifiedTasks =
-          ImmutableSet.<Task>builder()
-              .addAll(arguments.blockedTasks())
-              .addAll(arguments.blockedTasksToAdd())
-              .addAll(arguments.blockedTasksToRemove())
-              .addAll(arguments.blockingTasks())
-              .addAll(arguments.blockingTasksToAdd())
-              .addAll(arguments.blockingTasksToRemove())
-              .build();
-
-      // ensure task isn't connected to itself
-      // this is a convenience but is not strictly required because we still need to check if the
-      // graph is cyclical
-      if (allSpecifiedTasks.contains(targetTask)) {
-        throw new HandlerException("target task cannot block or be blocked by itself");
-      }
+    /*
+    Ensure task isn't connected to itself.
+    This is a short-circuit, but is not strictly required because we still need to check if the task
+    graph is cyclical.
+    */
+    if (ImmutableSet.<Task>builder()
+        .addAll(arguments.blockedTasks())
+        .addAll(arguments.blockedTasksToAdd())
+        .addAll(arguments.blockedTasksToRemove())
+        .addAll(arguments.blockingTasks())
+        .addAll(arguments.blockingTasksToAdd())
+        .addAll(arguments.blockingTasksToRemove())
+        .build()
+        .contains(arguments.targetTask())) {
+      throw new HandlerException("target task cannot block or be blocked by itself");
     }
 
     // ensure the same task isn't added and removed at the same time
-    Optional.of(
-        SetAlgorithms.intersectionOf(
-            ImmutableSet.copyOf(arguments.blockingTasksToAdd()),
-            ImmutableSet.copyOf(arguments.blockingTasksToRemove()))
-        .stream()
-        .map(Object::toString)
-        .collect(joining(", ")))
-        .filter(s -> !s.isEmpty())
-        .map(ambiguousTasks ->
-            "ambiguous operation: tasks both added and removed from before: " + ambiguousTasks)
-        .ifPresent(message -> {
-          throw new HandlerException(message);
-        });
+    verifyTasksAreMutuallyExclusive(
+        "ambiguous operation: tasks both added and removed from before: ",
+        arguments.blockingTasksToAdd(),
+        arguments.blockingTasksToRemove());
 
-    Optional.of(
-        SetAlgorithms.intersectionOf(
-            ImmutableSet.copyOf(arguments.blockedTasksToAdd()),
-            ImmutableSet.copyOf(arguments.blockedTasksToRemove()))
-        .stream()
-        .map(Object::toString)
-        .collect(joining(", ")))
-        .filter(s -> !s.isEmpty())
-        .map(ambiguousTasks ->
-            "ambiguous operation: tasks both added and removed from after: " + ambiguousTasks)
-        .ifPresent(message -> {
-          throw new HandlerException(message);
-        });
+    verifyTasksAreMutuallyExclusive(
+        "ambiguous operation: tasks both added and removed from after: ",
+        arguments.blockedTasksToAdd(),
+        arguments.blockedTasksToRemove());
 
     // okay, operation isn't ambiguous, task doesn't reference itself, and task ids are valid
     TaskStore taskStore = this.taskStore.value();
     return taskStore.mutateTask(
-        targetTask,
+        arguments.targetTask(),
         mutator -> {
           arguments.description().ifPresent(mutator::setLabel);
 
@@ -97,6 +70,6 @@ public final class AmendHandler implements ArgumentHandler<AmendArguments> {
           return mutator;
         })
         .andThen(taskStore.writeToDisk())
-        .doOnComplete(() -> System.out.println("task amended: " + targetTask));
+        .doOnComplete(() -> System.out.println("task amended: " + arguments.targetTask()));
   }
 }
