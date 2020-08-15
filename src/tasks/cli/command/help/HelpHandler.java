@@ -119,6 +119,7 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
 
   private static Output parameterLines(CommandDocumentation documentation) {
     return Observable.fromIterable(documentation.options())
+        .sorted(Comparator.comparing(OptionDocumentation::canonicalName))
         .map(HelpHandler::parameterLine)
         .collectInto(Output.builder(), Output.Builder::appendLine)
         .map(Output.Builder::build)
