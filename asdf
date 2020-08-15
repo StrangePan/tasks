@@ -11,7 +11,7 @@ h5kiwq5wnb40;true;Output task ID when creating tasks;
 170qeiiadyl1c;false;Add verbosity option to amend command;
 19ywwqj6ys1ds;false;Add commands for modifying blockers;
 1sj4wkz1nnpj4;false;Fix amend command loop checking;
-1so5tz4jow35s;false;Refactor commands to use same source of truth for registration as parsing;
+1so5tz4jow35s;true;Refactor commands to use same source of truth for registration as parsing;
 1u8yjlsmv79q8;false;Add graph output;
 1usblv8kvafi8;false;Add task bookmarks;
 # dependencies

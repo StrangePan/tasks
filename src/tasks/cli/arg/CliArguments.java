@@ -6,7 +6,6 @@ import static omnia.data.stream.Collectors.toImmutableMap;
 import static omnia.data.stream.Collectors.toImmutableSet;
 
 import io.reactivex.Single;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -76,24 +75,21 @@ public final class CliArguments {
     return registrationsIndexedByAliases.keys();
   }
 
-  public Object parse(String[] args) {
+  public Object parse(List<? extends String> args) {
     // Parameter validation
     requireNonNull(args);
-    if (Arrays.stream(args).anyMatch(Objects::isNull)) {
-      throw new IllegalArgumentException("arg cannot contain null");
+    if (args.stream().anyMatch(Objects::isNull)) {
+      throw new IllegalArgumentException("args cannot contain null");
     }
 
     return Single.just(
-        Tuple.of(
+        Tuple.<List<? extends String>, Optional<CommandRegistration>>of(
             args,
-            Optional.of(args)
-                .filter(a -> a.length > 0)
-                .map(a -> a[0])
-                .flatMap(this::registrationFromArgument)))
+            args.stream().findFirst().flatMap(this::registrationFromArgument)))
         .map(
             couple -> couple.second().isPresent()
                 ? couple.mapSecond(Optional::get)
-                : Tuple.of(new String[0], fallback))
+                : Tuple.of(ImmutableList.<String>empty(), fallback))
         .map(couple -> couple.second().parserSupplier().parse(couple.first()))
         .blockingGet();
   }
@@ -156,15 +152,7 @@ public final class CliArguments {
   }
 
   public interface Parser<T> {
-    T parse(String[] args);
-
-    default T parse(List<? extends String> args) {
-      String[] a = new String[args.count()];
-      for (int i = 0; i < args.count(); i++) {
-        a[i] = args.itemAt(i);
-      }
-      return parse(a);
-    }
+    T parse(List<? extends String> args);
   }
 
   private static final class RegistryBuilder {

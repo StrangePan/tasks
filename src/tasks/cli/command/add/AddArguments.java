@@ -94,7 +94,7 @@ public final class AddArguments {
     }
 
     @Override
-    public AddArguments parse(String[] args) {
+    public AddArguments parse(List<? extends String> args) {
       /*
       1st param assumed to be "add" or an alias for it
       2nd param must be description

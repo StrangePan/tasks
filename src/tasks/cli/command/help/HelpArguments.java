@@ -51,7 +51,7 @@ public final class HelpArguments {
     }
 
     @Override
-    public HelpArguments parse(String[] args) {
+    public HelpArguments parse(List<? extends String> args) {
       List<String> parsedArgs = List.masking(tryParse(args, new Options()).getArgList());
 
       Optional<String> mode =

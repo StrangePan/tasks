@@ -6,6 +6,7 @@ import static omnia.data.cache.Memoized.memoize;
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
 import omnia.data.cache.Memoized;
+import omnia.data.structure.immutable.ImmutableList;
 import tasks.cli.arg.CliArguments;
 import tasks.cli.handlers.ArgumentHandler;
 import tasks.cli.handlers.ArgumentHandlers;
@@ -38,8 +39,9 @@ final class Application {
   }
 
 
-  private Maybe<Object> parseCliArguments(Maybe<String[]> args) {
+  private Maybe<Object> parseCliArguments(Maybe<?  extends String[]> args) {
     return args
+        .map(ImmutableList::copyOf)
         .map(a -> argumentsParser.value().parse(a))
         .doOnError(Application::handleParseError)
         .onErrorComplete();

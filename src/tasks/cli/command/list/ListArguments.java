@@ -6,6 +6,7 @@ import static tasks.cli.arg.CliUtils.assertNoExtraArgs;
 import static tasks.cli.arg.CliUtils.tryParse;
 
 import omnia.data.cache.Memoized;
+import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
@@ -95,7 +96,7 @@ public final class ListArguments {
   public static final class Parser implements CliArguments.Parser<ListArguments> {
 
     @Override
-    public ListArguments parse(String[] args) {
+    public ListArguments parse(List<? extends String> args) {
       /*
       First arg is assumed to be "ls" or an alias thereof
       No other unclassified arg allowed

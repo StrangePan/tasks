@@ -23,12 +23,20 @@ import tasks.model.TaskStore;
 public final class CliUtils {
   private CliUtils() {}
 
-  public static CommandLine tryParse(String[] args, Options options) {
+  public static CommandLine tryParse(List<? extends String> args, Options options) {
     try {
-      return new DefaultParser().parse(options, args, /* stopAtNonOption= */ false);
+      return new DefaultParser().parse(options, toArray(args), /* stopAtNonOption= */ false);
     } catch (ParseException e) {
       throw new CliArguments.ArgumentFormatException("Unable to parse arguments: " + e.getMessage(), e);
     }
+  }
+
+  private static String[] toArray(List<? extends String> list) {
+    String[] array = new String[list.count()];
+    for (int i = 0; i < list.count(); i++) {
+      array[i] = list.itemAt(i);
+    }
+    return array;
   }
 
   public static CliArguments.Parser<List<ParseResult<Task>>> taskListParser(Memoized<TaskStore> taskStore) {

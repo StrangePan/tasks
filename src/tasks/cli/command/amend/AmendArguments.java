@@ -174,7 +174,7 @@ public final class AmendArguments {
     }
 
     @Override
-    public AmendArguments parse(String[] args) {
+    public AmendArguments parse(List<? extends String> args) {
       /*
       1st param assumed to be "amend" or an alias for it
       2nd param must a task ID
