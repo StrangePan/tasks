@@ -15,10 +15,13 @@ import tasks.cli.arg.CliArguments;
 import tasks.cli.arg.CliUtils;
 import tasks.model.Task;
 
+/** Command line argument parser for the Add command. */
 public final class AddParser implements CliArguments.Parser<AddArguments> {
-  private final Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser;
+  private final Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>>
+      taskParser;
 
-  public AddParser(Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
+  public AddParser(
+      Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
     this.taskParser = taskParser;
   }
 
@@ -28,8 +31,8 @@ public final class AddParser implements CliArguments.Parser<AddArguments> {
     1st param assumed to be "add" or an alias for it
     2nd param must be description
     3+ params not supported
-    optional befores
-    optional afters
+    optional blocking tasks
+    optional blocked tasks
     */
     Options options = CliUtils.toOptions(AddCommand.OPTIONS.value());
 
@@ -41,11 +44,16 @@ public final class AddParser implements CliArguments.Parser<AddArguments> {
             () -> new CliArguments.ArgumentFormatException("Task description not defined"));
     CliUtils.assertNoExtraArgs(commandLine, AddCommand.COMMAND_PARAMETERS.value());
 
-    List<CliUtils.ParseResult<Task>> afterTasks = taskParser.value().parse(getOptionValues(commandLine, AddCommand.AFTER_OPTION.value()));
-    List<CliUtils.ParseResult<Task>> beforeTasks = taskParser.value().parse(getOptionValues(commandLine, AddCommand.BEFORE_OPTION.value()));
+    List<CliUtils.ParseResult<Task>> afterTasks =
+        taskParser.value().parse(getOptionValues(commandLine, AddCommand.AFTER_OPTION.value()));
+    List<CliUtils.ParseResult<Task>> beforeTasks =
+        taskParser.value().parse(getOptionValues(commandLine, AddCommand.BEFORE_OPTION.value()));
 
     validateParsedTasks(
-        ImmutableList.<CliUtils.ParseResult<?>>builder().addAll(afterTasks).addAll(beforeTasks).build());
+        ImmutableList.<CliUtils.ParseResult<?>>builder()
+            .addAll(afterTasks)
+            .addAll(beforeTasks)
+            .build());
 
     return new AddArguments(
         taskDescription, extractTasksFrom(afterTasks), extractTasksFrom(beforeTasks));

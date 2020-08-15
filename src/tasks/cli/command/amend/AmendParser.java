@@ -18,9 +18,11 @@ import tasks.cli.arg.CliUtils;
 import tasks.model.Task;
 
 public final class AmendParser implements CliArguments.Parser<AmendArguments> {
-  private final Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser;
+  private final Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>>
+      taskParser;
 
-  public AmendParser(Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
+  public AmendParser(
+      Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
     this.taskParser = requireNonNull(taskParser);
   }
 
@@ -46,24 +48,44 @@ public final class AmendParser implements CliArguments.Parser<AmendArguments> {
       throw new CliArguments.ArgumentFormatException("Unexpected extra arguments");
     }
 
-    CliUtils.ParseResult<Task> targetTask = taskParser.value().parse(ImmutableList.of(argsList.itemAt(1))).itemAt(0);
+    CliUtils.ParseResult<Task> targetTask =
+        taskParser.value().parse(ImmutableList.of(argsList.itemAt(1))).itemAt(0);
 
-    Optional<String> description = getSingleOptionValue(commandLine, AmendCommand.DESCRIPTION_OPTION.value());
-    List<CliUtils.ParseResult<Task>> afterTasks = taskParser.value().parse(getOptionValues(commandLine, AmendCommand.AFTER_OPTION.value()));
-    List<CliUtils.ParseResult<Task>> afterTasksToAdd = taskParser.value().parse(getOptionValues(commandLine, AmendCommand.ADD_AFTER_OPTION.value()));
-    List<CliUtils.ParseResult<Task>> afterTasksToRemove = taskParser.value().parse(getOptionValues(commandLine, AmendCommand.REMOVE_AFTER_OPTION.value()));
-    List<CliUtils.ParseResult<Task>> beforeTasks = taskParser.value().parse(getOptionValues(commandLine, AmendCommand.BEFORE_OPTION.value()));
-    List<CliUtils.ParseResult<Task>> beforeTasksToAdd = taskParser.value().parse(getOptionValues(commandLine, AmendCommand.ADD_BEFORE_OPTION.value()));
-    List<CliUtils.ParseResult<Task>> beforeTasksToRemove = taskParser.value().parse(getOptionValues(commandLine, AmendCommand.REMOVE_BEFORE_OPTION.value()));
+    Optional<String> description =
+        getSingleOptionValue(commandLine, AmendCommand.DESCRIPTION_OPTION.value());
+    List<CliUtils.ParseResult<Task>> afterTasks =
+        taskParser.value().parse(
+            getOptionValues(commandLine, AmendCommand.AFTER_OPTION.value()));
+    List<CliUtils.ParseResult<Task>> afterTasksToAdd =
+        taskParser.value().parse(
+            getOptionValues(commandLine, AmendCommand.ADD_AFTER_OPTION.value()));
+    List<CliUtils.ParseResult<Task>> afterTasksToRemove =
+        taskParser.value().parse(
+            getOptionValues(commandLine, AmendCommand.REMOVE_AFTER_OPTION.value()));
+    List<CliUtils.ParseResult<Task>> beforeTasks =
+        taskParser.value().parse(
+            getOptionValues(commandLine, AmendCommand.BEFORE_OPTION.value()));
+    List<CliUtils.ParseResult<Task>> beforeTasksToAdd =
+        taskParser.value().parse(
+            getOptionValues(commandLine, AmendCommand.ADD_BEFORE_OPTION.value()));
+    List<CliUtils.ParseResult<Task>> beforeTasksToRemove =
+        taskParser.value().parse(
+            getOptionValues(commandLine, AmendCommand.REMOVE_BEFORE_OPTION.value()));
 
     if (afterTasks.isPopulated()
         && (afterTasksToAdd.isPopulated() || afterTasksToRemove.isPopulated())) {
-      throwOptionsMustBeMutuallyExclusive(AmendCommand.AFTER_OPTION, AmendCommand.ADD_AFTER_OPTION, AmendCommand.REMOVE_AFTER_OPTION);
+      throwOptionsMustBeMutuallyExclusive(
+          AmendCommand.AFTER_OPTION,
+          AmendCommand.ADD_AFTER_OPTION,
+          AmendCommand.REMOVE_AFTER_OPTION);
     }
 
     if (beforeTasks.isPopulated()
         && (beforeTasksToAdd.isPopulated() || beforeTasksToRemove.isPopulated())) {
-      throwOptionsMustBeMutuallyExclusive(AmendCommand.BEFORE_OPTION, AmendCommand.ADD_BEFORE_OPTION, AmendCommand.REMOVE_BEFORE_OPTION);
+      throwOptionsMustBeMutuallyExclusive(
+          AmendCommand.BEFORE_OPTION,
+          AmendCommand.ADD_BEFORE_OPTION,
+          AmendCommand.REMOVE_BEFORE_OPTION);
     }
 
     if (description.isEmpty()

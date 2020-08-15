@@ -10,10 +10,12 @@ import tasks.cli.arg.CliMode;
 import tasks.cli.arg.CliUtils;
 import tasks.model.Task;
 
-public class RemoveCommand {
+/** Canonical definition for the Remove command. */
+public final class RemoveCommand {
   private RemoveCommand() {}
 
-  public static CliArguments.CommandRegistration registration(Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
+  public static CliArguments.CommandRegistration registration(
+      Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
     return CliArguments.CommandRegistration.builder()
         .cliMode(CliMode.REMOVE)
         .canonicalName("remove")

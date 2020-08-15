@@ -10,6 +10,7 @@ import omnia.data.structure.Set;
 import org.apache.commons.cli.Options;
 import tasks.cli.arg.CliArguments;
 
+/** Command line argument parser for the Help command. */
 public final class HelpParser implements CliArguments.Parser<HelpArguments> {
   private final Memoized<Set<String>> validModes;
 

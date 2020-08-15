@@ -3,6 +3,7 @@ package tasks.cli.command.add;
 import omnia.data.structure.List;
 import tasks.model.Task;
 
+/** Model for parsed Add command arguments. */
 public final class AddArguments {
   private final String description;
   private final List<Task> blockingTasks;

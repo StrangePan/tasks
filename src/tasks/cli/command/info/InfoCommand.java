@@ -10,10 +10,12 @@ import tasks.cli.arg.CliMode;
 import tasks.cli.arg.CliUtils;
 import tasks.model.Task;
 
-public class InfoCommand {
+/** Canonical definition for the Info command. */
+public final class InfoCommand {
   private InfoCommand() {}
 
-  public static CliArguments.CommandRegistration registration(Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
+  public static CliArguments.CommandRegistration registration(
+      Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
     return CliArguments.CommandRegistration.builder()
         .cliMode(CliMode.INFO)
         .canonicalName("info")

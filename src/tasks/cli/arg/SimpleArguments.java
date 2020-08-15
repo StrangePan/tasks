@@ -20,7 +20,8 @@ public abstract class SimpleArguments {
     this.tasks = tasks;
   }
 
-  public List<Task> tasks() {
+  /** The list of tasks parsed from the command line. */
+  protected List<Task> tasks() {
     return tasks;
   }
 
@@ -28,7 +29,9 @@ public abstract class SimpleArguments {
     private final Function<List<Task>, T> constructor;
     private final Memoized<CliArguments.Parser<? extends List<ParseResult<Task>>>> taskParser;
 
-    protected Parser(Memoized<CliArguments.Parser<? extends List<ParseResult<Task>>>> taskParser, Function<List<Task>, T> constructor) {
+    protected Parser(
+        Memoized<CliArguments.Parser<? extends List<ParseResult<Task>>>> taskParser,
+        Function<List<Task>, T> constructor) {
       this.constructor = requireNonNull(constructor);
       this.taskParser = requireNonNull(taskParser);
     }

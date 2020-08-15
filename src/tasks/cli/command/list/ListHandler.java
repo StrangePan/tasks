@@ -12,6 +12,7 @@ import tasks.cli.handlers.ArgumentHandler;
 import tasks.cli.handlers.HandlerUtil;
 import tasks.model.TaskStore;
 
+/** Business logic for the List command. */
 public final class ListHandler implements ArgumentHandler<ListArguments> {
   private final Memoized<TaskStore> taskStore;
 

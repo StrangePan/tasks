@@ -18,6 +18,7 @@ import tasks.cli.handlers.HandlerUtil.CompletedState;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
+/** Business logic for the Complete command. */
 public final class CompleteHandler implements ArgumentHandler<CompleteArguments> {
   private final Memoized<TaskStore> taskStore;
 
@@ -52,20 +53,28 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
         .andThen(findTasksBlockedBy(incompleteTasks))
         .compose(this::onlyTasksThatAreUnblocked)
         .doOnSuccess(a -> printIfPopulated("task(s) marked as completed:", incompleteTasks))
-        .doOnSuccess(newlyUnblockedTasks -> printIfPopulated("task(s) unblocked as a result:", newlyUnblockedTasks))
+        .doOnSuccess(
+            newlyUnblockedTasks ->
+                printIfPopulated("task(s) unblocked as a result:", newlyUnblockedTasks))
         .ignoreElement();
   }
 
   private Single<Set<Task>> findTasksBlockedBy(Set<Task> tasks) {
     return Flowable.fromIterable(tasks)
         .flatMapSingle(task -> taskStore.value().allTasksBlockedBy(task).firstOrError())
-        .<ImmutableSet.Builder<Task>>collect(ImmutableSet::builder, (builder, taskSet) -> builder.addAll(taskSet))
+        .<ImmutableSet.Builder<Task>>collect(
+            ImmutableSet::builder, (builder, taskSet) -> builder.addAll(taskSet))
         .map(ImmutableSet.Builder::build);
   }
 
   private Single<Set<Task>> onlyTasksThatAreUnblocked(Single<Set<Task>> tasks) {
     return tasks.flatMapObservable(Observable::fromIterable)
-        .flatMapMaybe(task -> task.isUnblocked().firstOrError().filter(isUnblocked -> isUnblocked).map(isUnblocked -> task))
+        .flatMapMaybe(
+            task ->
+                task.isUnblocked()
+                    .firstOrError()
+                    .filter(isUnblocked -> isUnblocked)
+                    .map(isUnblocked -> task))
         .<ImmutableSet.Builder<Task>>collect(ImmutableSet::builder, ImmutableSet.Builder::add)
         .map(ImmutableSet.Builder::build);
   }

@@ -12,6 +12,7 @@ import tasks.cli.arg.CliMode;
 import tasks.cli.arg.CliUtils;
 import tasks.model.Task;
 
+/** Canonical definition for the Add command. */
 public final class AddCommand {
   private AddCommand() {}
 

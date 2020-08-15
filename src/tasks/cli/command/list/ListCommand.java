@@ -8,6 +8,7 @@ import omnia.data.structure.immutable.ImmutableList;
 import tasks.cli.arg.CliArguments;
 import tasks.cli.arg.CliMode;
 
+/** Canonical definition for the List command. */
 public final class ListCommand {
   private ListCommand() {}
 

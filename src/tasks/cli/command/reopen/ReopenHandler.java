@@ -13,6 +13,7 @@ import tasks.cli.handlers.HandlerUtil;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
+/** Business logic for the Reopen command. */
 public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
   private final Memoized<TaskStore> taskStore;
 

@@ -1,18 +1,10 @@
 package tasks.cli.command.help;
 
 import static java.util.Objects.requireNonNull;
-import static tasks.cli.arg.CliArguments.Parameter.Repeatable.NOT_REPEATABLE;
-import static tasks.cli.arg.CliUtils.tryParse;
 
 import java.util.Optional;
-import omnia.data.cache.Memoized;
-import omnia.data.structure.List;
-import omnia.data.structure.Set;
-import omnia.data.structure.immutable.ImmutableList;
-import org.apache.commons.cli.Options;
-import tasks.cli.arg.CliArguments;
-import tasks.cli.arg.CliMode;
 
+/** Model for parsed Help command arguments. */
 public final class HelpArguments {
   private final Optional<String> mode;
 
@@ -28,6 +20,7 @@ public final class HelpArguments {
     this.mode = requireNonNull(mode);
   }
 
+  /** The optional command for which the user is requesting help. */
   public Optional<String> mode() {
     return mode;
   }

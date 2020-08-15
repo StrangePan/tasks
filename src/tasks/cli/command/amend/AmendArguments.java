@@ -64,5 +64,4 @@ public final class AmendArguments {
   public List<Task> blockedTasksToRemove() {
     return blockedTasksToRemove;
   }
-
 }

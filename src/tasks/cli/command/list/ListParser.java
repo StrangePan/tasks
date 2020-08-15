@@ -9,6 +9,7 @@ import org.apache.commons.cli.Options;
 import tasks.cli.arg.CliArguments;
 import tasks.cli.arg.CliUtils;
 
+/** Command line argument parser for the List command. */
 public final class ListParser implements CliArguments.Parser<ListArguments> {
 
   @Override

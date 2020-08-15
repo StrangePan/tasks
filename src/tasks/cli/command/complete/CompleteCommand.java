@@ -10,7 +10,8 @@ import tasks.cli.arg.CliMode;
 import tasks.cli.arg.CliUtils;
 import tasks.model.Task;
 
-public class CompleteCommand {
+/** Canonical definition for the Complete command. */
+public final class CompleteCommand {
   private CompleteCommand() {}
 
   public static CliArguments.CommandRegistration registration(Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {

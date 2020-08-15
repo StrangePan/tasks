@@ -15,10 +15,13 @@ import tasks.cli.arg.CliArguments;
 import tasks.cli.arg.CliUtils;
 import tasks.model.Task;
 
+/** Command line argument parser for the Blockers command. */
 public final class BlockersParser implements CliArguments.Parser<BlockersArguments> {
-  private final Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser;
+  private final Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>>
+      taskParser;
 
-  public BlockersParser(Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
+  public BlockersParser(
+      Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
     this.taskParser = requireNonNull(taskParser);
   }
 
@@ -28,9 +31,9 @@ public final class BlockersParser implements CliArguments.Parser<BlockersArgumen
     1st param assumed to be "blockers"
     2nd param assumed to be task ID
     3+ params are unsupported
-    optional add
-    optional remove
-    optional clear
+    optional blockers to add
+    optional blockers to remove
+    optional clear flag
     */
     Options options = CliUtils.toOptions(BlockersCommand.OPTIONS.value());
 
@@ -45,11 +48,14 @@ public final class BlockersParser implements CliArguments.Parser<BlockersArgumen
     }
 
     CliUtils.ParseResult<Task> targetTask =
-        taskParser.value().parse(ImmutableList.of(argsList.itemAt(1))).itemAt(0);
+        taskParser.value().parse(
+            ImmutableList.of(argsList.itemAt(1))).itemAt(0);
     List<CliUtils.ParseResult<Task>> tasksToAdd =
-        taskParser.value().parse(getOptionValues(commandLine, BlockersCommand.ADD_OPTION.value()));
+        taskParser.value().parse(
+            getOptionValues(commandLine, BlockersCommand.ADD_OPTION.value()));
     List<CliUtils.ParseResult<Task>> tasksToRemove =
-        taskParser.value().parse(getOptionValues(commandLine, BlockersCommand.REMOVE_OPTION.value()));
+        taskParser.value().parse(
+            getOptionValues(commandLine, BlockersCommand.REMOVE_OPTION.value()));
     boolean isClearSet = commandLine.hasOption(BlockersCommand.CLEAR_OPTION.value().shortName());
 
     validateParsedTasks(

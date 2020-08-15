@@ -4,8 +4,15 @@ import omnia.data.structure.List;
 import tasks.cli.arg.SimpleArguments;
 import tasks.model.Task;
 
+/** Model for parsed Reopen command arguments. */
 public final class ReopenArguments extends SimpleArguments {
-  protected ReopenArguments(List<Task> tasks) {
+  ReopenArguments(List<Task> tasks) {
     super(tasks);
+  }
+
+  /** The tasks to reopen, in the order specified in the command line. */
+  @Override
+  public List<Task> tasks() {
+    return super.tasks();
   }
 }

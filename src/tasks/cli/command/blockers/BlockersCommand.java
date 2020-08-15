@@ -12,10 +12,12 @@ import tasks.cli.arg.CliMode;
 import tasks.cli.arg.CliUtils;
 import tasks.model.Task;
 
-public class BlockersCommand {
+/** Canonical definition for the Blockers command. */
+public final class BlockersCommand {
   private BlockersCommand() {}
 
-  public static CliArguments.CommandRegistration registration(Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
+  public static CliArguments.CommandRegistration registration(
+      Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
     return CliArguments.CommandRegistration.builder()
         .cliMode(CliMode.BLOCKERS)
         .canonicalName("blockers")

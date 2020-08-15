@@ -8,7 +8,8 @@ import omnia.data.structure.immutable.ImmutableList;
 import tasks.cli.arg.CliArguments;
 import tasks.cli.arg.CliMode;
 
-public class HelpCommand {
+/** Canonical definition for the Help command. */
+public final class HelpCommand {
   private HelpCommand() {}
 
   public static CliArguments.CommandRegistration registration(Memoized<Set<String>> validModes) {
