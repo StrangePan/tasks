@@ -3,7 +3,7 @@
 14a00nhsddz4;true;Output formatting;
 3ga3kmzl44cg;true;Put command definition into independent packages;
 7ri8li86wfeo;true;Output unblocked tasks when completing a task;
-aiv2qznibj7k;false;Remove amend command;
+aiv2qznibj7k;true;Remove amend command;
 cystb0f3sk5c;true;Move command registration to individual command definition classes;
 h5kiwq5wnb40;true;Output task ID when creating tasks;
 kz3kwaxll8n4;true;Add reword command;
