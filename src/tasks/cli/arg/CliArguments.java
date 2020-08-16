@@ -29,13 +29,16 @@ import tasks.cli.command.info.InfoCommand;
 import tasks.cli.command.list.ListCommand;
 import tasks.cli.command.remove.RemoveCommand;
 import tasks.cli.command.reopen.ReopenCommand;
+import tasks.cli.command.reword.RewordCommand;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
 /** Data structure for arguments passed into the command line. */
 public final class CliArguments {
 
-  private static Collection<CommandRegistration> createCommandModeRegistry(Memoized<Set<String>> validModes, Memoized<Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
+  private static Collection<CommandRegistration> createCommandModeRegistry(
+      Memoized<Set<String>> validModes,
+      Memoized<Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
     return new RegistryBuilder()
         .register(AddCommand.registration(taskParser))
         .register(AmendCommand.registration(taskParser))
@@ -46,6 +49,7 @@ public final class CliArguments {
         .register(ListCommand.registration())
         .register(RemoveCommand.registration(taskParser))
         .register(ReopenCommand.registration(taskParser))
+        .register(RewordCommand.registration(taskParser))
         .build();
   }
 

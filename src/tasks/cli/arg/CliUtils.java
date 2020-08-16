@@ -149,21 +149,26 @@ public final class CliUtils {
   }
 
   public static void assertNoExtraArgs(CommandLine commandLine) {
-    assertNoExtraArgs(commandLine, 0);
+    assertNoExtraArgs(List.masking(commandLine.getArgList()), 0);
   }
 
   public static void assertNoExtraArgs(
       CommandLine commandLine, Collection<CliArguments.Parameter> parameters) {
-    computeMaxNumberOfCommandParameters(parameters)
-        .ifPresent(max -> assertNoExtraArgs(commandLine, max));
+    assertNoExtraArgs(List.masking(commandLine.getArgList()), parameters);
   }
 
-  private static void assertNoExtraArgs(CommandLine commandLine, int maxNumberOfCommandParameters) {
-    if (commandLine.getArgList().size() - 1 > maxNumberOfCommandParameters) {
+  public static void assertNoExtraArgs(
+      List<? extends String> args, Collection<CliArguments.Parameter> parameters) {
+    computeMaxNumberOfCommandParameters(parameters)
+        .ifPresent(max -> assertNoExtraArgs(args, max));
+  }
+
+  private static void assertNoExtraArgs(
+      List<? extends String> args, int maxNumberOfCommandParameters) {
+    if (args.count() - 1 > maxNumberOfCommandParameters) {
       throw new CliArguments.ArgumentFormatException(
           "Unexpected arguments given: "
-              + commandLine.getArgList()
-                  .stream()
+              + args.stream()
                   .skip(maxNumberOfCommandParameters)
                   .map(s -> String.format("'%s'", s))
                   .collect(joining(", ")));

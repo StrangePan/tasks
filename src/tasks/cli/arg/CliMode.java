@@ -10,4 +10,5 @@ public enum CliMode {
   LIST,
   REMOVE,
   REOPEN,
+  REWORD,
 }

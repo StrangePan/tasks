@@ -25,8 +25,8 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
   @Override
   public Completable handle(AddArguments arguments) {
     // Validate arguments
-    String label = arguments.description().trim();
-    if (label.isEmpty()) {
+    String description = arguments.description().trim();
+    if (description.isEmpty()) {
       throw new HandlerException("description cannot be empty or whitespace only");
     }
 
@@ -38,7 +38,7 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
 
     // Construct the new task, commit to disk, print output
     return taskStore.createTask(
-        label,
+        description,
         builder ->
             Single.just(builder)
                 .flatMap(b ->
