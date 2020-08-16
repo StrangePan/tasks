@@ -49,7 +49,7 @@ public final class HandlerUtil {
         .ifPresent(System.out::print);
   }
 
-  static Output stringifyIfPopulated(String prefix, Collection<Task> tasks) {
+  public static Output stringifyIfPopulated(String prefix, Collection<Task> tasks) {
     return tasks.isPopulated()
         ? Output.builder()
             .color(Output.Color16.LIGHT_MAGENTA)

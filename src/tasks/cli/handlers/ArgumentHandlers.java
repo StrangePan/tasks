@@ -28,6 +28,8 @@ import tasks.cli.command.info.InfoHandler;
 import tasks.cli.command.list.ListHandler;
 import tasks.cli.command.remove.RemoveHandler;
 import tasks.cli.command.reopen.ReopenHandler;
+import tasks.cli.command.reword.RewordArguments;
+import tasks.cli.command.reword.RewordHandler;
 import tasks.model.TaskStore;
 
 public final class ArgumentHandlers implements ArgumentHandler<Object> {
@@ -56,6 +58,7 @@ public final class ArgumentHandlers implements ArgumentHandler<Object> {
         .register(ListArguments.class, () -> new ListHandler(taskStore))
         .register(RemoveArguments.class, () -> new RemoveHandler(taskStore))
         .register(ReopenArguments.class, () -> new ReopenHandler(taskStore))
+        .register(RewordArguments.class, () -> new RewordHandler(taskStore))
         .build();
   }
 
@@ -72,7 +75,8 @@ public final class ArgumentHandlers implements ArgumentHandler<Object> {
     private final MutableMap<Class<?>, ArgumentHandler<Object>> registeredHandlers =
         HashMap.create();
 
-    <T> RegistryBuilder register(Class<T> argumentsClass, Supplier<? extends ArgumentHandler<? super T>> handlerSupplier) {
+    <T> RegistryBuilder register(
+        Class<T> argumentsClass, Supplier<? extends ArgumentHandler<? super T>> handlerSupplier) {
       requireNonNull(argumentsClass);
       requireNonNull(handlerSupplier);
       requireUnique(argumentsClass);

@@ -36,7 +36,9 @@ import tasks.model.TaskStore;
 /** Data structure for arguments passed into the command line. */
 public final class CliArguments {
 
-  private static Collection<CommandRegistration> createCommandModeRegistry(Memoized<Set<String>> validModes, Memoized<Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
+  private static Collection<CommandRegistration> createCommandModeRegistry(
+      Memoized<Set<String>> validModes,
+      Memoized<Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
     return new RegistryBuilder()
         .register(AddCommand.registration(taskParser))
         .register(AmendCommand.registration(taskParser))
@@ -47,7 +49,7 @@ public final class CliArguments {
         .register(ListCommand.registration())
         .register(RemoveCommand.registration(taskParser))
         .register(ReopenCommand.registration(taskParser))
-        .register(RewordCommand.registration(taskParser))rew
+        .register(RewordCommand.registration(taskParser))
         .build();
   }
 
