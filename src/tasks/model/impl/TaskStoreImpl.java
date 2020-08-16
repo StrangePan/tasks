@@ -1,6 +1,7 @@
 package tasks.model.impl;
 
 import static java.util.Objects.requireNonNull;
+import static omnia.data.stream.Collectors.toImmutableList;
 import static omnia.data.stream.Collectors.toImmutableSet;
 import static omnia.data.stream.Collectors.toSet;
 
@@ -174,7 +175,7 @@ public final class TaskStoreImpl implements TaskStore {
     MutableDirectedGraph<TaskId> predictiveTaskGraph =
         WritableObservableDirectedGraph.copyOf(taskGraph);
     applyBuilderTo(predictiveTaskData, predictiveTaskGraph, id, data, builderImpl);
-    assertIsValid(predictiveTaskGraph);
+    assertIsValid(predictiveTaskData, predictiveTaskGraph);
 
     applyBuilderTo(taskData, taskGraph, id, data, builderImpl);
     return id;
@@ -192,12 +193,24 @@ public final class TaskStoreImpl implements TaskStore {
     builder.blockedTasks().forEach(blockedTask -> taskGraph.addEdge(blockedTask, id));
   }
 
-  private static void assertIsValid(
+  private void assertIsValid(
+      Map<TaskId, TaskData> taskData,
       DirectedGraph<TaskId> taskGraph) {
-    GraphAlgorithms.findAnyCycle(taskGraph).ifPresent(
-        cycle -> {
-          throw new CyclicalDependencyException("Cycle detected", cycle);
-        });
+    GraphAlgorithms.findAnyCycle(taskGraph)
+        .map(
+            cycle ->
+                cycle.stream()
+                    .map(
+                        id -> id.toString()
+                            + ": "
+                            + taskData.valueOf(id).map(TaskData::label).orElse(""))
+                    .collect(toImmutableList()))
+        .ifPresent(
+            cycle -> {
+              throw new CyclicalDependencyException(
+                  "Cycle detected",
+                  cycle);
+            });
   }
 
   TaskBuilderImpl validateBuilder(TaskBuilder builder) {
@@ -278,10 +291,12 @@ public final class TaskStoreImpl implements TaskStore {
   private void maybeApplyMutator(TaskMutator mutator) {
     TaskMutatorImpl mutatorImpl = validateMutator(mutator);
 
+    MutableMap<TaskId, TaskData> predictiveTaskData = HashMap.copyOf(taskData);
     MutableDirectedGraph<TaskId> predictiveTaskGraph =
         WritableObservableDirectedGraph.copyOf(taskGraph);
+    applyMutatorTo(mutatorImpl, predictiveTaskData);
     applyMutatorTo(mutatorImpl, predictiveTaskGraph);
-    assertIsValid(predictiveTaskGraph);
+    assertIsValid(predictiveTaskData, predictiveTaskGraph);
 
     applyMutatorTo(mutatorImpl, taskData);
     applyMutatorTo(mutatorImpl, taskGraph);

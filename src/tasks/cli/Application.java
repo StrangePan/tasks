@@ -11,6 +11,7 @@ import tasks.cli.arg.CliArguments;
 import tasks.cli.handlers.ArgumentHandler;
 import tasks.cli.handlers.ArgumentHandlers;
 import tasks.model.TaskStore;
+import tasks.model.impl.CyclicalDependencyException;
 import tasks.model.impl.TaskStoreImpl;
 
 final class Application {
@@ -51,12 +52,30 @@ final class Application {
     if (throwable instanceof CliArguments.ArgumentFormatException) {
       System.out.println(throwable.getMessage());
     } else {
-        throwable.printStackTrace();
+      throwable.printStackTrace();
     }
   }
 
   private Maybe<Completable> handleCliArguments(Maybe<Object> args) {
-    return args.flatMap(arguments -> argumentHandler.value().handle(arguments).toMaybe());
+    return args.<Completable>flatMap(
+            arguments -> argumentHandler.value().handle(arguments).toMaybe())
+        .compose(Application::maybeHandleError);
+  }
+
+  private static Maybe<Completable> maybeHandleError(Maybe<Completable> stream) {
+    return stream
+        .doOnError(Application::maybeHandleError)
+        .onErrorComplete(Application::maybeConsumeError);
+  }
+
+  private static void maybeHandleError(Throwable throwable) {
+    if (throwable instanceof CyclicalDependencyException) {
+      System.out.println(throwable.getMessage());
+    }
+  }
+
+  private static boolean maybeConsumeError(Throwable throwable) {
+    return throwable instanceof CyclicalDependencyException;
   }
 
 }
