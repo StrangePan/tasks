@@ -1,6 +1,7 @@
 package tasks.model.impl;
 
 import static java.util.Objects.requireNonNull;
+import static omnia.data.stream.Collectors.toImmutableList;
 import static omnia.data.stream.Collectors.toImmutableSet;
 import static omnia.data.stream.Collectors.toSet;
 
@@ -11,6 +12,7 @@ import io.reactivex.Single;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import omnia.algorithm.GraphAlgorithms;
 import omnia.data.structure.DirectedGraph;
 import omnia.data.structure.Graph;
 import omnia.data.structure.Map;
@@ -18,6 +20,7 @@ import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableMap;
 import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.HashMap;
+import omnia.data.structure.mutable.MutableDirectedGraph;
 import omnia.data.structure.mutable.MutableMap;
 import omnia.data.structure.observable.writable.WritableObservableDirectedGraph;
 import omnia.data.structure.tuple.Couple;
@@ -28,6 +31,7 @@ import tasks.model.TaskBuilder;
 import tasks.model.TaskMutator;
 import tasks.model.TaskStore;
 
+/** This is NOT thread-safe. */
 public final class TaskStoreImpl implements TaskStore {
 
   private final TaskFileSource fileSource;
@@ -133,7 +137,8 @@ public final class TaskStoreImpl implements TaskStore {
                 taskData.valueOf(successor.item()).map(data -> !data.isCompleted()).orElse(false));
   }
 
-  private Flowable<Set<Task>> tasksFromNodesMatching(Predicate<? super DirectedGraph.DirectedNode<? extends TaskId>> filter) {
+  private Flowable<Set<Task>> tasksFromNodesMatching(
+      Predicate<? super DirectedGraph.DirectedNode<? extends TaskId>> filter) {
     return taskGraph.observe()
         .states()
         .map(DirectedGraph::nodes)
@@ -150,20 +155,62 @@ public final class TaskStoreImpl implements TaskStore {
       String label, Function<? super TaskBuilder, ? extends TaskBuilder> builder) {
     return Single.just(new TaskBuilderImpl(this, label))
         .<TaskBuilder>map(builder::apply)
-        .flatMap(taskBuilder -> Single.fromCallable(() -> applyBuilder(taskBuilder)))
+        .flatMap(taskBuilder -> Single.fromCallable(() -> maybeApplyBuilder(taskBuilder)))
         .map(this::toTask)
         .cache();
   }
 
-  private TaskId applyBuilder(TaskBuilder builder) {
+  /**
+   * Attempts to apply the given {@link TaskBuilder} to the task graph, but in a manner that tries
+   * to preserve internal consistency by first applying the changes to a snapshot and validating
+   * the snapshot.
+   */
+  private TaskId maybeApplyBuilder(TaskBuilder builder) {
     TaskBuilderImpl builderImpl = validateBuilder(builder);
     TaskData data = new TaskData(builderImpl.completed(), builderImpl.label());
     TaskId id = generateId();
+
+    // check that the mutation is valid
+    MutableMap<TaskId, TaskData> predictiveTaskData = HashMap.copyOf(taskData);
+    MutableDirectedGraph<TaskId> predictiveTaskGraph =
+        WritableObservableDirectedGraph.copyOf(taskGraph);
+    applyBuilderTo(predictiveTaskData, predictiveTaskGraph, id, data, builderImpl);
+    assertIsValid(predictiveTaskData, predictiveTaskGraph);
+
+    applyBuilderTo(taskData, taskGraph, id, data, builderImpl);
+    return id;
+  }
+
+  private static void applyBuilderTo(
+      MutableMap<TaskId, TaskData> taskData,
+      MutableDirectedGraph<TaskId> taskGraph,
+      TaskId id,
+      TaskData data,
+      TaskBuilderImpl builder) {
     taskData.putMapping(id, data);
     taskGraph.addNode(id);
-    builderImpl.blockingTasks().forEach(blockingTask -> taskGraph.addEdge(id, blockingTask));
-    builderImpl.blockedTasks().forEach(blockedTask -> taskGraph.addEdge(blockedTask, id));
-    return id;
+    builder.blockingTasks().forEach(blockingTask -> taskGraph.addEdge(id, blockingTask));
+    builder.blockedTasks().forEach(blockedTask -> taskGraph.addEdge(blockedTask, id));
+  }
+
+  private void assertIsValid(
+      Map<TaskId, TaskData> taskData,
+      DirectedGraph<TaskId> taskGraph) {
+    GraphAlgorithms.findAnyCycle(taskGraph)
+        .map(
+            cycle ->
+                cycle.stream()
+                    .map(
+                        id -> id.toString()
+                            + ": "
+                            + taskData.valueOf(id).map(TaskData::label).orElse(""))
+                    .collect(toImmutableList()))
+        .ifPresent(
+            cycle -> {
+              throw new CyclicalDependencyException(
+                  "Cycle detected",
+                  cycle);
+            });
   }
 
   TaskBuilderImpl validateBuilder(TaskBuilder builder) {
@@ -200,14 +247,16 @@ public final class TaskStoreImpl implements TaskStore {
   }
 
   @Override
-  public Completable mutateTask(Task task, Function<? super TaskMutator, ? extends TaskMutator> mutation) {
+  public Completable mutateTask(
+      Task task, Function<? super TaskMutator, ? extends TaskMutator> mutation) {
     return mutateTask(validateTask(task), mutation);
   }
 
-  Completable mutateTask(TaskImpl task, Function<? super TaskMutator, ? extends TaskMutator> mutation) {
+  Completable mutateTask(
+      TaskImpl task, Function<? super TaskMutator, ? extends TaskMutator> mutation) {
     return Single.just(new TaskMutatorImpl(this, task.id()))
         .<TaskMutator>map(mutation::apply)
-        .flatMapCompletable(mutator -> Completable.fromAction(() -> applyMutator(mutator)))
+        .flatMapCompletable(mutator -> Completable.fromAction(() -> maybeApplyMutator(mutator)))
         .cache();
   }
 
@@ -239,10 +288,18 @@ public final class TaskStoreImpl implements TaskStore {
     return new TaskImpl(this, id);
   }
 
-  private void applyMutator(TaskMutator mutator) {
+  private void maybeApplyMutator(TaskMutator mutator) {
     TaskMutatorImpl mutatorImpl = validateMutator(mutator);
-    applyMutatorToTaskData(mutatorImpl);
-    applyMutatorToTaskGraph(mutatorImpl);
+
+    MutableMap<TaskId, TaskData> predictiveTaskData = HashMap.copyOf(taskData);
+    MutableDirectedGraph<TaskId> predictiveTaskGraph =
+        WritableObservableDirectedGraph.copyOf(taskGraph);
+    applyMutatorTo(mutatorImpl, predictiveTaskData);
+    applyMutatorTo(mutatorImpl, predictiveTaskGraph);
+    assertIsValid(predictiveTaskData, predictiveTaskGraph);
+
+    applyMutatorTo(mutatorImpl, taskData);
+    applyMutatorTo(mutatorImpl, taskGraph);
   }
 
   TaskMutatorImpl validateMutator(TaskMutator mutator) {
@@ -269,7 +326,7 @@ public final class TaskStoreImpl implements TaskStore {
     return mutatorImpl;
   }
 
-  private void applyMutatorToTaskData(TaskMutatorImpl mutatorImpl) {
+  private void applyMutatorTo(TaskMutatorImpl mutatorImpl, MutableMap<TaskId, TaskData> taskData) {
     Optional.of(mutatorImpl)
         .filter(mutator -> mutator.completed().isPresent() || mutator.label().isPresent())
         .map(TaskMutatorImpl::id)
@@ -281,7 +338,7 @@ public final class TaskStoreImpl implements TaskStore {
         .ifPresent(data -> taskData.putMapping(mutatorImpl.id(), data));
   }
 
-  private void applyMutatorToTaskGraph(TaskMutatorImpl mutatorImpl) {
+  private void applyMutatorTo(TaskMutatorImpl mutatorImpl, MutableDirectedGraph<TaskId> taskGraph) {
     TaskId id = mutatorImpl.id();
 
     if (mutatorImpl.overwriteBlockingTasks()) {
