@@ -10,7 +10,7 @@ kz3kwaxll8n4;true;Add reword command;
 lzvv3qy4wa9s;true;Move parsers out of arguments;
 13g106gz8dqm8;true;Output indentation;
 147s85hhpdou8;true;Help documentation;
-15r9jkmzl3u2o;false;Verify no graph cycles;
+15r9jkmzl3u2o;true;Verify no graph cycles;
 19ywwqj6ys1ds;true;Add commands for modifying blockers;
 1eudqjntygao0;false;Move taskstore saving out of handlers;
 1omyqxbuc98n4;false;Add confirmation to remove command;
