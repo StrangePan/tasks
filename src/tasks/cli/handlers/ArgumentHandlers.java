@@ -10,7 +10,6 @@ import omnia.data.structure.immutable.ImmutableMap;
 import omnia.data.structure.mutable.HashMap;
 import omnia.data.structure.mutable.MutableMap;
 import tasks.cli.command.add.AddArguments;
-import tasks.cli.command.amend.AmendArguments;
 import tasks.cli.command.blockers.BlockersArguments;
 import tasks.cli.command.blockers.BlockersHandler;
 import tasks.cli.command.complete.CompleteArguments;
@@ -21,7 +20,6 @@ import tasks.cli.command.remove.RemoveArguments;
 import tasks.cli.command.reopen.ReopenArguments;
 import tasks.cli.arg.CommandDocumentation;
 import tasks.cli.command.add.AddHandler;
-import tasks.cli.command.amend.AmendHandler;
 import tasks.cli.command.complete.CompleteHandler;
 import tasks.cli.command.help.HelpHandler;
 import tasks.cli.command.info.InfoHandler;
@@ -50,7 +48,6 @@ public final class ArgumentHandlers implements ArgumentHandler<Object> {
       Memoized<Set<CommandDocumentation>> documentation) {
     return new RegistryBuilder()
         .register(AddArguments.class, () -> new AddHandler(taskStore))
-        .register(AmendArguments.class, () -> new AmendHandler(taskStore))
         .register(BlockersArguments.class, () -> new BlockersHandler(taskStore))
         .register(CompleteArguments.class, () -> new CompleteHandler(taskStore))
         .register(HelpArguments.class, () -> new HelpHandler(documentation))
