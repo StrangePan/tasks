@@ -28,11 +28,9 @@ public final class AddCommand {
         .helpDocumentation("Creates a new task.");
   }
 
-  static final Memoized<CliArguments.StringParameter> DESCRIPTION_PARAMETER =
-      memoize(() -> new CliArguments.StringParameter("description", NOT_REPEATABLE));
-
   static final Memoized<ImmutableList<CliArguments.Parameter>> COMMAND_PARAMETERS =
-      memoize(() -> ImmutableList.of(DESCRIPTION_PARAMETER.value()));
+      memoize(
+          () -> ImmutableList.of(new CliArguments.StringParameter("description", NOT_REPEATABLE)));
 
   static final Memoized<CliArguments.TaskOption> AFTER_OPTION =
       memoize(

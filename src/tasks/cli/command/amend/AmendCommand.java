@@ -21,13 +21,16 @@ public class AmendCommand {
         .cliMode(CliMode.AMEND)
         .canonicalName("amend")
         .aliases()
-        .parameters(ImmutableList.of(new CliArguments.TaskParameter(NOT_REPEATABLE)))
+        .parameters(PARAMETERS.value())
         .options(OPTIONS.value())
         .parser(() -> new AmendParser(taskParser))
         .helpDocumentation(
             "Changes an existing task. Can be used to change the task description or to "
                 + "add/remove blocking/blocked tasks.");
   }
+
+  static final Memoized<ImmutableList<CliArguments.Parameter>> PARAMETERS =
+      memoize(() -> ImmutableList.of(new CliArguments.TaskParameter(NOT_REPEATABLE)));
 
   static final Memoized<CliArguments.StringOption> DESCRIPTION_OPTION =
       memoize(

@@ -29,6 +29,7 @@ import tasks.cli.command.info.InfoCommand;
 import tasks.cli.command.list.ListCommand;
 import tasks.cli.command.remove.RemoveCommand;
 import tasks.cli.command.reopen.ReopenCommand;
+import tasks.cli.command.reword.RewordCommand;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
@@ -46,6 +47,7 @@ public final class CliArguments {
         .register(ListCommand.registration())
         .register(RemoveCommand.registration(taskParser))
         .register(ReopenCommand.registration(taskParser))
+        .register(RewordCommand.registration(taskParser))rew
         .build();
   }
 

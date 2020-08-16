@@ -1,6 +1,7 @@
 package tasks.cli.command.amend;
 
 import static java.util.Objects.requireNonNull;
+import static tasks.cli.arg.CliUtils.assertNoExtraArgs;
 import static tasks.cli.arg.CliUtils.extractTasksFrom;
 import static tasks.cli.arg.CliUtils.getOptionValues;
 import static tasks.cli.arg.CliUtils.getSingleOptionValue;
@@ -44,9 +45,7 @@ public final class AmendParser implements CliArguments.Parser<AmendArguments> {
     if (argsList.count() < 2) {
       throw new CliArguments.ArgumentFormatException("Task not specified");
     }
-    if (argsList.count() > 2) {
-      throw new CliArguments.ArgumentFormatException("Unexpected extra arguments");
-    }
+    assertNoExtraArgs(commandLine, AmendCommand.PARAMETERS.value());
 
     CliUtils.ParseResult<Task> targetTask =
         taskParser.value().parse(ImmutableList.of(argsList.itemAt(1))).itemAt(0);
