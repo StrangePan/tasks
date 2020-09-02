@@ -1,6 +1,7 @@
 package tasks.cli.command.reopen;
 
 import static java.util.Objects.requireNonNull;
+import static tasks.cli.handlers.HandlerUtil.printIfPopulated;
 
 import io.reactivex.Completable;
 import io.reactivex.Observable;
@@ -39,7 +40,7 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
         tasksGroupedByState.getOrDefault(HandlerUtil.CompletedState.INCOMPLETE, Set.empty());
 
     // report tasks already open
-    HandlerUtil.printIfPopulated("tasks already open:", alreadyOpenTasks);
+    printIfPopulated("tasks already open:", alreadyOpenTasks);
 
     // mark incomplete tasks as complete and commit to disk
     return Observable.fromIterable(completedTasks)
@@ -47,6 +48,6 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
         .andThen(taskStore.writeToDisk())
         .andThen(
             Completable.fromAction(
-                () -> HandlerUtil.printIfPopulated("task(s) reopened:", completedTasks)));
+                () -> printIfPopulated("task(s) reopened:", completedTasks)));
   }
 }

@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.joining;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import java.util.stream.Collectors;
+import omnia.cli.out.Output;
 import omnia.data.structure.Set;
 import tasks.cli.handlers.ArgumentHandler;
 import tasks.cli.handlers.HandlerException;
@@ -38,7 +39,11 @@ public final class InfoHandler implements ArgumentHandler<InfoArguments> {
   }
 
   private static String stringify(Set<Task> tasks) {
-    return tasks.stream().map(Task::toString).map(line -> "\n  " + line).collect(joining());
+    return tasks.stream()
+        .map(Task::render)
+        .map(Output::render)
+        .map(line -> "\n  " + line)
+        .collect(joining());
   }
 
   private static String maybeAddPrefix(String prefix, String content) {

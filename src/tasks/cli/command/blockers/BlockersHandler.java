@@ -41,7 +41,7 @@ public final class BlockersHandler implements ArgumentHandler<BlockersArguments>
         arguments.blockingTasksToRemove());
 
     return mutateAndProduceBeforeAfterSnapshot(arguments)
-        .doOnSuccess(this::printResults)
+        .doOnSuccess(BlockersHandler::printResults)
         .ignoreElement();
   }
 
@@ -71,18 +71,18 @@ public final class BlockersHandler implements ArgumentHandler<BlockersArguments>
         .andThen(taskStore.value().writeToDisk());
   }
 
-  private Single<Set<Task>> getTasksBlocking(Task task) {
+  private static Single<Set<Task>> getTasksBlocking(Task task) {
     return task.query().tasksBlockingThis().firstOrError();
   }
 
-  private void printResults(Couple<Set<Task>, Set<Task>> beforeAfterSnapshots) {
+  private static void printResults(Couple<Set<Task>, Set<Task>> beforeAfterSnapshots) {
     printIfPopulated("current blockers:", beforeAfterSnapshots.second());
     printIfPopulated(
         "removed blockers:",
         getRemovedBlockers(beforeAfterSnapshots.first(), beforeAfterSnapshots.second()));
   }
 
-  private Set<Task> getRemovedBlockers(Set<Task> before, Set<Task> after) {
+  private static Set<Task> getRemovedBlockers(Set<Task> before, Set<Task> after) {
     return SetAlgorithms.differenceBetween(before, after);
   }
 }

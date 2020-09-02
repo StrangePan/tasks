@@ -30,7 +30,7 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
     return Single.just(arguments)
         .map(HelpArguments::mode)
         .flatMap(mode -> mode.map(this::getHelpOutputForMode).orElseGet(this::getHelpOutputForSelf))
-        .map(Output::renderForTerminal)
+        .map(Output::render)
         .doOnSuccess(System.out::print)
         .ignoreElement()
         .cache();
@@ -47,8 +47,7 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
   }
 
   private Single<Output> getHelpOutputForCommandListing() {
-    return Single.just(documentation)
-        .map(Memoized::value)
+    return Single.fromCallable(documentation::value)
         .flatMapObservable(Observable::fromIterable)
         .sorted(Comparator.comparing(CommandDocumentation::canonicalName))
         .map(

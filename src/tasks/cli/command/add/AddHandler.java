@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
+import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableSet;
@@ -47,7 +48,9 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
                     Observable.fromIterable(blockedTasks).reduce(b, TaskBuilder::addBlockedTask))
                 .blockingGet())
         .flatMap(task -> taskStore.writeToDisk().toSingleDefault(task))
-        .map(task -> "task created: " + task)
+        .map(Task::render)
+        .map(Output::render)
+        .map(taskString -> "task created: " + taskString)
         .flatMapCompletable(msg -> Completable.fromAction(() -> System.out.println(msg)));
   }
 }

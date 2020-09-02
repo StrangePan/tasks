@@ -43,7 +43,7 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
                     .andThen(taskStore.writeToDisk())
                     .andThen(Single.just(tasksAndReport.second())))
         .filter(Output::isPopulated)
-        .map(Output::renderForTerminal)
+        .map(Output::render)
         .doOnSuccess(System.out::print)
         .ignoreElement();
   }

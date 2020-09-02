@@ -30,6 +30,9 @@ public final class RewordHandler implements ArgumentHandler<RewordArguments> {
                     arguments.targetTask(),
                     mutator -> mutator.setLabel(arguments.description())))
         .andThen(taskStore.value().writeToDisk())
-        .doOnComplete(() -> System.out.println("Updated description: " + arguments.targetTask()));
+        .doOnComplete(
+            () ->
+                System.out.println(
+                    "Updated description: " + arguments.targetTask().render().render()));
   }
 }

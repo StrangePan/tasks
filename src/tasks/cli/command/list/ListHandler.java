@@ -1,6 +1,7 @@
 package tasks.cli.command.list;
 
 import static java.util.Objects.requireNonNull;
+import static tasks.cli.handlers.HandlerUtil.printIfPopulated;
 
 import io.reactivex.Completable;
 import io.reactivex.Observable;
@@ -41,7 +42,7 @@ public final class ListHandler implements ArgumentHandler<ListArguments> {
         .map(Triple::dropFirst)
         .concatMapEager(
             couple -> couple.second().map(tasks -> Tuple.of(couple.first(), tasks)).toObservable())
-        .doOnNext(couple -> HandlerUtil.printIfPopulated(couple.first(), couple.second()))
+        .doOnNext(couple -> printIfPopulated(couple.first(), couple.second()))
         .ignoreElements();
   }
 }

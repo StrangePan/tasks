@@ -51,7 +51,7 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
         .concatMapCompletable(task -> task.mutate(mutator -> mutator.setCompleted(true)))
         .andThen(taskStore.writeToDisk())
         .andThen(findTasksBlockedBy(incompleteTasks))
-        .compose(this::onlyTasksThatAreUnblocked)
+        .compose(CompleteHandler::onlyTasksThatAreUnblocked)
         .doOnSuccess(a -> printIfPopulated("task(s) marked as completed:", incompleteTasks))
         .doOnSuccess(
             newlyUnblockedTasks ->
@@ -59,15 +59,15 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
         .ignoreElement();
   }
 
-  private Single<Set<Task>> findTasksBlockedBy(Set<Task> tasks) {
+  private static Single<Set<Task>> findTasksBlockedBy(Set<Task> tasks) {
     return Flowable.fromIterable(tasks)
-        .flatMapSingle(task -> taskStore.value().allTasksBlockedBy(task).firstOrError())
+        .flatMapSingle(task -> task.query().tasksBlockedByThis().firstOrError())
         .<ImmutableSet.Builder<Task>>collect(
             ImmutableSet::builder, (builder, taskSet) -> builder.addAll(taskSet))
         .map(ImmutableSet.Builder::build);
   }
 
-  private Single<Set<Task>> onlyTasksThatAreUnblocked(Single<Set<Task>> tasks) {
+  private static Single<Set<Task>> onlyTasksThatAreUnblocked(Single<Set<Task>> tasks) {
     return tasks.flatMapObservable(Observable::fromIterable)
         .flatMapMaybe(
             task ->
