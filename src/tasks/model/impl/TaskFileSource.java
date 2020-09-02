@@ -111,8 +111,8 @@ final class TaskFileSource {
       Stream.of(fields[1].split(TASK_ID_DELIMITER))
           .map(TaskFileSource::parseId)
           .forEach(dependency -> graph.addEdge(id, dependency));
-      // TODO: ensure unique ids
-      // TODO: ensure we have data for all ids
+      // TODO(vc0gqs1jstmo): ensure unique ids
+      // TODO(vc0gqs1jstmo): ensure we have data for all ids
     }
 
     private void parseToTasks(String line) {
@@ -122,7 +122,7 @@ final class TaskFileSource {
       String label = unescapeLabel(fields[2]);
       tasks.put(id, new TaskData(completed, label));
       graph.addNode(id);
-      // TODO: ensure unique ids
+      // TODO(vc0gqs1jstmo): ensure unique ids
     }
 
     Couple<DirectedGraph<TaskId>, Map<TaskId, TaskData>> build() {
@@ -132,9 +132,9 @@ final class TaskFileSource {
 
   private static TaskId parseId(String string) {
     try {
-      return new TaskId(Long.parseLong(string, ID_RADIX));
+      return TaskId.parse(string);
     } catch (NumberFormatException ex) {
-      // TODO make a parsing exception
+      // TODO(3b6ayu83gqtc): make a parsing exception
       throw new RuntimeException("invalid id: " + string, ex);
     }
   }
@@ -172,7 +172,7 @@ final class TaskFileSource {
   }
 
   private static String serialize(TaskId id) {
-    return Long.toString(id.asLong(), ID_RADIX);
+    return id.toString();
   }
 
   private static String escapeLabel(String label) {

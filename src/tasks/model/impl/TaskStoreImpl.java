@@ -238,12 +238,13 @@ public final class TaskStoreImpl implements TaskStore {
   }
 
   private TaskId generateId() {
-    // TODO: more sophisticated algorithm
-    TaskId id;
-    do {
-      id = new TaskId((long) (Math.random() * Long.MAX_VALUE));
-    } while (taskGraph.contents().contains(id));
-    return id;
+    // TODO(vxi4873454w0): more sophisticated algorithm
+    while (true) {
+      TaskId id = new TaskId((long) (Math.random() * TaskId.MAX_ID_VALUE));
+      if (!taskGraph.contents().contains(id)) {
+        return id;
+      }
+    }
   }
 
   @Override
