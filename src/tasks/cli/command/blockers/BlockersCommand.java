@@ -54,7 +54,7 @@ public final class BlockersCommand {
               "remove",
               "d",
               "Removes another task from being a blocker. Ignored if --"
-                  + CLEAR_OPTION.value().longName() + "is set.",
+                  + CLEAR_OPTION.value().longName() + " is set.",
               REPEATABLE));
 
   static final Memoized<ImmutableList<CliArguments.Option>> OPTIONS =
