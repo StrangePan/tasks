@@ -2,6 +2,7 @@ package tasks.cli.arg;
 
 import static java.util.Objects.requireNonNull;
 import static omnia.data.cache.Memoized.memoize;
+import static omnia.data.stream.Collectors.toImmutableList;
 import static omnia.data.stream.Collectors.toImmutableMap;
 import static omnia.data.stream.Collectors.toImmutableSet;
 
@@ -9,7 +10,6 @@ import io.reactivex.Single;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import omnia.algorithm.ListAlgorithms;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
 import omnia.data.structure.List;
@@ -19,6 +19,7 @@ import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.HashMap;
 import omnia.data.structure.mutable.MutableMap;
+import omnia.data.structure.tuple.Couple;
 import omnia.data.structure.tuple.Tuple;
 import org.apache.commons.cli.CommandLine;
 import tasks.cli.command.add.AddCommand;
@@ -84,20 +85,40 @@ public final class CliArguments {
   }
 
   public Object parse(List<? extends String> args) {
-    // Parameter validation
     requireNonNull(args);
 
-    return Single.just(
-        Tuple.<List<? extends String>, Optional<CommandRegistration>>of(
-            ListAlgorithms.sublistOf(args, 1, args.count()),
-            args.stream().findFirst().flatMap(this::registrationFromArgument)))
-        .map(
-            couple -> couple.second().isPresent()
-                ? couple.mapSecond(Optional::get)
-                : Tuple.of(ImmutableList.<String>empty(), fallback))
-        .map(couple -> couple.mapFirst(first -> CliUtils.tryParse(first, CliUtils.toOptions(couple.second().options()))))
-        .map(couple -> couple.second().commandParserSupplier().parse(couple.first()))
+    return Single.just(argsAndOptionalRegistration(args))
+        .map(this::resolveRegistrationOrUseFallback)
+        .map(CliArguments::parseToCommandLine)
+        .map(CliArguments::parseToArguments)
         .blockingGet();
+  }
+
+  private Couple<List<? extends String>, Optional<CommandRegistration>> argsAndOptionalRegistration(
+      List<? extends String> args) {
+    return Tuple.of(
+        args.stream().skip(1).collect(toImmutableList()),
+        args.stream().findFirst().flatMap(this::registrationFromArgument));
+  }
+
+  private Couple<List<? extends String>, CommandRegistration> resolveRegistrationOrUseFallback(
+      Couple<List<? extends String>, Optional<CommandRegistration>> argsAndOptionalRegistration) {
+    return argsAndOptionalRegistration.second().isPresent()
+        ? argsAndOptionalRegistration.mapSecond(Optional::get)
+        : Tuple.of(ImmutableList.empty(), fallback);
+  }
+
+  private static Couple<CommandLine, CommandRegistration> parseToCommandLine(Couple<List<? extends String>, CommandRegistration> argsAndCommand) {
+    return argsAndCommand.mapFirst(
+        first -> CliUtils.tryParse(first, CliUtils.toOptions(argsAndCommand.second().options())));
+  }
+
+  private static Object parseToArguments(
+      Couple<CommandLine, CommandRegistration> commandLineAndRegistration) {
+    return commandLineAndRegistration
+        .second()
+        .commandParserSupplier()
+        .parse(commandLineAndRegistration.first());
   }
 
   private Optional<CommandRegistration> registrationFromArgument(String arg) {
