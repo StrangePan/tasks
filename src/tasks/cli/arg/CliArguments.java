@@ -6,10 +6,10 @@ import static omnia.data.stream.Collectors.toImmutableMap;
 import static omnia.data.stream.Collectors.toImmutableSet;
 
 import io.reactivex.Single;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import omnia.algorithm.ListAlgorithms;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
 import omnia.data.structure.List;
@@ -20,6 +20,7 @@ import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.HashMap;
 import omnia.data.structure.mutable.MutableMap;
 import omnia.data.structure.tuple.Tuple;
+import org.apache.commons.cli.CommandLine;
 import tasks.cli.command.add.AddCommand;
 import tasks.cli.command.blockers.BlockersCommand;
 import tasks.cli.command.complete.CompleteCommand;
@@ -56,7 +57,10 @@ public final class CliArguments {
   private final CommandRegistration fallback;
 
   public CliArguments(Memoized<TaskStore> taskStore) {
-    registrations = createCommandModeRegistry(memoize(this::modeNamesAndAliases), memoize(() -> CliUtils.taskListParser(taskStore)));
+    registrations =
+        createCommandModeRegistry(
+            memoize(this::modeNamesAndAliases),
+            memoize(() -> CliUtils.taskListParser(taskStore)));
 
     registrationsIndexedByAliases =
         registrations.stream()
@@ -82,19 +86,17 @@ public final class CliArguments {
   public Object parse(List<? extends String> args) {
     // Parameter validation
     requireNonNull(args);
-    if (args.stream().anyMatch(Objects::isNull)) {
-      throw new IllegalArgumentException("args cannot contain null");
-    }
 
     return Single.just(
         Tuple.<List<? extends String>, Optional<CommandRegistration>>of(
-            args,
+            ListAlgorithms.sublistOf(args, 1, args.count()),
             args.stream().findFirst().flatMap(this::registrationFromArgument)))
         .map(
             couple -> couple.second().isPresent()
                 ? couple.mapSecond(Optional::get)
                 : Tuple.of(ImmutableList.<String>empty(), fallback))
-        .map(couple -> couple.second().parserSupplier().parse(couple.first()))
+        .map(couple -> couple.mapFirst(first -> CliUtils.tryParse(first, CliUtils.toOptions(couple.second().options()))))
+        .map(couple -> couple.second().commandParserSupplier().parse(couple.first()))
         .blockingGet();
   }
 
@@ -156,7 +158,11 @@ public final class CliArguments {
   }
 
   public interface Parser<T> {
-    T parse(List<? extends String> args);
+    T parse(List<? extends String> commandLine);
+  }
+
+  public interface CommandParser<T> {
+    T parse(CommandLine commandLine);
   }
 
   private static final class RegistryBuilder {
@@ -187,7 +193,7 @@ public final class CliArguments {
     private final String description;
     private final Collection<Parameter> parameters;
     private final Collection<Option> options;
-    private final Memoized<Parser<?>> parser;
+    private final Memoized<CommandParser<?>> parser;
 
     private CommandRegistration(
         CliMode cliMode,
@@ -196,14 +202,14 @@ public final class CliArguments {
         String description,
         Collection<Parameter> parameters,
         Collection<Option> options,
-        Supplier<? extends Parser<?>> parserSupplier) {
+        Supplier<? extends CommandParser<?>> commandParserSupplier) {
       requireNonNull(cliMode);
       requireNonNull(canonicalName);
       requireNonNull(aliases);
       requireNonNull(description);
       requireNonNull(parameters);
       requireNonNull(options);
-      requireNonNull(parserSupplier);
+      requireNonNull(commandParserSupplier);
 
       if (aliases.contains(canonicalName)) {
         throw new IllegalArgumentException("aliases cannot contain the canonical name");
@@ -218,7 +224,7 @@ public final class CliArguments {
       this.description = description;
       this.parameters = parameters;
       this.options = ImmutableList.copyOf(options);
-      this.parser = memoize(parserSupplier);
+      this.parser = memoize(commandParserSupplier);
     }
 
     CliMode cliMode() {
@@ -249,7 +255,7 @@ public final class CliArguments {
       return ImmutableList.<String>builder().add(canonicalName).addAll(aliases).build();
     }
 
-    Parser<?> parserSupplier() {
+    CommandParser<?> commandParserSupplier() {
       return parser.value();
     }
 
@@ -274,7 +280,7 @@ public final class CliArguments {
     }
 
     public interface Builder5 {
-      Builder6 parser(Supplier<? extends Parser<?>> parserSupplier);
+      Builder6 parser(Supplier<? extends CommandParser<?>> commandParserSupplier);
     }
 
     public interface Builder6 {
@@ -287,7 +293,7 @@ public final class CliArguments {
             (Builder2) aliases ->
                 (Builder3) parameters ->
                     (Builder4) arguments ->
-                        (Builder5) parserSupplier ->
+                        (Builder5) commandParserSupplier ->
                             (Builder6) description ->
                                 new CommandRegistration(
                                     cliMode,
@@ -296,7 +302,7 @@ public final class CliArguments {
                                     description,
                                     parameters,
                                     arguments,
-                                    parserSupplier);
+                                    commandParserSupplier);
     }
   }
 

@@ -9,6 +9,8 @@ import static tasks.cli.arg.CliUtils.validateParsedTasks;
 import java.util.function.Function;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
+import omnia.data.structure.immutable.ImmutableList;
+import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import tasks.cli.arg.CliUtils.ParseResult;
 import tasks.model.Task;
@@ -25,7 +27,7 @@ public abstract class SimpleArguments {
     return tasks;
   }
 
-  public static abstract class Parser<T extends SimpleArguments> implements CliArguments.Parser<T> {
+  public static abstract class Parser<T extends SimpleArguments> implements CliArguments.CommandParser<T> {
     private final Function<List<Task>, T> constructor;
     private final Memoized<CliArguments.Parser<? extends List<ParseResult<Task>>>> taskParser;
 
@@ -37,15 +39,11 @@ public abstract class SimpleArguments {
     }
 
     @Override
-    public T parse(List<? extends String> args) {
+    public T parse(CommandLine commandLine) {
       /*
-      1st param assumed to be "remove" or an alias for it.
-      2nd+ params must be task IDs
-      */
-      List<String> argsList =
-          List.masking(
-              tryParse(args.stream().skip(1).collect(toImmutableList()), new Options())
-                  .getArgList());
+       * All params must be task IDs
+       */
+      List<String> argsList = ImmutableList.copyOf(commandLine.getArgList());
       if (argsList.count() < 1) {
         throw new CliArguments.ArgumentFormatException("No task IDs specified");
       }

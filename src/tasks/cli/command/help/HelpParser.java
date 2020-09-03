@@ -1,17 +1,17 @@
 package tasks.cli.command.help;
 
 import static java.util.Objects.requireNonNull;
-import static tasks.cli.arg.CliUtils.tryParse;
 
 import java.util.Optional;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.Set;
-import org.apache.commons.cli.Options;
+import omnia.data.structure.immutable.ImmutableList;
+import org.apache.commons.cli.CommandLine;
 import tasks.cli.arg.CliArguments;
 
 /** Command line argument parser for the Help command. */
-public final class HelpParser implements CliArguments.Parser<HelpArguments> {
+public final class HelpParser implements CliArguments.CommandParser<HelpArguments> {
   private final Memoized<Set<String>> validModes;
 
   public HelpParser(Memoized<Set<String>> validModes) {
@@ -19,8 +19,8 @@ public final class HelpParser implements CliArguments.Parser<HelpArguments> {
   }
 
   @Override
-  public HelpArguments parse(List<? extends String> args) {
-    List<String> parsedArgs = List.masking(tryParse(args, new Options()).getArgList());
+  public HelpArguments parse(CommandLine commandLine) {
+    List<String> parsedArgs = ImmutableList.copyOf(commandLine.getArgList());
 
     Optional<String> mode =
         parsedArgs.count() > 1
