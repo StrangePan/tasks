@@ -2,7 +2,6 @@ package tasks.cli.command.remove;
 
 import static java.util.Objects.requireNonNull;
 
-import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import omnia.cli.out.Output;
@@ -24,7 +23,7 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
   }
 
   @Override
-  public Completable handle(RemoveArguments arguments) {
+  public Single<Output> handle(RemoveArguments arguments) {
     Collection<Task> tasksToDelete = arguments.tasks();
 
     // Validate arguments
@@ -32,19 +31,13 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
       throw new HandlerException("no tasks specified");
     }
 
-    TaskStore taskStore = this.taskStore.value();
-
     return Single.just(tasksToDelete)
         .map(tasks -> Tuple.of(tasks, HandlerUtil.stringifyIfPopulated("tasks deleted:", tasks)))
         .flatMap(
             tasksAndReport ->
                 Observable.fromIterable(tasksAndReport.first())
-                    .concatMapCompletable(taskStore::deleteTask)
-                    .andThen(taskStore.writeToDisk())
-                    .andThen(Single.just(tasksAndReport.second())))
-        .filter(Output::isPopulated)
-        .map(Output::renderForTerminal)
-        .doOnSuccess(System.out::print)
-        .ignoreElement();
+                    .concatMapCompletable(task -> taskStore.value().deleteTask(task))
+                    .andThen(taskStore.value().writeToDisk())
+                    .andThen(Single.just(tasksAndReport.second())));
   }
 }

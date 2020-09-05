@@ -2,8 +2,9 @@ package tasks.cli.handlers;
 
 import static java.util.Objects.requireNonNull;
 
-import io.reactivex.Completable;
+import io.reactivex.Single;
 import java.util.function.Supplier;
+import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableMap;
@@ -12,6 +13,7 @@ import omnia.data.structure.mutable.MutableMap;
 import tasks.cli.command.add.AddArguments;
 import tasks.cli.command.blockers.BlockersArguments;
 import tasks.cli.command.blockers.BlockersHandler;
+import tasks.cli.command.common.CommonArguments;
 import tasks.cli.command.complete.CompleteArguments;
 import tasks.cli.command.help.HelpArguments;
 import tasks.cli.command.info.InfoArguments;
@@ -30,11 +32,12 @@ import tasks.cli.command.reword.RewordArguments;
 import tasks.cli.command.reword.RewordHandler;
 import tasks.model.TaskStore;
 
-public final class ArgumentHandlers implements ArgumentHandler<Object> {
+public final class ArgumentHandlers implements ArgumentHandler<CommonArguments<?>> {
   private final ImmutableMap<Class<?>, ArgumentHandler<Object>> registeredHandlers;
 
   public static ArgumentHandlers create(
-      Memoized<TaskStore> taskStore, Memoized<Set<CommandDocumentation>> documentation) {
+      Memoized<TaskStore> taskStore,
+      Memoized<Set<CommandDocumentation>> documentation) {
     return new ArgumentHandlers(requireNonNull(taskStore), requireNonNull(documentation));
   }
 
@@ -60,12 +63,14 @@ public final class ArgumentHandlers implements ArgumentHandler<Object> {
   }
 
   @Override
-  public Completable handle(Object arguments) {
-    Class<?> argumentsClass = requireNonNull(arguments).getClass();
-    return registeredHandlers.valueOf(argumentsClass)
+  public Single<Output> handle(CommonArguments<?> arguments) {
+    Object specificArguments = arguments.specificArguments();
+    Class<?> specificArgumentsClass = specificArguments.getClass();
+    return registeredHandlers.valueOf(specificArgumentsClass)
         .orElseThrow(
-            () -> new IllegalArgumentException("Unsupported argument type " + argumentsClass))
-        .handle(arguments);
+            () ->
+                new IllegalArgumentException("Unsupported argument type " + specificArgumentsClass))
+        .handle(specificArguments);
   }
 
   private static final class RegistryBuilder {

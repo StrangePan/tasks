@@ -3,7 +3,6 @@ package tasks.cli.command.help;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
-import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import java.util.Comparator;
@@ -13,8 +12,10 @@ import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
+import tasks.cli.arg.CliArguments;
 import tasks.cli.arg.CommandDocumentation;
 import tasks.cli.arg.CommandDocumentation.OptionDocumentation;
+import tasks.cli.command.common.CommonOptions;
 import tasks.cli.handlers.ArgumentHandler;
 
 /** Business logic for the Help command. */
@@ -26,14 +27,11 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
   }
 
   @Override
-  public Completable handle(HelpArguments arguments) {
+  public Single<Output> handle(HelpArguments arguments) {
     return Single.just(arguments)
         .map(HelpArguments::mode)
-        .flatMap(mode -> mode.map(this::getHelpOutputForMode).orElseGet(this::getHelpOutputForSelf))
-        .map(Output::renderForTerminal)
-        .doOnSuccess(System.out::print)
-        .ignoreElement()
-        .cache();
+        .flatMap(
+            mode -> mode.map(this::getHelpOutputForMode).orElseGet(this::getHelpOutputForSelf));
   }
 
   private Single<Output> getHelpOutputForSelf() {
@@ -47,8 +45,7 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
   }
 
   private Single<Output> getHelpOutputForCommandListing() {
-    return Single.just(documentation)
-        .map(Memoized::value)
+    return Single.fromCallable(documentation::value)
         .flatMapObservable(Observable::fromIterable)
         .sorted(Comparator.comparing(CommandDocumentation::canonicalName))
         .map(
@@ -85,6 +82,7 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
         .appendLine(usageLine(documentation))
         .appendLine(documentation.description(), 2)
         .appendLine(prependWithBlankLine(parameterLines(documentation)))
+        .appendLine(prependWithBlankLine(documentationCommonToAllCommands()))
         .build();
   }
 
@@ -118,6 +116,21 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
         .build();
   }
 
+  private static Output documentationCommonToAllCommands() {
+    return Output.builder()
+        .appendLine("Options common to all commands")
+        .appendLine()
+        .appendLine(
+            Single.fromCallable(CommonOptions.OPTIONS::value)
+                .flattenAsObservable(options -> options)
+                .map(CliArguments::toOptionDocumentation)
+                .map(HelpHandler::parameterLine)
+                .collectInto(Output.builder(), Output.Builder::appendLine)
+                .map(Output.Builder::build)
+                .blockingGet())
+        .build();
+  }
+
   private static Output parameterLines(CommandDocumentation documentation) {
     return Observable.fromIterable(documentation.options())
         .sorted(Comparator.comparing(OptionDocumentation::canonicalName))
@@ -132,7 +145,7 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
         .appendLine(
             Stream.concat(
                 Stream.of("--" + documentation.canonicalName()),
-                Stream.of("-" + documentation.shortFlag()))
+                documentation.shortFlag().stream().map(shortFlag -> "-" + shortFlag))
             .collect(joining(","))
                 + (documentation.parameterRepresentation().map(r -> " " + r).orElse(""))
                 + (documentation.isRepeatable() ? " [+]" : ""),

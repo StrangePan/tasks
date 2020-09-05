@@ -5,9 +5,13 @@ import static omnia.data.cache.Memoized.memoize;
 
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
+import io.reactivex.Single;
 import omnia.data.cache.Memoized;
+import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableList;
+import omnia.data.structure.immutable.ImmutableSet;
 import tasks.cli.arg.CliArguments;
+import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handlers.ArgumentHandler;
 import tasks.cli.handlers.ArgumentHandlers;
 import tasks.model.TaskStore;
@@ -20,7 +24,7 @@ final class Application {
   private final Memoized<TaskStore> taskStore = memoize(() -> new TaskStoreImpl("asdf"));
 
   private final Memoized<CliArguments> argumentsParser;
-  private final Memoized<ArgumentHandler<Object>> argumentHandler;
+  private final Memoized<ArgumentHandler<CommonArguments<?>>> argumentHandler;
 
   Application(String[] rawArgs) {
     this.rawArgs = requireNonNull(rawArgs);
@@ -28,22 +32,22 @@ final class Application {
     argumentsParser = memoize(() -> new CliArguments(taskStore));
     argumentHandler = memoize(() ->
         ArgumentHandlers.create(
-            taskStore, memoize(argumentsParser.value()::commandDocumentation)));
+            taskStore, memoize(() -> argumentsParser.value().commandDocumentation())));
   }
 
   void run() {
-    Maybe.just(rawArgs)
-        .compose(this::parseCliArguments)
-        .compose(this::handleCliArguments)
-        .flatMapCompletable(c -> c)
+    Single.just(rawArgs)
+        .flatMapMaybe(this::parseCliArguments)
+        .flatMapCompletable(this::handleCliArguments)
         .blockingAwait();
   }
 
 
-  private Maybe<Object> parseCliArguments(Maybe<?  extends String[]> args) {
-    return args
+  private Maybe<CommonArguments<?>> parseCliArguments(String[] args) {
+    return Single.just(args)
         .map(ImmutableList::copyOf)
-        .map(a -> argumentsParser.value().parse(a))
+        .<CommonArguments<?>>map(a -> argumentsParser.value().parse(a))
+        .toMaybe()
         .doOnError(Application::handleParseError)
         .onErrorComplete();
   }
@@ -56,26 +60,39 @@ final class Application {
     }
   }
 
-  private Maybe<Completable> handleCliArguments(Maybe<Object> args) {
-    return args.<Completable>flatMap(
-            arguments -> argumentHandler.value().handle(arguments).toMaybe())
-        .compose(Application::maybeHandleError);
-  }
-
-  private static Maybe<Completable> maybeHandleError(Maybe<Completable> stream) {
-    return stream
+  private Completable handleCliArguments(CommonArguments<?> args) {
+    return Single.just(args)
+        .flatMap(arguments -> argumentHandler.value().handle(arguments))
+        .doOnSuccess(
+            output ->
+                System.out.print(
+                    args.enableOutputFormatting() ? output.render() : output.renderWithoutCodes()))
+        .ignoreElement()
         .doOnError(Application::maybeHandleError)
         .onErrorComplete(Application::maybeConsumeError);
   }
 
   private static void maybeHandleError(Throwable throwable) {
-    if (throwable instanceof CyclicalDependencyException) {
+    if (shouldSuppressThrowable(throwable)) {
       System.out.println(throwable.getMessage());
     }
   }
 
   private static boolean maybeConsumeError(Throwable throwable) {
-    return throwable instanceof CyclicalDependencyException;
+    return shouldSuppressThrowable(throwable);
   }
 
+  private static boolean shouldSuppressThrowable(Throwable throwable) {
+    for (Class<? extends Throwable> suppressedClass : suppressedThrowableClasses) {
+      if (suppressedClass.isInstance(throwable)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // TODO: don't hard-code a CyclicalDependencyException directly in Application.
+  // We need a better way of converting an exception into a proper, human-readable output.
+  private static final Set<Class<? extends Throwable>> suppressedThrowableClasses =
+      ImmutableSet.of(CyclicalDependencyException.class);
 }

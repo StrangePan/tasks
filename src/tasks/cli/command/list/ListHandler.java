@@ -1,15 +1,15 @@
 package tasks.cli.command.list;
 
 import static java.util.Objects.requireNonNull;
+import static tasks.cli.handlers.HandlerUtil.stringifyIfPopulated;
 
-import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
+import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.tuple.Triple;
 import omnia.data.structure.tuple.Tuple;
 import tasks.cli.handlers.ArgumentHandler;
-import tasks.cli.handlers.HandlerUtil;
 import tasks.model.TaskStore;
 
 /** Business logic for the List command. */
@@ -21,7 +21,7 @@ public final class ListHandler implements ArgumentHandler<ListArguments> {
   }
 
   @Override
-  public Completable handle(ListArguments arguments) {
+  public Single<Output> handle(ListArguments arguments) {
     return Single.fromCallable(taskStore::value)
         .flatMapObservable(
             store -> Observable.just(
@@ -41,7 +41,8 @@ public final class ListHandler implements ArgumentHandler<ListArguments> {
         .map(Triple::dropFirst)
         .concatMapEager(
             couple -> couple.second().map(tasks -> Tuple.of(couple.first(), tasks)).toObservable())
-        .doOnNext(couple -> HandlerUtil.printIfPopulated(couple.first(), couple.second()))
-        .ignoreElements();
+        .map(couple -> stringifyIfPopulated(couple.first(), couple.second()))
+        .collectInto(Output.builder(), Output.Builder::appendLine)
+        .map(Output.Builder::build);
   }
 }

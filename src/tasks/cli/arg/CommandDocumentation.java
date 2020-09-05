@@ -50,14 +50,14 @@ public final class CommandDocumentation {
 
   public static final class OptionDocumentation {
     private final String canonicalName;
-    private final String shortFlag;
+    private final Optional<String> shortFlag;
     private final String description;
     private final boolean repeatable;
     private final Optional<String> parameterRepresentation;
 
     public OptionDocumentation(
         String canonicalName,
-        String shortFlag,
+        Optional<String> shortFlag,
         String description,
         boolean repeatable,
         Optional<String> parameterRepresentation) {
@@ -72,7 +72,7 @@ public final class CommandDocumentation {
       return canonicalName;
     }
 
-    public String shortFlag() {
+    public Optional<String> shortFlag() {
       return shortFlag;
     }
 

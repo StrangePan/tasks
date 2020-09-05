@@ -1,28 +1,21 @@
 package tasks.cli.command.list;
 
 import static tasks.cli.arg.CliUtils.assertNoExtraArgs;
-import static tasks.cli.arg.CliUtils.tryParse;
 
-import omnia.data.structure.List;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 import tasks.cli.arg.CliArguments;
 import tasks.cli.arg.CliUtils;
 
 /** Command line argument parser for the List command. */
-public final class ListParser implements CliArguments.Parser<ListArguments> {
+public final class ListParser implements CliArguments.CommandParser<ListArguments> {
 
   @Override
-  public ListArguments parse(List<? extends String> args) {
+  public ListArguments parse(CommandLine commandLine) {
     /*
-    First arg is assumed to be "ls" or an alias thereof
-    No other unclassified arg allowed
-    optional --blocked flag
-    optional --completed flag
-    */
-    Options options = CliUtils.toOptions(ListCommand.OPTIONS.value());
-
-    CommandLine commandLine = tryParse(args, options);
+     * No non-flag parameters allowed
+     * optional --blocked flag
+     * optional --completed flag
+     */
     assertNoExtraArgs(commandLine);
 
     boolean isAllSet = CliUtils.getFlagPresence(commandLine, ListCommand.ALL_OPTION.value());

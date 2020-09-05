@@ -3,12 +3,13 @@ package tasks.cli.command.complete;
 import static java.util.Objects.requireNonNull;
 import static tasks.cli.handlers.HandlerUtil.groupByCompletionState;
 import static tasks.cli.handlers.HandlerUtil.printIfPopulated;
+import static tasks.cli.handlers.HandlerUtil.stringifyIfPopulated;
 
-import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import java.util.EnumMap;
+import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableSet;
@@ -27,7 +28,7 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
   }
 
   @Override
-  public Completable handle(CompleteArguments arguments) {
+  public Single<Output> handle(CompleteArguments arguments) {
     // Validate arguments
     if (!arguments.tasks().isPopulated()) {
       throw new HandlerException("no tasks specified");
@@ -51,23 +52,24 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
         .concatMapCompletable(task -> task.mutate(mutator -> mutator.setCompleted(true)))
         .andThen(taskStore.writeToDisk())
         .andThen(findTasksBlockedBy(incompleteTasks))
-        .compose(this::onlyTasksThatAreUnblocked)
-        .doOnSuccess(a -> printIfPopulated("task(s) marked as completed:", incompleteTasks))
-        .doOnSuccess(
+        .compose(CompleteHandler::onlyTasksThatAreUnblocked)
+        .map(
             newlyUnblockedTasks ->
-                printIfPopulated("task(s) unblocked as a result:", newlyUnblockedTasks))
-        .ignoreElement();
+                Output.builder()
+                    .append(stringifyIfPopulated("task(s) marked as completed:", incompleteTasks))
+                    .append(stringifyIfPopulated("task(s) unblocked as a result:", newlyUnblockedTasks))
+                    .build());
   }
 
-  private Single<Set<Task>> findTasksBlockedBy(Set<Task> tasks) {
+  private static Single<Set<Task>> findTasksBlockedBy(Set<Task> tasks) {
     return Flowable.fromIterable(tasks)
-        .flatMapSingle(task -> taskStore.value().allTasksBlockedBy(task).firstOrError())
+        .flatMapSingle(task -> task.query().tasksBlockedByThis().firstOrError())
         .<ImmutableSet.Builder<Task>>collect(
             ImmutableSet::builder, (builder, taskSet) -> builder.addAll(taskSet))
         .map(ImmutableSet.Builder::build);
   }
 
-  private Single<Set<Task>> onlyTasksThatAreUnblocked(Single<Set<Task>> tasks) {
+  private static Single<Set<Task>> onlyTasksThatAreUnblocked(Single<Set<Task>> tasks) {
     return tasks.flatMapObservable(Observable::fromIterable)
         .flatMapMaybe(
             task ->

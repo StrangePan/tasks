@@ -2,11 +2,11 @@ package tasks.cli.arg;
 
 import static java.util.Objects.requireNonNull;
 import static omnia.data.cache.Memoized.memoize;
+import static omnia.data.stream.Collectors.toImmutableList;
 import static omnia.data.stream.Collectors.toImmutableMap;
 import static omnia.data.stream.Collectors.toImmutableSet;
 
 import io.reactivex.Single;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -19,9 +19,14 @@ import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.HashMap;
 import omnia.data.structure.mutable.MutableMap;
+import omnia.data.structure.tuple.Couple;
 import omnia.data.structure.tuple.Tuple;
+import org.apache.commons.cli.CommandLine;
 import tasks.cli.command.add.AddCommand;
 import tasks.cli.command.blockers.BlockersCommand;
+import tasks.cli.command.common.CommonArguments;
+import tasks.cli.command.common.CommonOptions;
+import tasks.cli.command.common.CommonParser;
 import tasks.cli.command.complete.CompleteCommand;
 import tasks.cli.command.help.HelpCommand;
 import tasks.cli.command.info.InfoCommand;
@@ -51,12 +56,16 @@ public final class CliArguments {
         .build();
   }
 
+  private final CommonParser commonArgumentsParser = new CommonParser();
   private final Collection<CommandRegistration> registrations;
   private final Map<String, CommandRegistration> registrationsIndexedByAliases;
   private final CommandRegistration fallback;
 
   public CliArguments(Memoized<TaskStore> taskStore) {
-    registrations = createCommandModeRegistry(memoize(this::modeNamesAndAliases), memoize(() -> CliUtils.taskListParser(taskStore)));
+    registrations =
+        createCommandModeRegistry(
+            memoize(this::modeNamesAndAliases),
+            memoize(() -> CliUtils.taskListParser(taskStore)));
 
     registrationsIndexedByAliases =
         registrations.stream()
@@ -79,23 +88,47 @@ public final class CliArguments {
     return registrationsIndexedByAliases.keys();
   }
 
-  public Object parse(List<? extends String> args) {
-    // Parameter validation
+  public CommonArguments<?> parse(List<? extends String> args) {
     requireNonNull(args);
-    if (args.stream().anyMatch(Objects::isNull)) {
-      throw new IllegalArgumentException("args cannot contain null");
-    }
-
-    return Single.just(
-        Tuple.<List<? extends String>, Optional<CommandRegistration>>of(
-            args,
-            args.stream().findFirst().flatMap(this::registrationFromArgument)))
-        .map(
-            couple -> couple.second().isPresent()
-                ? couple.mapSecond(Optional::get)
-                : Tuple.of(ImmutableList.<String>empty(), fallback))
-        .map(couple -> couple.second().parserSupplier().parse(couple.first()))
+    return Single.just(argsAndOptionalRegistration(args))
+        .map(this::resolveRegistrationOrUseFallback)
+        .map(CliArguments::parseToCommandLine)
+        .map(this::parseToArguments)
         .blockingGet();
+  }
+
+  private Couple<List<? extends String>, Optional<CommandRegistration>> argsAndOptionalRegistration(
+      List<? extends String> args) {
+    return Tuple.of(
+        args.stream().skip(1).collect(toImmutableList()),
+        args.stream().findFirst().flatMap(this::registrationFromArgument));
+  }
+
+  private Couple<List<? extends String>, CommandRegistration> resolveRegistrationOrUseFallback(
+      Couple<List<? extends String>, Optional<CommandRegistration>> argsAndOptionalRegistration) {
+    return argsAndOptionalRegistration.second().isPresent()
+        ? argsAndOptionalRegistration.mapSecond(Optional::get)
+        : Tuple.of(ImmutableList.empty(), fallback);
+  }
+
+  private static Couple<CommandLine, CommandRegistration> parseToCommandLine(Couple<List<? extends String>, CommandRegistration> argsAndCommand) {
+    Collection<Option> commonAndSpecificOptions =
+        ImmutableSet.<Option>builder()
+            .addAll(argsAndCommand.second().options())
+            .addAll(CommonOptions.OPTIONS.value())
+            .build();
+    return argsAndCommand
+        .mapFirst(first -> CliUtils.tryParse(first, CliUtils.toOptions(commonAndSpecificOptions)));
+  }
+
+  private CommonArguments<?> parseToArguments(
+      Couple<CommandLine, CommandRegistration> commandLineAndRegistration) {
+    return commonArgumentsParser.parse(
+        commandLineAndRegistration.first(),
+        commandLineAndRegistration
+            .second()
+            .commandParserSupplier()
+            .parse(commandLineAndRegistration.first()));
   }
 
   private Optional<CommandRegistration> registrationFromArgument(String arg) {
@@ -136,7 +169,7 @@ public final class CliArguments {
     return option.parameterRepresentation().map(rep -> "<" + rep + ">");
   }
 
-  private static CommandDocumentation.OptionDocumentation toOptionDocumentation(Option option) {
+  public static CommandDocumentation.OptionDocumentation toOptionDocumentation(Option option) {
     return new CommandDocumentation.OptionDocumentation(
         option.longName(),
         option.shortName(),
@@ -156,7 +189,11 @@ public final class CliArguments {
   }
 
   public interface Parser<T> {
-    T parse(List<? extends String> args);
+    T parse(List<? extends String> commandLine);
+  }
+
+  public interface CommandParser<T> {
+    T parse(CommandLine commandLine);
   }
 
   private static final class RegistryBuilder {
@@ -187,7 +224,7 @@ public final class CliArguments {
     private final String description;
     private final Collection<Parameter> parameters;
     private final Collection<Option> options;
-    private final Memoized<Parser<?>> parser;
+    private final Memoized<CommandParser<?>> parser;
 
     private CommandRegistration(
         CliMode cliMode,
@@ -196,14 +233,14 @@ public final class CliArguments {
         String description,
         Collection<Parameter> parameters,
         Collection<Option> options,
-        Supplier<? extends Parser<?>> parserSupplier) {
+        Supplier<? extends CommandParser<?>> commandParserSupplier) {
       requireNonNull(cliMode);
       requireNonNull(canonicalName);
       requireNonNull(aliases);
       requireNonNull(description);
       requireNonNull(parameters);
       requireNonNull(options);
-      requireNonNull(parserSupplier);
+      requireNonNull(commandParserSupplier);
 
       if (aliases.contains(canonicalName)) {
         throw new IllegalArgumentException("aliases cannot contain the canonical name");
@@ -218,7 +255,7 @@ public final class CliArguments {
       this.description = description;
       this.parameters = parameters;
       this.options = ImmutableList.copyOf(options);
-      this.parser = memoize(parserSupplier);
+      this.parser = memoize(commandParserSupplier);
     }
 
     CliMode cliMode() {
@@ -249,7 +286,7 @@ public final class CliArguments {
       return ImmutableList.<String>builder().add(canonicalName).addAll(aliases).build();
     }
 
-    Parser<?> parserSupplier() {
+    CommandParser<?> commandParserSupplier() {
       return parser.value();
     }
 
@@ -274,7 +311,7 @@ public final class CliArguments {
     }
 
     public interface Builder5 {
-      Builder6 parser(Supplier<? extends Parser<?>> parserSupplier);
+      Builder6 parser(Supplier<? extends CommandParser<?>> commandParserSupplier);
     }
 
     public interface Builder6 {
@@ -287,7 +324,7 @@ public final class CliArguments {
             (Builder2) aliases ->
                 (Builder3) parameters ->
                     (Builder4) arguments ->
-                        (Builder5) parserSupplier ->
+                        (Builder5) commandParserSupplier ->
                             (Builder6) description ->
                                 new CommandRegistration(
                                     cliMode,
@@ -296,20 +333,37 @@ public final class CliArguments {
                                     description,
                                     parameters,
                                     arguments,
-                                    parserSupplier);
+                                    commandParserSupplier);
     }
   }
 
   public abstract static class Option {
     private final String longName;
-    private final String shortName;
+    private final Optional<String> shortName;
     private final String description;
     private final Parameter.Repeatable repeatable;
     private final Optional<String> parameterRepresentation;
 
-    Option(
+    protected Option(
         String longName,
         String shortName,
+        String description,
+        Parameter.Repeatable repeatable,
+        Optional<String> parameterRepresentation) {
+      this(longName, Optional.of(shortName), description, repeatable, parameterRepresentation);
+    }
+
+    protected Option(
+        String longName,
+        String description,
+        Parameter.Repeatable repeatable,
+        Optional<String> parameterRepresentation) {
+      this(longName, Optional.empty(), description, repeatable, parameterRepresentation);
+    }
+
+    private Option(
+        String longName,
+        Optional<String> shortName,
         String description,
         Parameter.Repeatable repeatable,
         Optional<String> parameterRepresentation) {
@@ -324,7 +378,7 @@ public final class CliArguments {
       return longName;
     }
 
-    public String shortName() {
+    public Optional<String> shortName() {
       return shortName;
     }
 
@@ -350,7 +404,7 @@ public final class CliArguments {
 
     @Override
     public org.apache.commons.cli.Option toCliOption() {
-      return org.apache.commons.cli.Option.builder(shortName())
+      return org.apache.commons.cli.Option.builder(shortName().orElse(null))
           .longOpt(longName())
           .desc(description())
           .optionalArg(false)
@@ -371,7 +425,7 @@ public final class CliArguments {
 
     @Override
     public org.apache.commons.cli.Option toCliOption() {
-      return org.apache.commons.cli.Option.builder(shortName())
+      return org.apache.commons.cli.Option.builder(shortName().orElse(null))
           .longOpt(longName())
           .desc(description())
           .optionalArg(false)
@@ -385,9 +439,13 @@ public final class CliArguments {
       super(longName, shortName, description, repeatable, Optional.empty());
     }
 
+    public FlagOption(String longName, String description, Parameter.Repeatable repeatable) {
+      super(longName, description, repeatable, Optional.empty());
+    }
+
     @Override
     public org.apache.commons.cli.Option toCliOption() {
-      return org.apache.commons.cli.Option.builder(shortName())
+      return org.apache.commons.cli.Option.builder(shortName().orElse(null))
           .longOpt(longName())
           .desc(description())
           .numberOfArgs(0)

@@ -1,10 +1,13 @@
 package tasks.cli.command.reopen;
 
 import static java.util.Objects.requireNonNull;
+import static tasks.cli.handlers.HandlerUtil.printIfPopulated;
+import static tasks.cli.handlers.HandlerUtil.stringifyIfPopulated;
 
-import io.reactivex.Completable;
 import io.reactivex.Observable;
+import io.reactivex.Single;
 import java.util.EnumMap;
+import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import tasks.cli.handlers.ArgumentHandler;
@@ -22,7 +25,7 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
   }
 
   @Override
-  public Completable handle(ReopenArguments arguments) {
+  public Single<Output> handle(ReopenArguments arguments) {
     // Validate arguments
     if (!arguments.tasks().isPopulated()) {
       throw new HandlerException("no tasks specified");
@@ -39,14 +42,12 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
         tasksGroupedByState.getOrDefault(HandlerUtil.CompletedState.INCOMPLETE, Set.empty());
 
     // report tasks already open
-    HandlerUtil.printIfPopulated("tasks already open:", alreadyOpenTasks);
+    printIfPopulated("tasks already open:", alreadyOpenTasks);
 
     // mark incomplete tasks as complete and commit to disk
     return Observable.fromIterable(completedTasks)
         .flatMapCompletable(task -> task.mutate(mutator -> mutator.setCompleted(false)))
         .andThen(taskStore.writeToDisk())
-        .andThen(
-            Completable.fromAction(
-                () -> HandlerUtil.printIfPopulated("task(s) reopened:", completedTasks)));
+        .andThen(Single.just(stringifyIfPopulated("task(s) reopened:", completedTasks)));
   }
 }

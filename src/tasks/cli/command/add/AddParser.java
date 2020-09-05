@@ -2,7 +2,6 @@ package tasks.cli.command.add;
 
 import static tasks.cli.arg.CliUtils.extractTasksFrom;
 import static tasks.cli.arg.CliUtils.getOptionValues;
-import static tasks.cli.arg.CliUtils.tryParse;
 import static tasks.cli.arg.CliUtils.validateParsedTasks;
 
 import java.util.Optional;
@@ -10,13 +9,12 @@ import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 import tasks.cli.arg.CliArguments;
 import tasks.cli.arg.CliUtils;
 import tasks.model.Task;
 
 /** Command line argument parser for the Add command. */
-public final class AddParser implements CliArguments.Parser<AddArguments> {
+public final class AddParser implements CliArguments.CommandParser<AddArguments> {
   private final Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>>
       taskParser;
 
@@ -26,19 +24,14 @@ public final class AddParser implements CliArguments.Parser<AddArguments> {
   }
 
   @Override
-  public AddArguments parse(List<? extends String> args) {
+  public AddArguments parse(CommandLine commandLine) {
     /*
-    1st param assumed to be "add" or an alias for it
-    2nd param must be description
-    3+ params not supported
-    optional blocking tasks
-    optional blocked tasks
-    */
-    Options options = CliUtils.toOptions(AddCommand.OPTIONS.value());
-
-    CommandLine commandLine = tryParse(args, options);
-
-    List<String> argsList = List.masking(commandLine.getArgList());
+     * 1st param must be description
+     * 2+ params not supported
+     * optional blocking tasks
+     * optional blocked tasks
+     */
+    List<String> argsList = ImmutableList.copyOf(commandLine.getArgList());
     String taskDescription = extractTaskDescriptionFrom(argsList)
         .orElseThrow(
             () -> new CliArguments.ArgumentFormatException("Task description not defined"));
@@ -60,6 +53,6 @@ public final class AddParser implements CliArguments.Parser<AddArguments> {
   }
 
   private static Optional<String> extractTaskDescriptionFrom(List<String> args) {
-    return args.count() < 2 ? Optional.empty() : Optional.of(args.itemAt(1));
+    return args.count() < 1 ? Optional.empty() : Optional.of(args.itemAt(0));
   }
 }

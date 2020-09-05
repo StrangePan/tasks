@@ -50,7 +50,7 @@ public final class HandlerUtil {
   public static void printIfPopulated(String prefix, Collection<Task> tasks) {
     Optional.of(stringifyIfPopulated(prefix, tasks))
         .filter(Output::isPopulated)
-        .map(Output::renderForTerminal)
+        .map(Output::render)
         .ifPresent(System.out::print);
   }
 
