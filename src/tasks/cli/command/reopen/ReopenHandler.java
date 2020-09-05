@@ -18,9 +18,9 @@ import tasks.model.TaskStore;
 
 /** Business logic for the Reopen command. */
 public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
-  private final Memoized<TaskStore> taskStore;
+  private final Memoized<? extends TaskStore> taskStore;
 
-  public ReopenHandler(Memoized<TaskStore> taskStore) {
+  public ReopenHandler(Memoized<? extends TaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 

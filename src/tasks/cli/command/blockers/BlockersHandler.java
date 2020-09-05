@@ -19,9 +19,9 @@ import tasks.model.TaskStore;
 
 /** Business logic for the Blockers command. */
 public final class BlockersHandler implements ArgumentHandler<BlockersArguments> {
-  private final Memoized<TaskStore> taskStore;
+  private final Memoized<? extends TaskStore> taskStore;
 
-  public BlockersHandler(Memoized<TaskStore> taskStore) {
+  public BlockersHandler(Memoized<? extends TaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 

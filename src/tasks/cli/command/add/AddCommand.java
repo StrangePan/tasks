@@ -5,30 +5,19 @@ import static tasks.cli.command.Parameter.Repeatable.NOT_REPEATABLE;
 import static tasks.cli.command.Parameter.Repeatable.REPEATABLE;
 
 import omnia.data.cache.Memoized;
-import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
-import tasks.cli.parser.ParserUtil;
 import tasks.cli.command.Command;
 import tasks.cli.command.Option;
 import tasks.cli.command.Parameter;
 import tasks.cli.command.StringParameter;
 import tasks.cli.command.TaskOption;
-import tasks.cli.parser.Parser;
-import tasks.model.Task;
 
 /** Canonical definition for the Add command. */
 public final class AddCommand {
   private AddCommand() {}
 
-  public static Command registration(
-      Memoized<Parser<? extends List<ParserUtil.ParseResult<Task>>>> taskParser) {
-    return Command.builder()
-        .canonicalName("add")
-        .aliases()
-        .parameters(COMMAND_PARAMETERS.value())
-        .options(OPTIONS.value())
-        .parser(() -> new AddParser(taskParser))
-        .helpDocumentation("Creates a new task.");
+  public static Command registration() {
+    return COMMAND.value();
   }
 
   static final Memoized<ImmutableList<Parameter>> COMMAND_PARAMETERS =
@@ -53,4 +42,13 @@ public final class AddCommand {
 
   static final Memoized<ImmutableList<Option>> OPTIONS =
       memoize(() -> ImmutableList.of(AFTER_OPTION.value(), BEFORE_OPTION.value()));
+
+  private static final Memoized<Command> COMMAND =
+      memoize(
+          () -> Command.builder()
+              .canonicalName("add")
+              .aliases()
+              .parameters(COMMAND_PARAMETERS.value())
+              .options(OPTIONS.value())
+              .helpDocumentation("Creates a new task."));
 }

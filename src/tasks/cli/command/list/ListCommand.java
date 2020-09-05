@@ -14,16 +14,7 @@ public final class ListCommand {
   private ListCommand() {}
 
   public static Command registration() {
-    return Command.builder()
-        .canonicalName("list")
-        .aliases("ls", "l")
-        .parameters(ImmutableList.empty())
-        .options(OPTIONS.value())
-        .parser(ListParser::new)
-        .helpDocumentation(
-            "Prints a list of tasks. By default, only lists uncompleted tasks that are "
-                + "unblocked. Can also list only blocked tasks, only completed tasks, any "
-                + "combination of the three, or all tasks.");
+    return COMMAND.value();
   }
 
   static final Memoized<FlagOption> BLOCKED_OPTION =
@@ -67,4 +58,16 @@ public final class ListCommand {
               COMPLETED_OPTION.value(),
               UNBLOCKED_OPTION.value(),
               ALL_OPTION.value()));
+
+  private static final Memoized<Command> COMMAND =
+      memoize(
+          () -> Command.builder()
+              .canonicalName("list")
+              .aliases("ls", "l")
+              .parameters(ImmutableList.empty())
+              .options(OPTIONS.value())
+              .helpDocumentation(
+                  "Prints a list of tasks. By default, only lists uncompleted tasks that are "
+                      + "unblocked. Can also list only blocked tasks, only completed tasks, any "
+                      + "combination of the three, or all tasks."));
 }

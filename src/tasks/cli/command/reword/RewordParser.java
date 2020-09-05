@@ -7,6 +7,7 @@ import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
 import tasks.cli.parser.ArgumentFormatException;
+import tasks.cli.parser.ParseResult;
 import tasks.cli.parser.ParserUtil;
 import tasks.cli.parser.CommandParser;
 import tasks.cli.parser.Parser;
@@ -14,11 +15,12 @@ import tasks.model.Task;
 
 /** Command line argument parser for the Reword command. */
 public final class  RewordParser implements CommandParser<RewordArguments> {
-  private final Memoized<Parser<? extends List<ParserUtil.ParseResult<Task>>>>
+  private final Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
       taskParser;
 
   public RewordParser(
-      Memoized<Parser<? extends List<ParserUtil.ParseResult<Task>>>> taskParser) {
+      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
+          taskParser) {
     this.taskParser = taskParser;
   }
 
@@ -40,7 +42,7 @@ public final class  RewordParser implements CommandParser<RewordArguments> {
     ParserUtil.assertNoExtraArgs(commandLine, RewordCommand.COMMAND_PARAMETERS.value());
 
 
-    ParserUtil.ParseResult<Task> targetTask =
+    ParseResult<? extends Task> targetTask =
         taskParser.value().parse(ImmutableList.of(argsList.itemAt(0))).itemAt(0);
     String description = argsList.itemAt(1);
 

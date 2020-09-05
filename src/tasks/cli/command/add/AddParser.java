@@ -1,6 +1,6 @@
 package tasks.cli.command.add;
 
-import static tasks.cli.parser.ParserUtil.extractTasksFrom;
+import static tasks.cli.parser.ParserUtil.extractSuccessfulResults;
 import static tasks.cli.parser.ParserUtil.getOptionValues;
 import static tasks.cli.parser.ParserUtil.validateParsedTasks;
 
@@ -13,15 +13,16 @@ import tasks.cli.parser.ArgumentFormatException;
 import tasks.cli.parser.ParserUtil;
 import tasks.cli.parser.CommandParser;
 import tasks.cli.parser.Parser;
+import tasks.cli.parser.ParseResult;
 import tasks.model.Task;
 
 /** Command line argument parser for the Add command. */
 public final class AddParser implements CommandParser<AddArguments> {
-  private final Memoized<Parser<? extends List<ParserUtil.ParseResult<Task>>>>
-      taskParser;
+  private final Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>> taskParser;
 
   public AddParser(
-      Memoized<Parser<? extends List<ParserUtil.ParseResult<Task>>>> taskParser) {
+      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
+          taskParser) {
     this.taskParser = taskParser;
   }
 
@@ -39,19 +40,21 @@ public final class AddParser implements CommandParser<AddArguments> {
             () -> new ArgumentFormatException("Task description not defined"));
     ParserUtil.assertNoExtraArgs(commandLine, AddCommand.COMMAND_PARAMETERS.value());
 
-    List<ParserUtil.ParseResult<Task>> afterTasks =
+    List<? extends ParseResult<? extends Task>> afterTasks =
         taskParser.value().parse(getOptionValues(commandLine, AddCommand.AFTER_OPTION.value()));
-    List<ParserUtil.ParseResult<Task>> beforeTasks =
+    List<? extends ParseResult<? extends Task>> beforeTasks =
         taskParser.value().parse(getOptionValues(commandLine, AddCommand.BEFORE_OPTION.value()));
 
     validateParsedTasks(
-        ImmutableList.<ParserUtil.ParseResult<?>>builder()
+        ImmutableList.<ParseResult<?>>builder()
             .addAll(afterTasks)
             .addAll(beforeTasks)
             .build());
 
     return new AddArguments(
-        taskDescription, extractTasksFrom(afterTasks), extractTasksFrom(beforeTasks));
+        taskDescription,
+        extractSuccessfulResults(afterTasks),
+        extractSuccessfulResults(beforeTasks));
   }
 
   private static Optional<String> extractTaskDescriptionFrom(List<String> args) {

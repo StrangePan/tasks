@@ -5,7 +5,7 @@ public final class ArgumentFormatException extends RuntimeException {
     super(reason);
   }
 
-  ArgumentFormatException(String reason, Throwable cause) {
+  public ArgumentFormatException(String reason, Throwable cause) {
     super(reason, cause);
   }
 }

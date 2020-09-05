@@ -16,9 +16,9 @@ import tasks.model.TaskStore;
 
 /** Business logic for the Add command. */
 public final class AddHandler implements ArgumentHandler<AddArguments> {
-  private final Memoized<TaskStore> taskStore;
+  private final Memoized<? extends TaskStore> taskStore;
 
-  public AddHandler(Memoized<TaskStore> taskStore) {
+  public AddHandler(Memoized<? extends TaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 

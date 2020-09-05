@@ -11,9 +11,9 @@ import tasks.model.Task;
 import tasks.model.TaskStore;
 
 public final class RewordHandler implements ArgumentHandler<RewordArguments> {
-  private final Memoized<TaskStore> taskStore;
+  private final Memoized<? extends TaskStore> taskStore;
 
-  public RewordHandler(Memoized<TaskStore> taskStore) {
+  public RewordHandler(Memoized<? extends TaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 

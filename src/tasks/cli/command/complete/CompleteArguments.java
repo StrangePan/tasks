@@ -1,7 +1,7 @@
 package tasks.cli.command.complete;
 
 import omnia.data.structure.List;
-import tasks.cli.arguments.SimpleArguments;
+import tasks.cli.command.common.simple.SimpleArguments;
 import tasks.model.Task;
 
 /** Model for parsed Complete command arguments. */

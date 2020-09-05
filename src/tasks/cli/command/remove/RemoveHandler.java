@@ -16,9 +16,9 @@ import tasks.model.TaskStore;
 
 /** Business logic for the Remove command. */
 public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
-  private final Memoized<TaskStore> taskStore;
+  private final Memoized<? extends TaskStore> taskStore;
 
-  public RemoveHandler(Memoized<TaskStore> taskStore) {
+  public RemoveHandler(Memoized<? extends TaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 

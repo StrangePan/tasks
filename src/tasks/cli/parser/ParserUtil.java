@@ -30,16 +30,8 @@ public final class ParserUtil {
 
   private ParserUtil() {}
 
-  public static CommandLine tryParse(List<? extends String> args, Options options) {
-    try {
-      return new DefaultParser().parse(options, ListAlgorithms.toArray(args, new String[0]), /* stopAtNonOption= */ false);
-    } catch (ParseException e) {
-      throw new ArgumentFormatException("Unable to parse arguments: " + e.getMessage(), e);
-    }
-  }
-
   public static Parser<List<ParseResult<Task>>> taskListParser(
-      Memoized<TaskStore> taskStore) {
+      Memoized<? extends TaskStore> taskStore) {
     return (args) -> parseTaskIds(ImmutableList.copyOf(args), taskStore.value());
   }
 
@@ -83,34 +75,9 @@ public final class ParserUtil {
         .map(failureMessages -> failureMessages.stream().collect(Collectors.joining("\n")));
   }
 
-  public static List<Task> extractTasksFrom(List<ParseResult<Task>> tasks) {
-    return tasks.stream().flatMap(result -> result.successResult().stream()).collect(toList());
-  }
-
-  public static final class ParseResult<T> {
-    private final Optional<T> successResult;
-    private final Optional<String> failureMessage;
-
-    private static <T> ParseResult<T> success(T result) {
-      return new ParseResult<>(Optional.of(result), Optional.empty());
-    }
-
-    private static <T> ParseResult<T> failure(String message) {
-      return new ParseResult<>(Optional.empty(), Optional.of(message));
-    }
-
-    private ParseResult(Optional<T> successResult, Optional<String> failureMessage) {
-      this.successResult = requireNonNull(successResult);
-      this.failureMessage = requireNonNull(failureMessage);
-    }
-
-    public Optional<T> successResult() {
-      return successResult;
-    }
-
-    Optional<String> failureMessage() {
-      return failureMessage;
-    }
+  public static <T> List<T> extractSuccessfulResults(
+      Collection<? extends ParseResult<? extends T>> results) {
+    return results.stream().flatMap(result -> result.successResult().stream()).collect(toList());
   }
 
   public static boolean getFlagPresence(CommandLine commandLine, FlagOption flagOption) {
@@ -137,13 +104,6 @@ public final class ParserUtil {
           String.format("Too many values provided for parameter '%s'", opt));
     }
     return Optional.ofNullable(commandLine.getOptionValue(opt));
-  }
-
-  public static Options toOptions(Iterable<? extends Option> options) {
-    return Observable.fromIterable(options)
-        .map(Option::toCliOption)
-        .collect(Options::new, Options::addOption)
-        .blockingGet();
   }
 
   public static void assertNoExtraArgs(CommandLine commandLine) {

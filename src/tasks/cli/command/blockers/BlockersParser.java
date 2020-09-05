@@ -1,7 +1,7 @@
 package tasks.cli.command.blockers;
 
 import static java.util.Objects.requireNonNull;
-import static tasks.cli.parser.ParserUtil.extractTasksFrom;
+import static tasks.cli.parser.ParserUtil.extractSuccessfulResults;
 import static tasks.cli.parser.ParserUtil.getFlagPresence;
 import static tasks.cli.parser.ParserUtil.getOptionValues;
 import static tasks.cli.parser.ParserUtil.validateParsedTasks;
@@ -11,18 +11,19 @@ import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
 import tasks.cli.parser.ArgumentFormatException;
-import tasks.cli.parser.ParserUtil;
 import tasks.cli.parser.CommandParser;
 import tasks.cli.parser.Parser;
+import tasks.cli.parser.ParseResult;
 import tasks.model.Task;
 
 /** Command line argument parser for the Blockers command. */
 public final class BlockersParser implements CommandParser<BlockersArguments> {
-  private final Memoized<Parser<? extends List<ParserUtil.ParseResult<Task>>>>
+  private final Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
       taskParser;
 
   public BlockersParser(
-      Memoized<Parser<? extends List<ParserUtil.ParseResult<Task>>>> taskParser) {
+      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
+          taskParser) {
     this.taskParser = requireNonNull(taskParser);
   }
 
@@ -43,20 +44,20 @@ public final class BlockersParser implements CommandParser<BlockersArguments> {
       throw new ArgumentFormatException("Unexpected extra arguments");
     }
 
-    ParserUtil.ParseResult<Task> targetTask =
+    ParseResult<? extends Task> targetTask =
         taskParser.value().parse(
             ImmutableList.of(argsList.itemAt(0))).itemAt(0);
-    List<ParserUtil.ParseResult<Task>> tasksToAdd =
+    List<? extends ParseResult<? extends Task>> tasksToAdd =
         taskParser.value().parse(
             getOptionValues(commandLine, BlockersCommand.ADD_OPTION.value()));
-    List<ParserUtil.ParseResult<Task>> tasksToRemove =
+    List<? extends ParseResult<? extends Task>> tasksToRemove =
         taskParser.value().parse(
             getOptionValues(commandLine, BlockersCommand.REMOVE_OPTION.value()));
     boolean isClearSet =
         getFlagPresence(commandLine, BlockersCommand.CLEAR_OPTION.value());
 
     validateParsedTasks(
-        ImmutableList.<ParserUtil.ParseResult<?>>builder()
+        ImmutableList.<ParseResult<?>>builder()
             .add(targetTask)
             .addAll(tasksToAdd)
             .addAll(tasksToRemove)
@@ -64,8 +65,8 @@ public final class BlockersParser implements CommandParser<BlockersArguments> {
 
     return new BlockersArguments(
         targetTask.successResult().get(),
-        extractTasksFrom(tasksToAdd),
-        extractTasksFrom(tasksToRemove),
+        extractSuccessfulResults(tasksToAdd),
+        extractSuccessfulResults(tasksToRemove),
         isClearSet);
   }
 }

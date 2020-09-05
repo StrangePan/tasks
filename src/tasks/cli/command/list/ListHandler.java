@@ -14,9 +14,9 @@ import tasks.model.TaskStore;
 
 /** Business logic for the List command. */
 public final class ListHandler implements ArgumentHandler<ListArguments> {
-  private final Memoized<TaskStore> taskStore;
+  private final Memoized<? extends TaskStore> taskStore;
 
-  public ListHandler(Memoized<TaskStore> taskStore) {
+  public ListHandler(Memoized<? extends TaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 

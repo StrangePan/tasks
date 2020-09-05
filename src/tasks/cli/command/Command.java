@@ -1,15 +1,11 @@
 package tasks.cli.command;
 
 import static java.util.Objects.requireNonNull;
-import static omnia.data.cache.Memoized.memoize;
 
-import java.util.function.Supplier;
-import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
-import tasks.cli.parser.CommandParser;
 
 public final class Command {
   private final String canonicalName;
@@ -17,21 +13,18 @@ public final class Command {
   private final String description;
   private final Collection<Parameter> parameters;
   private final Collection<Option> options;
-  private final Memoized<CommandParser<?>> parser;
 
   private Command(
       String canonicalName,
       Collection<String> aliases,
       String description,
       Collection<Parameter> parameters,
-      Collection<Option> options,
-      Supplier<? extends CommandParser<?>> commandParserSupplier) {
+      Collection<Option> options) {
     requireNonNull(canonicalName);
     requireNonNull(aliases);
     requireNonNull(description);
     requireNonNull(parameters);
     requireNonNull(options);
-    requireNonNull(commandParserSupplier);
 
     if (aliases.contains(canonicalName)) {
       throw new IllegalArgumentException("aliases cannot contain the canonical name");
@@ -45,7 +38,6 @@ public final class Command {
     this.description = description;
     this.parameters = parameters;
     this.options = ImmutableList.copyOf(options);
-    this.parser = memoize(commandParserSupplier);
   }
 
   public String canonicalName() {
@@ -72,10 +64,6 @@ public final class Command {
     return ImmutableList.<String>builder().add(canonicalName).addAll(aliases).build();
   }
 
-  public CommandParser<?> commandParserSupplier() {
-    return parser.value();
-  }
-
   public interface Builder0 {
     Builder1 canonicalName(String canonicalName);
   }
@@ -93,10 +81,6 @@ public final class Command {
   }
 
   public interface Builder4 {
-    Builder5 parser(Supplier<? extends CommandParser<?>> commandParserSupplier);
-  }
-
-  public interface Builder5 {
     Command helpDocumentation(String description);
   }
 
@@ -105,14 +89,12 @@ public final class Command {
         (Builder1) aliases ->
             (Builder2) parameters ->
                 (Builder3) arguments ->
-                    (Builder4) commandParserSupplier ->
-                        (Builder5) description ->
-                            new Command(
-                                canonicalName,
-                                ImmutableList.copyOf(aliases),
-                                description,
-                                parameters,
-                                arguments,
-                                commandParserSupplier);
+                    (Builder4) description ->
+                        new Command(
+                            canonicalName,
+                            ImmutableList.copyOf(aliases),
+                            description,
+                            parameters,
+                            arguments);
   }
 }

@@ -21,9 +21,9 @@ import tasks.model.TaskStore;
 
 /** Business logic for the Complete command. */
 public final class CompleteHandler implements ArgumentHandler<CompleteArguments> {
-  private final Memoized<TaskStore> taskStore;
+  private final Memoized<? extends TaskStore> taskStore;
 
-  public CompleteHandler(Memoized<TaskStore> taskStore) {
+  public CompleteHandler(Memoized<? extends TaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 
