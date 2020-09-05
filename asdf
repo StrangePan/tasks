@@ -3,7 +3,7 @@
 0j6p63xvhl9s;false;Strip color codes when parsing;
 0y6dpuel9kg0;true;Add option to strip color from output;
 14a00nhsddz4;true;Output formatting;
-3b6ayu83gqtc;false;Create a parsing exception;
+3b6ayu83gqtc;true;Create a parsing exception;
 3ga3kmzl44cg;true;Put command definition into independent packages;
 7ri8li86wfeo;true;Output unblocked tasks when completing a task;
 aiv2qznibj7k;true;Remove amend command;
@@ -27,7 +27,6 @@ w1ckqcfs7f28;false;Add help topics infrastructure;
 1so5tz4jow35s;true;Refactor commands to use same source of truth for registration as parsing;
 1u4zo38nv3fgg;false;Add undo command;
 1u8yjlsmv79q8;false;Add graph output;
-1usblv8kvafi8;false;Add task bookmarks;
 # dependencies
 aiv2qznibj7k;kz3kwaxll8n4,19ywwqj6ys1ds;
 booswtafq3nk;w1ckqcfs7f28;
