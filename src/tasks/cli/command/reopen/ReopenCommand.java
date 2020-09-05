@@ -1,30 +1,29 @@
 package tasks.cli.command.reopen;
 
-import static tasks.cli.arg.CliArguments.Parameter.Repeatable.REPEATABLE;
+import static omnia.data.cache.Memoized.memoize;
+import static tasks.cli.command.Parameter.Repeatable.REPEATABLE;
 
 import omnia.data.cache.Memoized;
-import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
-import tasks.cli.arg.CliArguments;
-import tasks.cli.arg.CliMode;
-import tasks.cli.arg.CliUtils;
-import tasks.model.Task;
+import tasks.cli.command.Command;
+import tasks.cli.command.TaskParameter;
 
 /** Canonical definition for the Reopen command. */
 public final class ReopenCommand {
   private ReopenCommand() {}
 
-  public static CliArguments.CommandRegistration registration(
-      Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
-    return CliArguments.CommandRegistration.builder()
-        .cliMode(CliMode.REOPEN)
-        .canonicalName("reopen")
-        .aliases()
-        .parameters(ImmutableList.of(new CliArguments.TaskParameter(REPEATABLE)))
-        .options(ImmutableList.empty())
-        .parser(() -> new ReopenParser(taskParser))
-        .helpDocumentation(
-            "Reopens one or more completed tasks. This can be undone with the complete "
-                + "command.");
+  public static Command registration() {
+    return COMMAND.value();
   }
+
+  private static final Memoized<Command> COMMAND =
+      memoize(
+          () -> Command.builder()
+              .canonicalName("reopen")
+              .aliases()
+              .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))
+              .options(ImmutableList.empty())
+              .helpDocumentation(
+                  "Reopens one or more completed tasks. This can be undone with the complete "
+                      + "command."));
 }

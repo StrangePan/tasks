@@ -1,13 +1,13 @@
 package tasks.cli.command.list;
 
-import static tasks.cli.arg.CliUtils.assertNoExtraArgs;
+import static tasks.cli.parser.ParserUtil.assertNoExtraArgs;
 
 import org.apache.commons.cli.CommandLine;
-import tasks.cli.arg.CliArguments;
-import tasks.cli.arg.CliUtils;
+import tasks.cli.parser.ParserUtil;
+import tasks.cli.parser.CommandParser;
 
 /** Command line argument parser for the List command. */
-public final class ListParser implements CliArguments.CommandParser<ListArguments> {
+public final class ListParser implements CommandParser<ListArguments> {
 
   @Override
   public ListArguments parse(CommandLine commandLine) {
@@ -15,18 +15,20 @@ public final class ListParser implements CliArguments.CommandParser<ListArgument
      * No non-flag parameters allowed
      * optional --blocked flag
      * optional --completed flag
+     * optional --all flag
+     * optional --unblocked flag
      */
     assertNoExtraArgs(commandLine);
 
-    boolean isAllSet = CliUtils.getFlagPresence(commandLine, ListCommand.ALL_OPTION.value());
+    boolean isAllSet = ParserUtil.getFlagPresence(commandLine, ListCommand.ALL_OPTION.value());
     boolean isBlockedSet =
-        isAllSet || CliUtils.getFlagPresence(commandLine, ListCommand.BLOCKED_OPTION.value());
+        isAllSet || ParserUtil.getFlagPresence(commandLine, ListCommand.BLOCKED_OPTION.value());
     boolean isCompletedSet =
-        isAllSet || CliUtils.getFlagPresence(commandLine, ListCommand.COMPLETED_OPTION.value());
+        isAllSet || ParserUtil.getFlagPresence(commandLine, ListCommand.COMPLETED_OPTION.value());
     boolean isUnblockedSet =
         isAllSet
-            || CliUtils.getFlagPresence(commandLine, ListCommand.UNBLOCKED_OPTION.value())
-            || (!isBlockedSet && !isCompletedSet);
+            || (!isBlockedSet && !isCompletedSet)
+            || ParserUtil.getFlagPresence(commandLine, ListCommand.UNBLOCKED_OPTION.value());
 
     return new ListArguments(isUnblockedSet, isBlockedSet, isCompletedSet);
   }

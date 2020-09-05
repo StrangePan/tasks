@@ -1,8 +1,8 @@
 package tasks.cli.command.reopen;
 
 import static java.util.Objects.requireNonNull;
-import static tasks.cli.handlers.HandlerUtil.printIfPopulated;
-import static tasks.cli.handlers.HandlerUtil.stringifyIfPopulated;
+import static tasks.cli.handler.HandlerUtil.printIfPopulated;
+import static tasks.cli.handler.HandlerUtil.stringifyIfPopulated;
 
 import io.reactivex.Observable;
 import io.reactivex.Single;
@@ -10,17 +10,17 @@ import java.util.EnumMap;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
-import tasks.cli.handlers.ArgumentHandler;
-import tasks.cli.handlers.HandlerException;
-import tasks.cli.handlers.HandlerUtil;
+import tasks.cli.handler.ArgumentHandler;
+import tasks.cli.handler.HandlerException;
+import tasks.cli.handler.HandlerUtil;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
 /** Business logic for the Reopen command. */
 public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
-  private final Memoized<TaskStore> taskStore;
+  private final Memoized<? extends TaskStore> taskStore;
 
-  public ReopenHandler(Memoized<TaskStore> taskStore) {
+  public ReopenHandler(Memoized<? extends TaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 

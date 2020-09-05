@@ -1,4 +1,4 @@
-package tasks.cli.handlers;
+package tasks.cli.handler;
 
 import io.reactivex.Single;
 import omnia.cli.out.Output;

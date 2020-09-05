@@ -2,15 +2,16 @@ package tasks.cli.command.complete;
 
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
-import tasks.cli.arg.CliArguments;
-import tasks.cli.arg.CliUtils;
-import tasks.cli.arg.SimpleArguments;
+import tasks.cli.command.common.simple.SimpleParser;
+import tasks.cli.parser.ParseResult;
+import tasks.cli.parser.Parser;
 import tasks.model.Task;
 
 /** Command line argument parser for the Complete command. */
-public final class CompleteParser extends SimpleArguments.Parser<CompleteArguments> {
+public final class CompleteParser extends SimpleParser<CompleteArguments> {
   public CompleteParser(
-      Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
-    super(taskParser, CompleteArguments::new);
+      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
+          taskParser) {
+    super(CompleteArguments::new, taskParser);
   }
 }

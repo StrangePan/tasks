@@ -1,4 +1,4 @@
-package tasks.cli.handlers;
+package tasks.cli.handler;
 
 public final class HandlerException extends RuntimeException {
   public HandlerException(String message) {

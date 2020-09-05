@@ -1,4 +1,4 @@
-package tasks.cli.arg;
+package tasks.cli.command.help;
 
 import static java.util.Objects.requireNonNull;
 

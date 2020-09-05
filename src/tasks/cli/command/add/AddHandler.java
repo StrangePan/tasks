@@ -8,17 +8,17 @@ import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableSet;
-import tasks.cli.handlers.ArgumentHandler;
-import tasks.cli.handlers.HandlerException;
+import tasks.cli.handler.ArgumentHandler;
+import tasks.cli.handler.HandlerException;
 import tasks.model.Task;
 import tasks.model.TaskBuilder;
 import tasks.model.TaskStore;
 
 /** Business logic for the Add command. */
 public final class AddHandler implements ArgumentHandler<AddArguments> {
-  private final Memoized<TaskStore> taskStore;
+  private final Memoized<? extends TaskStore> taskStore;
 
-  public AddHandler(Memoized<TaskStore> taskStore) {
+  public AddHandler(Memoized<? extends TaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 

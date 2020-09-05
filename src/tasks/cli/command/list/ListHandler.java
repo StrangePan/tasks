@@ -1,7 +1,7 @@
 package tasks.cli.command.list;
 
 import static java.util.Objects.requireNonNull;
-import static tasks.cli.handlers.HandlerUtil.stringifyIfPopulated;
+import static tasks.cli.handler.HandlerUtil.stringifyIfPopulated;
 
 import io.reactivex.Observable;
 import io.reactivex.Single;
@@ -9,14 +9,14 @@ import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.tuple.Triple;
 import omnia.data.structure.tuple.Tuple;
-import tasks.cli.handlers.ArgumentHandler;
+import tasks.cli.handler.ArgumentHandler;
 import tasks.model.TaskStore;
 
 /** Business logic for the List command. */
 public final class ListHandler implements ArgumentHandler<ListArguments> {
-  private final Memoized<TaskStore> taskStore;
+  private final Memoized<? extends TaskStore> taskStore;
 
-  public ListHandler(Memoized<TaskStore> taskStore) {
+  public ListHandler(Memoized<? extends TaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 

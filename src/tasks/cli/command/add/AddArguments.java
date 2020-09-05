@@ -1,6 +1,7 @@
 package tasks.cli.command.add;
 
 import omnia.data.structure.List;
+import omnia.data.structure.immutable.ImmutableList;
 import tasks.model.Task;
 
 /** Model for parsed Add command arguments. */
@@ -9,10 +10,11 @@ public final class AddArguments {
   private final List<Task> blockingTasks;
   private final List<Task> blockedTasks;
 
-  AddArguments(String description, List<Task> blockingTasks, List<Task> blockedTasks) {
+  AddArguments(
+      String description, List<? extends Task> blockingTasks, List<? extends Task> blockedTasks) {
     this.description = description;
-    this.blockingTasks = blockingTasks;
-    this.blockedTasks = blockedTasks;
+    this.blockingTasks = ImmutableList.copyOf(blockingTasks);
+    this.blockedTasks = ImmutableList.copyOf(blockedTasks);
   }
 
   /** The description empty the task. */

@@ -12,6 +12,7 @@ cystb0f3sk5c;true;Move command registration to individual command definition cla
 h5kiwq5wnb40;true;Output task ID when creating tasks;
 kz3kwaxll8n4;true;Add reword command;
 lzvv3qy4wa9s;true;Move parsers out of arguments;
+ufklb65rjm68;true;Validate registered commands;
 vc0gqs1jstmo;false;Validate graph when parsing;
 vsyn83a6ozk0;false;Add help topic: blocking tasks;
 vxi4873454w0;false;Add more sophisticated id hashing algorithm;
