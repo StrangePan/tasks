@@ -6,9 +6,11 @@ import static omnia.data.stream.Collectors.toImmutableList;
 import static omnia.data.stream.Collectors.toImmutableMap;
 import static omnia.data.stream.Collectors.toImmutableSet;
 
+import io.reactivex.Observable;
 import io.reactivex.Single;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
 import omnia.data.structure.List;
@@ -184,14 +186,38 @@ public final class CliArguments {
     private final ImmutableSet.Builder<CommandRegistration> registeredCommands =
         ImmutableSet.builder();
 
-     RegistryBuilder register(CommandRegistration registration) {
-       requireNonNull(registration);
-       registeredCommands.add(registration);
+    RegistryBuilder register(CommandRegistration registration) {
+      requireNonNull(registration);
+      registeredCommands.add(registration);
       return this;
     }
 
     Set<CommandRegistration> build() {
-      return registeredCommands.build();
+      Set<CommandRegistration> registeredCommands = this.registeredCommands.build();
+      requireNamesAndAliasesAreUnique(registeredCommands);
+      return registeredCommands;
+    }
+
+    private static void requireNamesAndAliasesAreUnique(Set<CommandRegistration> commands) {
+      List<String> duplicates =
+          Observable.fromIterable(commands)
+              .flatMap(
+                  command ->
+                      Observable.just(command.canonicalName())
+                          .concatWith(Observable.fromIterable(command.aliases())))
+              .groupBy(name -> name)
+              .flatMapMaybe(names -> names.skip(1).reduce((original, duplicate) -> original))
+              .sorted(String::compareToIgnoreCase)
+              .<ImmutableList.Builder<String>>collectInto(
+                  ImmutableList.builder(), ImmutableList.Builder::add)
+              .map(ImmutableList.Builder::build)
+              .blockingGet();
+
+      if (duplicates.isPopulated()) {
+        throw new IllegalStateException(
+            "two or more commands use these aliases: "
+                + duplicates.stream().collect(Collectors.joining(",", "[", "]")));
+      }
     }
   }
 
