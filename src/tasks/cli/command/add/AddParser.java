@@ -8,7 +8,7 @@ import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
-import tasks.cli.parser.ArgumentFormatException;
+import tasks.cli.parser.ParserException;
 import tasks.cli.parser.ParserUtil;
 import tasks.cli.parser.CommandParser;
 import tasks.cli.parser.Parser;
@@ -36,7 +36,7 @@ public final class AddParser implements CommandParser<AddArguments> {
     List<String> argsList = ImmutableList.copyOf(commandLine.getArgList());
     String taskDescription = extractTaskDescriptionFrom(argsList)
         .orElseThrow(
-            () -> new ArgumentFormatException("Task description not defined"));
+            () -> new ParserException("Task description not defined"));
     ParserUtil.assertNoExtraArgs(commandLine, AddCommand.COMMAND_PARAMETERS.value());
 
     List<? extends ParseResult<? extends Task>> afterTasks =
