@@ -8,7 +8,6 @@ import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import tasks.cli.arg.CliArguments;
-import tasks.cli.arg.CliMode;
 import tasks.cli.arg.CliUtils;
 import tasks.cli.arg.registration.CommandRegistration;
 import tasks.cli.arg.registration.Option;
@@ -24,7 +23,6 @@ public final class AddCommand {
   public static CommandRegistration registration(
       Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
     return CommandRegistration.builder()
-        .cliMode(CliMode.ADD)
         .canonicalName("add")
         .aliases()
         .parameters(COMMAND_PARAMETERS.value())

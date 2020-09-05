@@ -5,7 +5,6 @@ import static tasks.cli.arg.registration.Parameter.Repeatable.NOT_REPEATABLE;
 
 import omnia.data.cache.Memoized;
 import omnia.data.structure.immutable.ImmutableList;
-import tasks.cli.arg.CliMode;
 import tasks.cli.arg.registration.CommandRegistration;
 import tasks.cli.arg.registration.FlagOption;
 import tasks.cli.arg.registration.Option;
@@ -16,7 +15,6 @@ public final class ListCommand {
 
   public static CommandRegistration registration() {
     return CommandRegistration.builder()
-        .cliMode(CliMode.LIST)
         .canonicalName("list")
         .aliases("ls", "l")
         .parameters(ImmutableList.empty())

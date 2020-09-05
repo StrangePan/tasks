@@ -3,7 +3,6 @@ package tasks.cli.command.help;
 import static tasks.cli.arg.registration.Parameter.Repeatable.NOT_REPEATABLE;
 
 import omnia.data.structure.immutable.ImmutableList;
-import tasks.cli.arg.CliMode;
 import tasks.cli.arg.registration.CommandRegistration;
 import tasks.cli.arg.registration.StringParameter;
 
@@ -13,7 +12,6 @@ public final class HelpCommand {
 
   public static CommandRegistration registration() {
     return CommandRegistration.builder()
-        .cliMode(CliMode.HELP)
         .canonicalName("help")
         .aliases()
         .parameters(ImmutableList.of(new StringParameter("command", NOT_REPEATABLE)))

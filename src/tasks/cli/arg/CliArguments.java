@@ -181,23 +181,17 @@ public final class CliArguments {
   }
 
   private static final class RegistryBuilder {
-    private final MutableMap<CliMode, CommandRegistration> registeredHandlers = HashMap.create();
+    private final ImmutableSet.Builder<CommandRegistration> registeredCommands =
+        ImmutableSet.builder();
 
      RegistryBuilder register(CommandRegistration registration) {
        requireNonNull(registration);
-       requireUnique(registration.cliMode());
-       registeredHandlers.putMapping(registration.cliMode(), registration);
+       registeredCommands.add(registration);
       return this;
     }
 
-    private void requireUnique(CliMode mode) {
-      if (registeredHandlers.keys().contains(mode)) {
-        throw new IllegalStateException("Duplication registration for " + mode);
-      }
-    }
-
     Set<CommandRegistration> build() {
-      return ImmutableSet.copyOf(registeredHandlers.values());
+      return registeredCommands.build();
     }
   }
 
