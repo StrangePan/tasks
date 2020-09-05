@@ -12,9 +12,9 @@ import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
-import tasks.cli.arg.RegisteredParsers;
-import tasks.cli.arg.CommandDocumentation;
-import tasks.cli.arg.CommandDocumentation.OptionDocumentation;
+import tasks.cli.bindings.RegisteredParsers;
+import tasks.cli.bindings.CommandDocumentation;
+import tasks.cli.bindings.CommandDocumentation.OptionDocumentation;
 import tasks.cli.command.common.CommonOptions;
 import tasks.cli.handler.ArgumentHandler;
 
