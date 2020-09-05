@@ -13,7 +13,7 @@ public final class StripColors {
       memoize(
           () -> new CliArguments.FlagOption(
               "no-color",
-              "When this flag is present, all color and formatting codes are stripped from the "
-                  + "output. This is useful when attempting to pipe the output.",
+              "Removes all color and formatting codes from the output. This is useful when "
+                  + "attempting to pipe the output into another command.",
               NOT_REPEATABLE));
 }
