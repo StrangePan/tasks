@@ -333,14 +333,31 @@ public final class CliArguments {
 
   public abstract static class Option {
     private final String longName;
-    private final String shortName;
+    private final Optional<String> shortName;
     private final String description;
     private final Parameter.Repeatable repeatable;
     private final Optional<String> parameterRepresentation;
 
-    Option(
+    protected Option(
         String longName,
         String shortName,
+        String description,
+        Parameter.Repeatable repeatable,
+        Optional<String> parameterRepresentation) {
+      this(longName, Optional.of(shortName), description, repeatable, parameterRepresentation);
+    }
+
+    protected Option(
+        String longName,
+        String description,
+        Parameter.Repeatable repeatable,
+        Optional<String> parameterRepresentation) {
+      this(longName, Optional.empty(), description, repeatable, parameterRepresentation);
+    }
+
+    private Option(
+        String longName,
+        Optional<String> shortName,
         String description,
         Parameter.Repeatable repeatable,
         Optional<String> parameterRepresentation) {
@@ -355,7 +372,7 @@ public final class CliArguments {
       return longName;
     }
 
-    public String shortName() {
+    public Optional<String> shortName() {
       return shortName;
     }
 
@@ -381,7 +398,7 @@ public final class CliArguments {
 
     @Override
     public org.apache.commons.cli.Option toCliOption() {
-      return org.apache.commons.cli.Option.builder(shortName())
+      return org.apache.commons.cli.Option.builder(shortName().orElse(null))
           .longOpt(longName())
           .desc(description())
           .optionalArg(false)
@@ -402,7 +419,7 @@ public final class CliArguments {
 
     @Override
     public org.apache.commons.cli.Option toCliOption() {
-      return org.apache.commons.cli.Option.builder(shortName())
+      return org.apache.commons.cli.Option.builder(shortName().orElse(null))
           .longOpt(longName())
           .desc(description())
           .optionalArg(false)
@@ -416,9 +433,13 @@ public final class CliArguments {
       super(longName, shortName, description, repeatable, Optional.empty());
     }
 
+    public FlagOption(String longName, String description, Parameter.Repeatable repeatable) {
+      super(longName, description, repeatable, Optional.empty());
+    }
+
     @Override
     public org.apache.commons.cli.Option toCliOption() {
-      return org.apache.commons.cli.Option.builder(shortName())
+      return org.apache.commons.cli.Option.builder(shortName().orElse(null))
           .longOpt(longName())
           .desc(description())
           .numberOfArgs(0)

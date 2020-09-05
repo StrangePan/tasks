@@ -116,11 +116,11 @@ public final class CliUtils {
   }
 
   public static boolean getFlagPresence(CommandLine commandLine, CliArguments.FlagOption flagOption) {
-    return commandLine.hasOption(flagOption.shortName());
+    return commandLine.hasOption(flagOption.shortName().orElse(flagOption.longName()));
   }
 
   public static List<String> getOptionValues(CommandLine commandLine, CliArguments.Option option) {
-    return getOptionValues(commandLine, option.shortName());
+    return getOptionValues(commandLine, option.shortName().orElse(option.longName()));
   }
 
   public static List<String> getOptionValues(CommandLine commandLine, String opt) {
@@ -130,7 +130,7 @@ public final class CliUtils {
   }
 
   public static Optional<String> getSingleOptionValue(CommandLine commandLine, CliArguments.Option option) {
-    return getSingleOptionValue(commandLine, option.shortName());
+    return getSingleOptionValue(commandLine, option.shortName().orElse(option.longName()));
   }
 
   public static Optional<String> getSingleOptionValue(CommandLine commandLine, String opt) {

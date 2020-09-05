@@ -2,6 +2,7 @@ package tasks.cli.command.blockers;
 
 import static java.util.Objects.requireNonNull;
 import static tasks.cli.arg.CliUtils.extractTasksFrom;
+import static tasks.cli.arg.CliUtils.getFlagPresence;
 import static tasks.cli.arg.CliUtils.getOptionValues;
 import static tasks.cli.arg.CliUtils.validateParsedTasks;
 
@@ -49,7 +50,8 @@ public final class BlockersParser implements CliArguments.CommandParser<Blockers
     List<CliUtils.ParseResult<Task>> tasksToRemove =
         taskParser.value().parse(
             getOptionValues(commandLine, BlockersCommand.REMOVE_OPTION.value()));
-    boolean isClearSet = commandLine.hasOption(BlockersCommand.CLEAR_OPTION.value().shortName());
+    boolean isClearSet =
+        getFlagPresence(commandLine, BlockersCommand.CLEAR_OPTION.value());
 
     validateParsedTasks(
         ImmutableList.<CliUtils.ParseResult<?>>builder()
