@@ -8,7 +8,7 @@ import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
-import tasks.cli.parser.ArgumentFormatException;
+import tasks.cli.parser.ParserException;
 import tasks.cli.parser.CommandParser;
 import tasks.cli.parser.ParseResult;
 import tasks.cli.parser.Parser;
@@ -34,7 +34,7 @@ public abstract class SimpleParser<T extends SimpleArguments> implements Command
      */
     List<String> argsList = ImmutableList.copyOf(commandLine.getArgList());
     if (argsList.count() < 1) {
-      throw new ArgumentFormatException("No task IDs specified");
+      throw new ParserException("No task IDs specified");
     }
 
     return constructor.apply(

@@ -1,13 +1,12 @@
 package tasks.cli.command.reword;
 
 import static tasks.cli.parser.ParserUtil.extractSuccessfulResultOrThrow;
-import static tasks.cli.parser.ParserUtil.extractSuccessfulResultsOrThrow;
 
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
-import tasks.cli.parser.ArgumentFormatException;
+import tasks.cli.parser.ParserException;
 import tasks.cli.parser.ParseResult;
 import tasks.cli.parser.ParserUtil;
 import tasks.cli.parser.CommandParser;
@@ -35,10 +34,10 @@ public final class  RewordParser implements CommandParser<RewordArguments> {
     List<String> argsList = ImmutableList.copyOf(commandLine.getArgList());
 
     if (argsList.count() < 1) {
-      throw new ArgumentFormatException("No task ID or description specified");
+      throw new ParserException("No task ID or description specified");
     }
     if (argsList.count() < 2) {
-      throw new ArgumentFormatException("No description specified");
+      throw new ParserException("No description specified");
     }
     ParserUtil.assertNoExtraArgs(commandLine, RewordCommand.COMMAND_PARAMETERS.value());
 

@@ -10,7 +10,7 @@ import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
-import tasks.cli.parser.ArgumentFormatException;
+import tasks.cli.parser.ParserException;
 import tasks.cli.parser.CommandParser;
 import tasks.cli.parser.Parser;
 import tasks.cli.parser.ParseResult;
@@ -38,10 +38,10 @@ public final class BlockersParser implements CommandParser<BlockersArguments> {
      */
     List<String> argsList = ImmutableList.copyOf(commandLine.getArgList());
     if (argsList.count() < 1) {
-      throw new ArgumentFormatException("Task not specified");
+      throw new ParserException("Task not specified");
     }
     if (argsList.count() > 1) {
-      throw new ArgumentFormatException("Unexpected extra arguments");
+      throw new ParserException("Unexpected extra arguments");
     }
 
     ParseResult<? extends Task> targetTask =

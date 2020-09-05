@@ -25,7 +25,7 @@ import tasks.cli.command.common.CommonArguments;
 import tasks.cli.command.common.CommonOptions;
 import tasks.cli.command.common.CommonParser;
 import tasks.cli.handler.ArgumentHandler;
-import tasks.cli.parser.ArgumentFormatException;
+import tasks.cli.parser.ParserException;
 import tasks.cli.parser.CommandParser;
 import tasks.model.impl.CyclicalDependencyException;
 
@@ -110,7 +110,7 @@ public final class Feature<T> {
           .parse(
               options, ListAlgorithms.toArray(args, new String[0]), /* stopAtNonOption= */ false);
     } catch (ParseException e) {
-      throw new ArgumentFormatException("Unable to parse arguments: " + e.getMessage(), e);
+      throw new ParserException("Unable to parse arguments: " + e.getMessage(), e);
     }
   }
 
@@ -153,5 +153,5 @@ public final class Feature<T> {
   // TODO: don't hard-code throwable classes.
   // We need a better way of converting an exception into a proper, human-readable output.
   private static final Set<Class<? extends Throwable>> SUPPRESSED_HANDLER_THROWABLE_CLASSES =
-      ImmutableSet.of(ArgumentFormatException.class, CyclicalDependencyException.class);
+      ImmutableSet.of(ParserException.class, CyclicalDependencyException.class);
 }

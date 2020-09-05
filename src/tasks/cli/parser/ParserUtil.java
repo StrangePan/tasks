@@ -81,7 +81,7 @@ public final class ParserUtil {
 
   private static void throwIfPopulated(List<? extends String> failureMessages) {
     if (failureMessages.isPopulated()) {
-      throw new ArgumentFormatException(
+      throw new ParserException(
           "Unable to parse task IDs: " + failureMessages.stream().collect(joining(",", "[", "]")));
     }
   }
@@ -106,7 +106,7 @@ public final class ParserUtil {
 
   public static Optional<String> getSingleOptionValue(CommandLine commandLine, String opt) {
     if (Optional.ofNullable(commandLine.getOptionValues(opt)).orElse(new String[0]).length > 1) {
-      throw new ArgumentFormatException(
+      throw new ParserException(
           String.format("Too many values provided for parameter '%s'", opt));
     }
     return Optional.ofNullable(commandLine.getOptionValue(opt));
@@ -130,7 +130,7 @@ public final class ParserUtil {
   private static void assertNoExtraArgs(
       List<? extends String> args, int maxNumberOfCommandParameters) {
     if (args.count() - 1 > maxNumberOfCommandParameters) {
-      throw new ArgumentFormatException(
+      throw new ParserException(
           "Unexpected arguments given: "
               + args.stream()
                   .skip(maxNumberOfCommandParameters)
