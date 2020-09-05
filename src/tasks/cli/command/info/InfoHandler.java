@@ -21,9 +21,9 @@ public final class InfoHandler implements ArgumentHandler<InfoArguments> {
 
     return Observable.fromIterable(arguments.tasks())
         .map(InfoHandler::stringify)
-        .flatMap(output -> Observable.just(Output.just("\n\n"), output))
+        .flatMap(output -> Observable.just(Output.justNewline(), output))
         .skip(1)
-        .collectInto(Output.builder(), Output.Builder::append)
+        .collectInto(Output.builder(), Output.Builder::appendLine)
         .map(Output.Builder::build);
   }
 
