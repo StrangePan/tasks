@@ -1,12 +1,13 @@
 package tasks.cli.command.blockers;
 
 import static java.util.Objects.requireNonNull;
-import static tasks.cli.handlers.HandlerUtil.printIfPopulated;
+import static tasks.cli.handlers.HandlerUtil.stringifyIfPopulated;
 import static tasks.cli.handlers.HandlerUtil.verifyTasksAreMutuallyExclusive;
 
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import omnia.algorithm.SetAlgorithms;
+import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.tuple.Couple;
@@ -25,12 +26,12 @@ public final class BlockersHandler implements ArgumentHandler<BlockersArguments>
   }
 
   @Override
-  public Completable handle(BlockersArguments arguments) {
+  public Single<Output> handle(BlockersArguments arguments) {
     /*
-    Ensure task isn't connected to itself.
-    This is a short-circuit, but is not strictly required because we still need to check if the task
-    graph is cyclical.
-    */
+     * Ensure task isn't connected to itself.
+     * This is a short-circuit, but is not strictly required because we still need to check if the
+     * task graph is cyclical.
+     */
     if (arguments.blockingTasksToAdd().contains(arguments.targetTask())) {
       throw new HandlerException("target task cannot block or be blocked by itself");
     }
@@ -41,8 +42,13 @@ public final class BlockersHandler implements ArgumentHandler<BlockersArguments>
         arguments.blockingTasksToRemove());
 
     return mutateAndProduceBeforeAfterSnapshot(arguments)
-        .doOnSuccess(BlockersHandler::printResults)
-        .ignoreElement();
+        .map(BlockersHandler::stringifyResults)
+        .map(
+            results ->
+                Output.builder()
+                    .appendLine(arguments.targetTask().render())
+                    .appendLine(results)
+                    .build());
   }
 
   private Single<Couple<Set<Task>, Set<Task>>> mutateAndProduceBeforeAfterSnapshot(
@@ -75,11 +81,14 @@ public final class BlockersHandler implements ArgumentHandler<BlockersArguments>
     return task.query().tasksBlockingThis().firstOrError();
   }
 
-  private static void printResults(Couple<Set<Task>, Set<Task>> beforeAfterSnapshots) {
-    printIfPopulated("current blockers:", beforeAfterSnapshots.second());
-    printIfPopulated(
-        "removed blockers:",
-        getRemovedBlockers(beforeAfterSnapshots.first(), beforeAfterSnapshots.second()));
+  private static Output stringifyResults(Couple<Set<Task>, Set<Task>> beforeAfterSnapshots) {
+    return Output.builder()
+        .appendLine(stringifyIfPopulated("current blockers:", beforeAfterSnapshots.second()))
+        .appendLine(
+            stringifyIfPopulated(
+                "removed blockers:",
+                getRemovedBlockers(beforeAfterSnapshots.first(), beforeAfterSnapshots.second())))
+        .build();
   }
 
   private static Set<Task> getRemovedBlockers(Set<Task> before, Set<Task> after) {

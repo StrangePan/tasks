@@ -2,7 +2,6 @@ package tasks.cli.command.add;
 
 import static java.util.Objects.requireNonNull;
 
-import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import omnia.cli.out.Output;
@@ -24,7 +23,7 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
   }
 
   @Override
-  public Completable handle(AddArguments arguments) {
+  public Single<Output> handle(AddArguments arguments) {
     // Validate arguments
     String description = arguments.description().trim();
     if (description.isEmpty()) {
@@ -49,8 +48,7 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
                 .blockingGet())
         .flatMap(task -> taskStore.writeToDisk().toSingleDefault(task))
         .map(Task::render)
-        .map(Output::render)
-        .map(taskString -> "task created: " + taskString)
-        .flatMapCompletable(msg -> Completable.fromAction(() -> System.out.println(msg)));
+        .map(output -> Output.builder().append("task created: ").append(output).build())
+        .map(output -> Output.builder().appendLine(output).build());
   }
 }

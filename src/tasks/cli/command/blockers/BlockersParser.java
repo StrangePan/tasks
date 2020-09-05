@@ -26,12 +26,12 @@ public final class BlockersParser implements CliArguments.CommandParser<Blockers
   @Override
   public BlockersArguments parse(CommandLine commandLine) {
     /*
-    1st param assumed to be task ID
-    2+ params are unsupported
-    optional blockers to add
-    optional blockers to remove
-    optional clear flag
-    */
+     * 1st param assumed to be task ID
+     * 2+ params are unsupported
+     * optional blockers to add
+     * optional blockers to remove
+     * optional clear flag
+     */
     List<String> argsList = ImmutableList.copyOf(commandLine.getArgList());
     if (argsList.count() < 1) {
       throw new CliArguments.ArgumentFormatException("Task not specified");
@@ -42,7 +42,7 @@ public final class BlockersParser implements CliArguments.CommandParser<Blockers
 
     CliUtils.ParseResult<Task> targetTask =
         taskParser.value().parse(
-            ImmutableList.of(argsList.itemAt(1))).itemAt(0);
+            ImmutableList.of(argsList.itemAt(0))).itemAt(0);
     List<CliUtils.ParseResult<Task>> tasksToAdd =
         taskParser.value().parse(
             getOptionValues(commandLine, BlockersCommand.ADD_OPTION.value()));

@@ -3,7 +3,9 @@ package tasks.cli.handlers;
 import static java.util.Objects.requireNonNull;
 
 import io.reactivex.Completable;
+import io.reactivex.Single;
 import java.util.function.Supplier;
+import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableMap;
@@ -60,7 +62,7 @@ public final class ArgumentHandlers implements ArgumentHandler<Object> {
   }
 
   @Override
-  public Completable handle(Object arguments) {
+  public Single<Output> handle(Object arguments) {
     Class<?> argumentsClass = requireNonNull(arguments).getClass();
     return registeredHandlers.valueOf(argumentsClass)
         .orElseThrow(

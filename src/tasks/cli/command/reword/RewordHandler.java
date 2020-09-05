@@ -2,11 +2,12 @@ package tasks.cli.command.reword;
 
 import static java.util.Objects.requireNonNull;
 
-import io.reactivex.Completable;
 import io.reactivex.Single;
+import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import tasks.cli.handlers.ArgumentHandler;
 import tasks.cli.handlers.HandlerException;
+import tasks.model.Task;
 import tasks.model.TaskStore;
 
 public final class RewordHandler implements ArgumentHandler<RewordArguments> {
@@ -17,7 +18,7 @@ public final class RewordHandler implements ArgumentHandler<RewordArguments> {
   }
 
   @Override
-  public Completable handle(RewordArguments arguments) {
+  public Single<Output> handle(RewordArguments arguments) {
     String description = arguments.description().trim();
     if (description.isEmpty()) {
       throw new HandlerException("description cannot be empty or whitespace only");
@@ -30,9 +31,10 @@ public final class RewordHandler implements ArgumentHandler<RewordArguments> {
                     arguments.targetTask(),
                     mutator -> mutator.setLabel(arguments.description())))
         .andThen(taskStore.value().writeToDisk())
-        .doOnComplete(
-            () ->
-                System.out.println(
-                    "Updated description: " + arguments.targetTask().render().render()));
+        .andThen(Single.just(arguments.targetTask()))
+        .map(Task::render)
+        .map(
+            taskOutput ->
+                Output.builder().append("Updated description: ").append(taskOutput).build());
   }
 }

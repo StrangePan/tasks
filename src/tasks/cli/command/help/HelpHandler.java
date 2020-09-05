@@ -3,7 +3,6 @@ package tasks.cli.command.help;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
-import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import java.util.Comparator;
@@ -26,14 +25,10 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
   }
 
   @Override
-  public Completable handle(HelpArguments arguments) {
+  public Single<Output> handle(HelpArguments arguments) {
     return Single.just(arguments)
         .map(HelpArguments::mode)
-        .flatMap(mode -> mode.map(this::getHelpOutputForMode).orElseGet(this::getHelpOutputForSelf))
-        .map(Output::render)
-        .doOnSuccess(System.out::print)
-        .ignoreElement()
-        .cache();
+        .flatMap(mode -> mode.map(this::getHelpOutputForMode).orElseGet(this::getHelpOutputForSelf));
   }
 
   private Single<Output> getHelpOutputForSelf() {
