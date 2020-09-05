@@ -23,8 +23,8 @@ public final class HelpParser implements CliArguments.CommandParser<HelpArgument
     List<String> parsedArgs = ImmutableList.copyOf(commandLine.getArgList());
 
     Optional<String> mode =
-        parsedArgs.count() > 1
-            ? Optional.of(parsedArgs.itemAt(1))
+        parsedArgs.count() > 0
+            ? Optional.of(parsedArgs.itemAt(0))
             : Optional.empty();
 
     mode.ifPresent(this::assertModeIsValid);
