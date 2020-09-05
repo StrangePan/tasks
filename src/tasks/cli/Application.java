@@ -10,10 +10,11 @@ import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
-import tasks.cli.arg.CliArguments;
+import tasks.cli.arg.RegisteredParsers;
+import tasks.cli.parser.ArgumentFormatException;
 import tasks.cli.command.common.CommonArguments;
-import tasks.cli.handlers.ArgumentHandler;
-import tasks.cli.handlers.ArgumentHandlers;
+import tasks.cli.handler.ArgumentHandler;
+import tasks.cli.arg.RegisteredHandlers;
 import tasks.model.TaskStore;
 import tasks.model.impl.CyclicalDependencyException;
 import tasks.model.impl.TaskStoreImpl;
@@ -23,15 +24,15 @@ final class Application {
 
   private final Memoized<TaskStore> taskStore = memoize(() -> new TaskStoreImpl("asdf"));
 
-  private final Memoized<CliArguments> argumentsParser;
+  private final Memoized<RegisteredParsers> argumentsParser;
   private final Memoized<ArgumentHandler<CommonArguments<?>>> argumentHandler;
 
   Application(String[] rawArgs) {
     this.rawArgs = requireNonNull(rawArgs);
 
-    argumentsParser = memoize(() -> new CliArguments(taskStore));
+    argumentsParser = memoize(() -> new RegisteredParsers(taskStore));
     argumentHandler = memoize(() ->
-        ArgumentHandlers.create(
+        RegisteredHandlers.create(
             taskStore, memoize(() -> argumentsParser.value().commandDocumentation())));
   }
 
@@ -53,7 +54,7 @@ final class Application {
   }
 
   private static void handleParseError(Throwable throwable) {
-    if (throwable instanceof CliArguments.ArgumentFormatException) {
+    if (throwable instanceof ArgumentFormatException) {
       System.out.println(throwable.getMessage());
     } else {
       throwable.printStackTrace();

@@ -1,28 +1,28 @@
 package tasks.cli.command.blockers;
 
 import static omnia.data.cache.Memoized.memoize;
-import static tasks.cli.arg.registration.Parameter.Repeatable.NOT_REPEATABLE;
-import static tasks.cli.arg.registration.Parameter.Repeatable.REPEATABLE;
+import static tasks.cli.command.Parameter.Repeatable.NOT_REPEATABLE;
+import static tasks.cli.command.Parameter.Repeatable.REPEATABLE;
 
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
-import tasks.cli.arg.CliArguments;
-import tasks.cli.arg.CliUtils;
-import tasks.cli.arg.registration.CommandRegistration;
-import tasks.cli.arg.registration.FlagOption;
-import tasks.cli.arg.registration.Option;
-import tasks.cli.arg.registration.TaskOption;
-import tasks.cli.arg.registration.TaskParameter;
+import tasks.cli.parser.ParserUtil;
+import tasks.cli.command.Command;
+import tasks.cli.command.FlagOption;
+import tasks.cli.command.Option;
+import tasks.cli.command.TaskOption;
+import tasks.cli.command.TaskParameter;
+import tasks.cli.parser.Parser;
 import tasks.model.Task;
 
 /** Canonical definition for the Blockers command. */
 public final class BlockersCommand {
   private BlockersCommand() {}
 
-  public static CommandRegistration registration(
-      Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
-    return CommandRegistration.builder()
+  public static Command registration(
+      Memoized<Parser<? extends List<ParserUtil.ParseResult<Task>>>> taskParser) {
+    return Command.builder()
         .canonicalName("blockers")
         .aliases("blocker", "bk")
         .parameters(ImmutableList.of(new TaskParameter(NOT_REPEATABLE)))

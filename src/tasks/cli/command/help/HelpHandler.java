@@ -12,11 +12,11 @@ import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
-import tasks.cli.arg.CliArguments;
+import tasks.cli.arg.RegisteredParsers;
 import tasks.cli.arg.CommandDocumentation;
 import tasks.cli.arg.CommandDocumentation.OptionDocumentation;
 import tasks.cli.command.common.CommonOptions;
-import tasks.cli.handlers.ArgumentHandler;
+import tasks.cli.handler.ArgumentHandler;
 
 /** Business logic for the Help command. */
 public final class HelpHandler implements ArgumentHandler<HelpArguments> {
@@ -123,7 +123,7 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
         .appendLine(
             Single.fromCallable(CommonOptions.OPTIONS::value)
                 .flattenAsObservable(options -> options)
-                .map(CliArguments::toOptionDocumentation)
+                .map(RegisteredParsers::toOptionDocumentation)
                 .map(HelpHandler::parameterLine)
                 .collectInto(Output.builder(), Output.Builder::appendLine)
                 .map(Output.Builder::build)

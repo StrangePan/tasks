@@ -1,10 +1,10 @@
 package tasks.cli.command.common;
 
 import static omnia.data.cache.Memoized.memoize;
-import static tasks.cli.arg.registration.Parameter.Repeatable.NOT_REPEATABLE;
+import static tasks.cli.command.Parameter.Repeatable.NOT_REPEATABLE;
 
 import omnia.data.cache.Memoized;
-import tasks.cli.arg.registration.FlagOption;
+import tasks.cli.command.FlagOption;
 
 public final class StripColors {
   private StripColors() {}

@@ -1,8 +1,6 @@
-package tasks.cli.arg.registration;
+package tasks.cli.command;
 
 import static java.util.Objects.requireNonNull;
-
-import tasks.cli.arg.CliArguments;
 
 public abstract class Parameter {
   private final String description;

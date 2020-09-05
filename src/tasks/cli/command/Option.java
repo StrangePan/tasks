@@ -1,4 +1,4 @@
-package tasks.cli.arg.registration;
+package tasks.cli.command;
 
 import static java.util.Objects.requireNonNull;
 

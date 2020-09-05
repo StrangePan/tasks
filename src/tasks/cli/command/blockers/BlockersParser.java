@@ -1,27 +1,28 @@
 package tasks.cli.command.blockers;
 
 import static java.util.Objects.requireNonNull;
-import static tasks.cli.arg.CliUtils.extractTasksFrom;
-import static tasks.cli.arg.CliUtils.getFlagPresence;
-import static tasks.cli.arg.CliUtils.getOptionValues;
-import static tasks.cli.arg.CliUtils.validateParsedTasks;
+import static tasks.cli.parser.ParserUtil.extractTasksFrom;
+import static tasks.cli.parser.ParserUtil.getFlagPresence;
+import static tasks.cli.parser.ParserUtil.getOptionValues;
+import static tasks.cli.parser.ParserUtil.validateParsedTasks;
 
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
-import tasks.cli.arg.CliArguments;
-import tasks.cli.arg.CliUtils;
-import tasks.cli.arg.registration.CommandParser;
+import tasks.cli.parser.ArgumentFormatException;
+import tasks.cli.parser.ParserUtil;
+import tasks.cli.parser.CommandParser;
+import tasks.cli.parser.Parser;
 import tasks.model.Task;
 
 /** Command line argument parser for the Blockers command. */
 public final class BlockersParser implements CommandParser<BlockersArguments> {
-  private final Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>>
+  private final Memoized<Parser<? extends List<ParserUtil.ParseResult<Task>>>>
       taskParser;
 
   public BlockersParser(
-      Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
+      Memoized<Parser<? extends List<ParserUtil.ParseResult<Task>>>> taskParser) {
     this.taskParser = requireNonNull(taskParser);
   }
 
@@ -36,26 +37,26 @@ public final class BlockersParser implements CommandParser<BlockersArguments> {
      */
     List<String> argsList = ImmutableList.copyOf(commandLine.getArgList());
     if (argsList.count() < 1) {
-      throw new CliArguments.ArgumentFormatException("Task not specified");
+      throw new ArgumentFormatException("Task not specified");
     }
     if (argsList.count() > 1) {
-      throw new CliArguments.ArgumentFormatException("Unexpected extra arguments");
+      throw new ArgumentFormatException("Unexpected extra arguments");
     }
 
-    CliUtils.ParseResult<Task> targetTask =
+    ParserUtil.ParseResult<Task> targetTask =
         taskParser.value().parse(
             ImmutableList.of(argsList.itemAt(0))).itemAt(0);
-    List<CliUtils.ParseResult<Task>> tasksToAdd =
+    List<ParserUtil.ParseResult<Task>> tasksToAdd =
         taskParser.value().parse(
             getOptionValues(commandLine, BlockersCommand.ADD_OPTION.value()));
-    List<CliUtils.ParseResult<Task>> tasksToRemove =
+    List<ParserUtil.ParseResult<Task>> tasksToRemove =
         taskParser.value().parse(
             getOptionValues(commandLine, BlockersCommand.REMOVE_OPTION.value()));
     boolean isClearSet =
         getFlagPresence(commandLine, BlockersCommand.CLEAR_OPTION.value());
 
     validateParsedTasks(
-        ImmutableList.<CliUtils.ParseResult<?>>builder()
+        ImmutableList.<ParserUtil.ParseResult<?>>builder()
             .add(targetTask)
             .addAll(tasksToAdd)
             .addAll(tasksToRemove)

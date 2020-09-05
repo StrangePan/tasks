@@ -1,4 +1,4 @@
-package tasks.cli.handlers;
+package tasks.cli.handler;
 
 import static java.util.stream.Collectors.joining;
 import static omnia.data.stream.Collectors.toImmutableSet;

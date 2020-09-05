@@ -1,20 +1,20 @@
 package tasks.cli.command.list;
 
 import static omnia.data.cache.Memoized.memoize;
-import static tasks.cli.arg.registration.Parameter.Repeatable.NOT_REPEATABLE;
+import static tasks.cli.command.Parameter.Repeatable.NOT_REPEATABLE;
 
 import omnia.data.cache.Memoized;
 import omnia.data.structure.immutable.ImmutableList;
-import tasks.cli.arg.registration.CommandRegistration;
-import tasks.cli.arg.registration.FlagOption;
-import tasks.cli.arg.registration.Option;
+import tasks.cli.command.Command;
+import tasks.cli.command.FlagOption;
+import tasks.cli.command.Option;
 
 /** Canonical definition for the List command. */
 public final class ListCommand {
   private ListCommand() {}
 
-  public static CommandRegistration registration() {
-    return CommandRegistration.builder()
+  public static Command registration() {
+    return Command.builder()
         .canonicalName("list")
         .aliases("ls", "l")
         .parameters(ImmutableList.empty())

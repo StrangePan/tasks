@@ -5,9 +5,9 @@ import io.reactivex.Observable;
 import io.reactivex.Single;
 import omnia.cli.out.Output;
 import omnia.data.structure.Set;
-import tasks.cli.handlers.ArgumentHandler;
-import tasks.cli.handlers.HandlerException;
-import tasks.cli.handlers.HandlerUtil;
+import tasks.cli.handler.ArgumentHandler;
+import tasks.cli.handler.HandlerException;
+import tasks.cli.handler.HandlerUtil;
 import tasks.model.Task;
 
 /** Business logic for the Info command. */

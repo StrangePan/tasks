@@ -1,22 +1,22 @@
 package tasks.cli.command.complete;
 
-import static tasks.cli.arg.registration.Parameter.Repeatable.REPEATABLE;
+import static tasks.cli.command.Parameter.Repeatable.REPEATABLE;
 
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
-import tasks.cli.arg.CliArguments;
-import tasks.cli.arg.CliUtils;
-import tasks.cli.arg.registration.CommandRegistration;
-import tasks.cli.arg.registration.TaskParameter;
+import tasks.cli.parser.ParserUtil;
+import tasks.cli.command.Command;
+import tasks.cli.command.TaskParameter;
+import tasks.cli.parser.Parser;
 import tasks.model.Task;
 
 /** Canonical definition for the Complete command. */
 public final class CompleteCommand {
   private CompleteCommand() {}
 
-  public static CommandRegistration registration(Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
-    return CommandRegistration.builder()
+  public static Command registration(Memoized<Parser<? extends List<ParserUtil.ParseResult<Task>>>> taskParser) {
+    return Command.builder()
         .canonicalName("complete")
         .aliases()
         .parameters(ImmutableList.of(new TaskParameter(REPEATABLE)))

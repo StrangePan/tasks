@@ -1,28 +1,28 @@
 package tasks.cli.command.add;
 
 import static omnia.data.cache.Memoized.memoize;
-import static tasks.cli.arg.registration.Parameter.Repeatable.NOT_REPEATABLE;
-import static tasks.cli.arg.registration.Parameter.Repeatable.REPEATABLE;
+import static tasks.cli.command.Parameter.Repeatable.NOT_REPEATABLE;
+import static tasks.cli.command.Parameter.Repeatable.REPEATABLE;
 
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
-import tasks.cli.arg.CliArguments;
-import tasks.cli.arg.CliUtils;
-import tasks.cli.arg.registration.CommandRegistration;
-import tasks.cli.arg.registration.Option;
-import tasks.cli.arg.registration.Parameter;
-import tasks.cli.arg.registration.StringParameter;
-import tasks.cli.arg.registration.TaskOption;
+import tasks.cli.parser.ParserUtil;
+import tasks.cli.command.Command;
+import tasks.cli.command.Option;
+import tasks.cli.command.Parameter;
+import tasks.cli.command.StringParameter;
+import tasks.cli.command.TaskOption;
+import tasks.cli.parser.Parser;
 import tasks.model.Task;
 
 /** Canonical definition for the Add command. */
 public final class AddCommand {
   private AddCommand() {}
 
-  public static CommandRegistration registration(
-      Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
-    return CommandRegistration.builder()
+  public static Command registration(
+      Memoized<Parser<? extends List<ParserUtil.ParseResult<Task>>>> taskParser) {
+    return Command.builder()
         .canonicalName("add")
         .aliases()
         .parameters(COMMAND_PARAMETERS.value())

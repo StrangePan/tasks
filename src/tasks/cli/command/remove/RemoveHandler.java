@@ -8,9 +8,9 @@ import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
 import omnia.data.structure.tuple.Tuple;
-import tasks.cli.handlers.ArgumentHandler;
-import tasks.cli.handlers.HandlerException;
-import tasks.cli.handlers.HandlerUtil;
+import tasks.cli.handler.ArgumentHandler;
+import tasks.cli.handler.HandlerException;
+import tasks.cli.handler.HandlerUtil;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 

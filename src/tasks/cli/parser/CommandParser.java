@@ -1,4 +1,4 @@
-package tasks.cli.arg.registration;
+package tasks.cli.parser;
 
 import org.apache.commons.cli.CommandLine;
 

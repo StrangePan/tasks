@@ -1,4 +1,4 @@
-package tasks.cli.arg;
+package tasks.cli.parser;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -9,6 +9,7 @@ import io.reactivex.Observable;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
+import omnia.algorithm.ListAlgorithms;
 import omnia.contract.Countable;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
@@ -19,32 +20,26 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import tasks.cli.arg.registration.FlagOption;
-import tasks.cli.arg.registration.Option;
-import tasks.cli.arg.registration.Parameter;
+import tasks.cli.command.FlagOption;
+import tasks.cli.command.Option;
+import tasks.cli.command.Parameter;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
-public final class CliUtils {
-  private CliUtils() {}
+public final class ParserUtil {
+
+  private ParserUtil() {}
 
   public static CommandLine tryParse(List<? extends String> args, Options options) {
     try {
-      return new DefaultParser().parse(options, toArray(args), /* stopAtNonOption= */ false);
+      return new DefaultParser().parse(options, ListAlgorithms.toArray(args, new String[0]), /* stopAtNonOption= */ false);
     } catch (ParseException e) {
-      throw new CliArguments.ArgumentFormatException("Unable to parse arguments: " + e.getMessage(), e);
+      throw new ArgumentFormatException("Unable to parse arguments: " + e.getMessage(), e);
     }
   }
 
-  private static String[] toArray(List<? extends String> list) {
-    String[] array = new String[list.count()];
-    for (int i = 0; i < list.count(); i++) {
-      array[i] = list.itemAt(i);
-    }
-    return array;
-  }
-
-  public static CliArguments.Parser<List<ParseResult<Task>>> taskListParser(Memoized<TaskStore> taskStore) {
+  public static Parser<List<ParseResult<Task>>> taskListParser(
+      Memoized<TaskStore> taskStore) {
     return (args) -> parseTaskIds(ImmutableList.copyOf(args), taskStore.value());
   }
 
@@ -73,7 +68,7 @@ public final class CliUtils {
   public static void validateParsedTasks(Collection<? extends ParseResult<?>> parseResults) {
     generateAggregateFailureMessage(parseResults)
         .ifPresent(message -> {
-          throw new CliArguments.ArgumentFormatException("Unable to parse task IDs:\n" + message);
+          throw new ArgumentFormatException("Unable to parse task IDs:\n" + message);
         });
   }
 
@@ -138,7 +133,7 @@ public final class CliUtils {
 
   public static Optional<String> getSingleOptionValue(CommandLine commandLine, String opt) {
     if (Optional.ofNullable(commandLine.getOptionValues(opt)).orElse(new String[0]).length > 1) {
-      throw new CliArguments.ArgumentFormatException(
+      throw new ArgumentFormatException(
           String.format("Too many values provided for parameter '%s'", opt));
     }
     return Optional.ofNullable(commandLine.getOptionValue(opt));
@@ -169,7 +164,7 @@ public final class CliUtils {
   private static void assertNoExtraArgs(
       List<? extends String> args, int maxNumberOfCommandParameters) {
     if (args.count() - 1 > maxNumberOfCommandParameters) {
-      throw new CliArguments.ArgumentFormatException(
+      throw new ArgumentFormatException(
           "Unexpected arguments given: "
               + args.stream()
                   .skip(maxNumberOfCommandParameters)

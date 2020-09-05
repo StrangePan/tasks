@@ -1,4 +1,4 @@
-package tasks.cli.handlers;
+package tasks.cli.arg;
 
 import static java.util.Objects.requireNonNull;
 
@@ -6,6 +6,7 @@ import io.reactivex.Single;
 import java.util.function.Supplier;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
+import tasks.cli.handler.ArgumentHandler;
 
 final class ValidatingHandler<T> implements ArgumentHandler<Object> {
   private final Class<? extends T> argumentClass;

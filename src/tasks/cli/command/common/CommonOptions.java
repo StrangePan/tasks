@@ -4,7 +4,7 @@ import static omnia.data.cache.Memoized.memoize;
 
 import omnia.data.cache.Memoized;
 import omnia.data.structure.immutable.ImmutableList;
-import tasks.cli.arg.registration.Option;
+import tasks.cli.command.Option;
 
 public final class CommonOptions {
 

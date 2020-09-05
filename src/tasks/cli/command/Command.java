@@ -1,4 +1,4 @@
-package tasks.cli.arg.registration;
+package tasks.cli.command;
 
 import static java.util.Objects.requireNonNull;
 import static omnia.data.cache.Memoized.memoize;
@@ -9,8 +9,9 @@ import omnia.data.structure.Collection;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
+import tasks.cli.parser.CommandParser;
 
-public final class CommandRegistration {
+public final class Command {
   private final String canonicalName;
   private final Collection<String> aliases;
   private final String description;
@@ -18,7 +19,7 @@ public final class CommandRegistration {
   private final Collection<Option> options;
   private final Memoized<CommandParser<?>> parser;
 
-  private CommandRegistration(
+  private Command(
       String canonicalName,
       Collection<String> aliases,
       String description,
@@ -96,7 +97,7 @@ public final class CommandRegistration {
   }
 
   public interface Builder5 {
-    CommandRegistration helpDocumentation(String description);
+    Command helpDocumentation(String description);
   }
 
   public static Builder0 builder() {
@@ -106,7 +107,7 @@ public final class CommandRegistration {
                 (Builder3) arguments ->
                     (Builder4) commandParserSupplier ->
                         (Builder5) description ->
-                            new CommandRegistration(
+                            new Command(
                                 canonicalName,
                                 ImmutableList.copyOf(aliases),
                                 description,

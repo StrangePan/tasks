@@ -1,4 +1,4 @@
-package tasks.cli.arg.registration;
+package tasks.cli.command;
 
 import java.util.Optional;
 

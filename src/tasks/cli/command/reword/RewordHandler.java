@@ -5,8 +5,8 @@ import static java.util.Objects.requireNonNull;
 import io.reactivex.Single;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
-import tasks.cli.handlers.ArgumentHandler;
-import tasks.cli.handlers.HandlerException;
+import tasks.cli.handler.ArgumentHandler;
+import tasks.cli.handler.HandlerException;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 

@@ -1,4 +1,4 @@
-package tasks.cli.handlers;
+package tasks.cli.arg;
 
 import static java.util.Objects.requireNonNull;
 
@@ -20,7 +20,6 @@ import tasks.cli.command.info.InfoArguments;
 import tasks.cli.command.list.ListArguments;
 import tasks.cli.command.remove.RemoveArguments;
 import tasks.cli.command.reopen.ReopenArguments;
-import tasks.cli.arg.CommandDocumentation;
 import tasks.cli.command.add.AddHandler;
 import tasks.cli.command.complete.CompleteHandler;
 import tasks.cli.command.help.HelpHandler;
@@ -30,18 +29,19 @@ import tasks.cli.command.remove.RemoveHandler;
 import tasks.cli.command.reopen.ReopenHandler;
 import tasks.cli.command.reword.RewordArguments;
 import tasks.cli.command.reword.RewordHandler;
+import tasks.cli.handler.ArgumentHandler;
 import tasks.model.TaskStore;
 
-public final class ArgumentHandlers implements ArgumentHandler<CommonArguments<?>> {
+public final class RegisteredHandlers implements ArgumentHandler<CommonArguments<?>> {
   private final ImmutableMap<Class<?>, ArgumentHandler<Object>> registeredHandlers;
 
-  public static ArgumentHandlers create(
+  public static RegisteredHandlers create(
       Memoized<TaskStore> taskStore,
       Memoized<Set<CommandDocumentation>> documentation) {
-    return new ArgumentHandlers(requireNonNull(taskStore), requireNonNull(documentation));
+    return new RegisteredHandlers(requireNonNull(taskStore), requireNonNull(documentation));
   }
 
-  private ArgumentHandlers(
+  private RegisteredHandlers(
       Memoized<TaskStore> taskStore, Memoized<Set<CommandDocumentation>> documentation) {
     this.registeredHandlers = buildHandlerMap(taskStore, documentation);
   }

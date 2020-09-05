@@ -10,7 +10,6 @@ import io.reactivex.Observable;
 import io.reactivex.Single;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
 import omnia.data.structure.List;
@@ -18,14 +17,14 @@ import omnia.data.structure.Map;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
-import omnia.data.structure.mutable.HashMap;
-import omnia.data.structure.mutable.MutableMap;
 import omnia.data.structure.tuple.Couple;
 import omnia.data.structure.tuple.Tuple;
 import org.apache.commons.cli.CommandLine;
-import tasks.cli.arg.registration.CommandRegistration;
-import tasks.cli.arg.registration.Option;
-import tasks.cli.arg.registration.Parameter;
+import tasks.cli.command.Command;
+import tasks.cli.command.Option;
+import tasks.cli.command.Parameter;
+import tasks.cli.parser.ParserUtil;
+import tasks.cli.parser.Parser;
 import tasks.cli.command.add.AddCommand;
 import tasks.cli.command.blockers.BlockersCommand;
 import tasks.cli.command.common.CommonArguments;
@@ -42,10 +41,10 @@ import tasks.model.Task;
 import tasks.model.TaskStore;
 
 /** Data structure for arguments passed into the command line. */
-public final class CliArguments {
+public final class RegisteredParsers {
 
-  private static Collection<CommandRegistration> createCommandModeRegistry(
-      Memoized<Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
+  private static Collection<Command> createCommandModeRegistry(
+      Memoized<Parser<? extends List<ParserUtil.ParseResult<Task>>>> taskParser) {
     return new RegistryBuilder()
         .register(AddCommand.registration(taskParser))
         .register(BlockersCommand.registration(taskParser))
@@ -60,13 +59,13 @@ public final class CliArguments {
   }
 
   private final CommonParser commonArgumentsParser = new CommonParser();
-  private final CommandRegistration fallback = HelpCommand.registration();
+  private final Command fallback = HelpCommand.registration();
 
-  private final Collection<CommandRegistration> registrations;
-  private final Map<String, CommandRegistration> registrationsIndexedByAliases;
+  private final Collection<Command> registrations;
+  private final Map<String, Command> registrationsIndexedByAliases;
 
-  public CliArguments(Memoized<TaskStore> taskStore) {
-    registrations = createCommandModeRegistry(memoize(() -> CliUtils.taskListParser(taskStore)));
+  public RegisteredParsers(Memoized<TaskStore> taskStore) {
+    registrations = createCommandModeRegistry(memoize(() -> ParserUtil.taskListParser(taskStore)));
 
     registrationsIndexedByAliases =
         registrations.stream()
@@ -82,37 +81,37 @@ public final class CliArguments {
     requireNonNull(args);
     return Single.just(argsAndOptionalRegistration(args))
         .map(this::resolveRegistrationOrUseFallback)
-        .map(CliArguments::parseToCommandLine)
+        .map(RegisteredParsers::parseToCommandLine)
         .map(this::parseToArguments)
         .blockingGet();
   }
 
-  private Couple<List<? extends String>, Optional<CommandRegistration>> argsAndOptionalRegistration(
+  private Couple<List<? extends String>, Optional<Command>> argsAndOptionalRegistration(
       List<? extends String> args) {
     return Tuple.of(
         args.stream().skip(1).collect(toImmutableList()),
         args.stream().findFirst().flatMap(this::registrationFromArgument));
   }
 
-  private Couple<List<? extends String>, CommandRegistration> resolveRegistrationOrUseFallback(
-      Couple<List<? extends String>, Optional<CommandRegistration>> argsAndOptionalRegistration) {
+  private Couple<List<? extends String>, Command> resolveRegistrationOrUseFallback(
+      Couple<List<? extends String>, Optional<Command>> argsAndOptionalRegistration) {
     return argsAndOptionalRegistration.second().isPresent()
         ? argsAndOptionalRegistration.mapSecond(Optional::get)
         : Tuple.of(ImmutableList.empty(), fallback);
   }
 
-  private static Couple<CommandLine, CommandRegistration> parseToCommandLine(Couple<List<? extends String>, CommandRegistration> argsAndCommand) {
+  private static Couple<CommandLine, Command> parseToCommandLine(Couple<List<? extends String>, Command> argsAndCommand) {
     Collection<Option> commonAndSpecificOptions =
         ImmutableSet.<Option>builder()
             .addAll(argsAndCommand.second().options())
             .addAll(CommonOptions.OPTIONS.value())
             .build();
     return argsAndCommand
-        .mapFirst(first -> CliUtils.tryParse(first, CliUtils.toOptions(commonAndSpecificOptions)));
+        .mapFirst(first -> ParserUtil.tryParse(first, ParserUtil.toOptions(commonAndSpecificOptions)));
   }
 
   private CommonArguments<?> parseToArguments(
-      Couple<CommandLine, CommandRegistration> commandLineAndRegistration) {
+      Couple<CommandLine, Command> commandLineAndRegistration) {
     return commonArgumentsParser.parse(
         commandLineAndRegistration.first(),
         commandLineAndRegistration
@@ -121,32 +120,32 @@ public final class CliArguments {
             .parse(commandLineAndRegistration.first()));
   }
 
-  private Optional<CommandRegistration> registrationFromArgument(String arg) {
+  private Optional<Command> registrationFromArgument(String arg) {
     return registrationsIndexedByAliases.valueOf(arg);
   }
 
   public Set<CommandDocumentation> commandDocumentation() {
     return registrations.stream()
-        .map(CliArguments::toCommandDocumentation)
+        .map(RegisteredParsers::toCommandDocumentation)
         .collect(toImmutableSet());
   }
 
-  private static CommandDocumentation toCommandDocumentation(CommandRegistration registration) {
+  private static CommandDocumentation toCommandDocumentation(Command registration) {
     return new CommandDocumentation(
         registration.canonicalName(),
         ImmutableList.copyOf(registration.aliases()),
         toParameterRepresentation(registration),
         registration.description(),
         registration.options().stream()
-            .map(CliArguments::toOptionDocumentation)
+            .map(RegisteredParsers::toOptionDocumentation)
             .collect(toImmutableSet()));
   }
 
-  private static Optional<String> toParameterRepresentation(CommandRegistration registration) {
+  private static Optional<String> toParameterRepresentation(Command registration) {
     return registration.parameters().isPopulated()
         ? Optional.of(
             registration.parameters().stream()
-              .map(CliArguments::toParameterRepresentation)
+              .map(RegisteredParsers::toParameterRepresentation)
               .collect(Collectors.joining(" ")))
         : Optional.empty();
   }
@@ -168,37 +167,23 @@ public final class CliArguments {
         toParameterRepresentation(option));
   }
 
-  public static final class ArgumentFormatException extends RuntimeException {
-    public ArgumentFormatException(String reason) {
-      super(reason);
-    }
-
-    ArgumentFormatException(String reason, Throwable cause) {
-      super(reason, cause);
-    }
-  }
-
-  public interface Parser<T> {
-    T parse(List<? extends String> commandLine);
-  }
-
   private static final class RegistryBuilder {
-    private final ImmutableSet.Builder<CommandRegistration> registeredCommands =
+    private final ImmutableSet.Builder<Command> registeredCommands =
         ImmutableSet.builder();
 
-    RegistryBuilder register(CommandRegistration registration) {
+    RegistryBuilder register(Command registration) {
       requireNonNull(registration);
       registeredCommands.add(registration);
       return this;
     }
 
-    Set<CommandRegistration> build() {
-      Set<CommandRegistration> registeredCommands = this.registeredCommands.build();
+    Set<Command> build() {
+      Set<Command> registeredCommands = this.registeredCommands.build();
       requireNamesAndAliasesAreUnique(registeredCommands);
       return registeredCommands;
     }
 
-    private static void requireNamesAndAliasesAreUnique(Set<CommandRegistration> commands) {
+    private static void requireNamesAndAliasesAreUnique(Set<Command> commands) {
       List<String> duplicates =
           Observable.fromIterable(commands)
               .flatMap(

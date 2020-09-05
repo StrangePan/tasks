@@ -1,8 +1,8 @@
 package tasks.cli.command.blockers;
 
 import static java.util.Objects.requireNonNull;
-import static tasks.cli.handlers.HandlerUtil.stringifyIfPopulated;
-import static tasks.cli.handlers.HandlerUtil.verifyTasksAreMutuallyExclusive;
+import static tasks.cli.handler.HandlerUtil.stringifyIfPopulated;
+import static tasks.cli.handler.HandlerUtil.verifyTasksAreMutuallyExclusive;
 
 import io.reactivex.Completable;
 import io.reactivex.Single;
@@ -12,8 +12,8 @@ import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.tuple.Couple;
 import omnia.data.structure.tuple.Tuple;
-import tasks.cli.handlers.ArgumentHandler;
-import tasks.cli.handlers.HandlerException;
+import tasks.cli.handler.ArgumentHandler;
+import tasks.cli.handler.HandlerException;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 

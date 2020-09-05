@@ -4,7 +4,7 @@ import java.util.Optional;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
-import tasks.cli.arg.registration.CommandParser;
+import tasks.cli.parser.CommandParser;
 
 /** Command line argument parser for the Help command. */
 public final class HelpParser implements CommandParser<HelpArguments> {
