@@ -19,6 +19,9 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import tasks.cli.arg.registration.FlagOption;
+import tasks.cli.arg.registration.Option;
+import tasks.cli.arg.registration.Parameter;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
@@ -115,11 +118,11 @@ public final class CliUtils {
     }
   }
 
-  public static boolean getFlagPresence(CommandLine commandLine, CliArguments.FlagOption flagOption) {
+  public static boolean getFlagPresence(CommandLine commandLine, FlagOption flagOption) {
     return commandLine.hasOption(flagOption.shortName().orElse(flagOption.longName()));
   }
 
-  public static List<String> getOptionValues(CommandLine commandLine, CliArguments.Option option) {
+  public static List<String> getOptionValues(CommandLine commandLine, Option option) {
     return getOptionValues(commandLine, option.shortName().orElse(option.longName()));
   }
 
@@ -129,7 +132,7 @@ public final class CliUtils {
             .orElse(new String[0]));
   }
 
-  public static Optional<String> getSingleOptionValue(CommandLine commandLine, CliArguments.Option option) {
+  public static Optional<String> getSingleOptionValue(CommandLine commandLine, Option option) {
     return getSingleOptionValue(commandLine, option.shortName().orElse(option.longName()));
   }
 
@@ -141,9 +144,9 @@ public final class CliUtils {
     return Optional.ofNullable(commandLine.getOptionValue(opt));
   }
 
-  public static Options toOptions(Iterable<? extends CliArguments.Option> options) {
+  public static Options toOptions(Iterable<? extends Option> options) {
     return Observable.fromIterable(options)
-        .map(CliArguments.Option::toCliOption)
+        .map(Option::toCliOption)
         .collect(Options::new, Options::addOption)
         .blockingGet();
   }
@@ -153,12 +156,12 @@ public final class CliUtils {
   }
 
   public static void assertNoExtraArgs(
-      CommandLine commandLine, Collection<CliArguments.Parameter> parameters) {
+      CommandLine commandLine, Collection<Parameter> parameters) {
     assertNoExtraArgs(List.masking(commandLine.getArgList()), parameters);
   }
 
   public static void assertNoExtraArgs(
-      List<? extends String> args, Collection<CliArguments.Parameter> parameters) {
+      List<? extends String> args, Collection<Parameter> parameters) {
     computeMaxNumberOfCommandParameters(parameters)
         .ifPresent(max -> assertNoExtraArgs(args, max));
   }
@@ -176,8 +179,8 @@ public final class CliUtils {
   }
 
   public static OptionalInt computeMaxNumberOfCommandParameters(
-      Collection<CliArguments.Parameter> parameters) {
-    return parameters.stream().anyMatch(CliArguments.Parameter::isRepeatable)
+      Collection<Parameter> parameters) {
+    return parameters.stream().anyMatch(Parameter::isRepeatable)
         ? OptionalInt.empty()
         : OptionalInt.of(parameters.count());
   }

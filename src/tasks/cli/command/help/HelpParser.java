@@ -9,9 +9,10 @@ import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
 import tasks.cli.arg.CliArguments;
+import tasks.cli.arg.registration.CommandParser;
 
 /** Command line argument parser for the Help command. */
-public final class HelpParser implements CliArguments.CommandParser<HelpArguments> {
+public final class HelpParser implements CommandParser<HelpArguments> {
   private final Memoized<Set<String>> validModes;
 
   public HelpParser(Memoized<Set<String>> validModes) {

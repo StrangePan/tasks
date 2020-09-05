@@ -1,9 +1,7 @@
 package tasks.cli.arg;
 
 import static java.util.Objects.requireNonNull;
-import static omnia.data.stream.Collectors.toImmutableList;
 import static tasks.cli.arg.CliUtils.extractTasksFrom;
-import static tasks.cli.arg.CliUtils.tryParse;
 import static tasks.cli.arg.CliUtils.validateParsedTasks;
 
 import java.util.function.Function;
@@ -11,8 +9,8 @@ import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 import tasks.cli.arg.CliUtils.ParseResult;
+import tasks.cli.arg.registration.CommandParser;
 import tasks.model.Task;
 
 public abstract class SimpleArguments {
@@ -27,7 +25,7 @@ public abstract class SimpleArguments {
     return tasks;
   }
 
-  public static abstract class Parser<T extends SimpleArguments> implements CliArguments.CommandParser<T> {
+  public static abstract class Parser<T extends SimpleArguments> implements CommandParser<T> {
     private final Function<List<Task>, T> constructor;
     private final Memoized<CliArguments.Parser<? extends List<ParseResult<Task>>>> taskParser;
 

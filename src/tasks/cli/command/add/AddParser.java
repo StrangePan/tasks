@@ -11,10 +11,11 @@ import omnia.data.structure.immutable.ImmutableList;
 import org.apache.commons.cli.CommandLine;
 import tasks.cli.arg.CliArguments;
 import tasks.cli.arg.CliUtils;
+import tasks.cli.arg.registration.CommandParser;
 import tasks.model.Task;
 
 /** Command line argument parser for the Add command. */
-public final class AddParser implements CliArguments.CommandParser<AddArguments> {
+public final class AddParser implements CommandParser<AddArguments> {
   private final Memoized<CliArguments.Parser<? extends List<CliUtils.ParseResult<Task>>>>
       taskParser;
 

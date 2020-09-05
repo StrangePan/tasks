@@ -3,11 +3,11 @@ package tasks.cli.command.list;
 import static tasks.cli.arg.CliUtils.assertNoExtraArgs;
 
 import org.apache.commons.cli.CommandLine;
-import tasks.cli.arg.CliArguments;
 import tasks.cli.arg.CliUtils;
+import tasks.cli.arg.registration.CommandParser;
 
 /** Command line argument parser for the List command. */
-public final class ListParser implements CliArguments.CommandParser<ListArguments> {
+public final class ListParser implements CommandParser<ListArguments> {
 
   @Override
   public ListArguments parse(CommandLine commandLine) {

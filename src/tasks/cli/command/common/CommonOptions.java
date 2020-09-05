@@ -4,10 +4,10 @@ import static omnia.data.cache.Memoized.memoize;
 
 import omnia.data.cache.Memoized;
 import omnia.data.structure.immutable.ImmutableList;
-import tasks.cli.arg.CliArguments;
+import tasks.cli.arg.registration.Option;
 
 public final class CommonOptions {
 
-  public static final Memoized<ImmutableList<CliArguments.Option>> OPTIONS =
+  public static final Memoized<ImmutableList<Option>> OPTIONS =
       memoize(() -> ImmutableList.of(StripColors.STRIP_COLORS_OPTION.value()));
 }
