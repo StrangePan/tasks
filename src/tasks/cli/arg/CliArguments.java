@@ -43,13 +43,12 @@ import tasks.model.TaskStore;
 public final class CliArguments {
 
   private static Collection<CommandRegistration> createCommandModeRegistry(
-      Memoized<Set<String>> validModes,
       Memoized<Parser<? extends List<CliUtils.ParseResult<Task>>>> taskParser) {
     return new RegistryBuilder()
         .register(AddCommand.registration(taskParser))
         .register(BlockersCommand.registration(taskParser))
         .register(CompleteCommand.registration(taskParser))
-        .register(HelpCommand.registration(validModes))
+        .register(HelpCommand.registration())
         .register(InfoCommand.registration(taskParser))
         .register(ListCommand.registration())
         .register(RemoveCommand.registration(taskParser))
@@ -59,15 +58,13 @@ public final class CliArguments {
   }
 
   private final CommonParser commonArgumentsParser = new CommonParser();
+  private final CommandRegistration fallback = HelpCommand.registration();
+
   private final Collection<CommandRegistration> registrations;
   private final Map<String, CommandRegistration> registrationsIndexedByAliases;
-  private final CommandRegistration fallback;
 
   public CliArguments(Memoized<TaskStore> taskStore) {
-    registrations =
-        createCommandModeRegistry(
-            memoize(this::modeNamesAndAliases),
-            memoize(() -> CliUtils.taskListParser(taskStore)));
+    registrations = createCommandModeRegistry(memoize(() -> CliUtils.taskListParser(taskStore)));
 
     registrationsIndexedByAliases =
         registrations.stream()
@@ -77,17 +74,6 @@ public final class CliArguments {
                         .stream()
                         .map(alias -> Tuple.of(alias, registration)))
             .collect(toImmutableMap());
-
-    //noinspection OptionalGetWithoutIsPresent
-    this.fallback =
-        registrations.stream()
-            .filter(registration -> registration.cliMode() == CliMode.HELP)
-            .findFirst()
-            .get();
-  }
-
-  private Set<String> modeNamesAndAliases() {
-    return registrationsIndexedByAliases.keys();
   }
 
   public CommonArguments<?> parse(List<? extends String> args) {
