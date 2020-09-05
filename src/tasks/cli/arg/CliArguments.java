@@ -24,6 +24,8 @@ import omnia.data.structure.tuple.Tuple;
 import org.apache.commons.cli.CommandLine;
 import tasks.cli.command.add.AddCommand;
 import tasks.cli.command.blockers.BlockersCommand;
+import tasks.cli.command.common.CommonArguments;
+import tasks.cli.command.common.CommonParser;
 import tasks.cli.command.complete.CompleteCommand;
 import tasks.cli.command.help.HelpCommand;
 import tasks.cli.command.info.InfoCommand;
@@ -53,6 +55,7 @@ public final class CliArguments {
         .build();
   }
 
+  private final CommonParser commonArgumentsParser = new CommonParser();
   private final Collection<CommandRegistration> registrations;
   private final Map<String, CommandRegistration> registrationsIndexedByAliases;
   private final CommandRegistration fallback;
@@ -84,13 +87,12 @@ public final class CliArguments {
     return registrationsIndexedByAliases.keys();
   }
 
-  public Object parse(List<? extends String> args) {
+  public CommonArguments<?> parse(List<? extends String> args) {
     requireNonNull(args);
-
     return Single.just(argsAndOptionalRegistration(args))
         .map(this::resolveRegistrationOrUseFallback)
         .map(CliArguments::parseToCommandLine)
-        .map(CliArguments::parseToArguments)
+        .map(this::parseToArguments)
         .blockingGet();
   }
 
@@ -113,12 +115,14 @@ public final class CliArguments {
         first -> CliUtils.tryParse(first, CliUtils.toOptions(argsAndCommand.second().options())));
   }
 
-  private static Object parseToArguments(
+  private CommonArguments<?> parseToArguments(
       Couple<CommandLine, CommandRegistration> commandLineAndRegistration) {
-    return commandLineAndRegistration
-        .second()
-        .commandParserSupplier()
-        .parse(commandLineAndRegistration.first());
+    return commonArgumentsParser.parse(
+        commandLineAndRegistration.first(),
+        commandLineAndRegistration
+            .second()
+            .commandParserSupplier()
+            .parse(commandLineAndRegistration.first()));
   }
 
   private Optional<CommandRegistration> registrationFromArgument(String arg) {

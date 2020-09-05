@@ -11,6 +11,7 @@ import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
 import tasks.cli.arg.CliArguments;
+import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handlers.ArgumentHandler;
 import tasks.cli.handlers.ArgumentHandlers;
 import tasks.model.TaskStore;
@@ -23,7 +24,7 @@ final class Application {
   private final Memoized<TaskStore> taskStore = memoize(() -> new TaskStoreImpl("asdf"));
 
   private final Memoized<CliArguments> argumentsParser;
-  private final Memoized<ArgumentHandler<Object>> argumentHandler;
+  private final Memoized<ArgumentHandler<CommonArguments<?>>> argumentHandler;
 
   Application(String[] rawArgs) {
     this.rawArgs = requireNonNull(rawArgs);
@@ -42,10 +43,10 @@ final class Application {
   }
 
 
-  private Maybe<Object> parseCliArguments(String[] args) {
+  private Maybe<CommonArguments<?>> parseCliArguments(String[] args) {
     return Single.just(args)
         .map(ImmutableList::copyOf)
-        .map(a -> argumentsParser.value().parse(a))
+        .<CommonArguments<?>>map(a -> argumentsParser.value().parse(a))
         .toMaybe()
         .doOnError(Application::handleParseError)
         .onErrorComplete();
@@ -59,10 +60,13 @@ final class Application {
     }
   }
 
-  private Completable handleCliArguments(Object args) {
+  private Completable handleCliArguments(CommonArguments<?> args) {
     return Single.just(args)
         .flatMap(arguments -> argumentHandler.value().handle(arguments))
-        .doOnSuccess(output -> System.out.print(output.render()))
+        .doOnSuccess(
+            output ->
+                System.out.print(
+                    args.enableOutputFormatting() ? output.render() : output.renderWithoutCodes()))
         .ignoreElement()
         .doOnError(Application::maybeHandleError)
         .onErrorComplete(Application::maybeConsumeError);
