@@ -169,7 +169,7 @@ public final class CliArguments {
     return option.parameterRepresentation().map(rep -> "<" + rep + ">");
   }
 
-  private static CommandDocumentation.OptionDocumentation toOptionDocumentation(Option option) {
+  public static CommandDocumentation.OptionDocumentation toOptionDocumentation(Option option) {
     return new CommandDocumentation.OptionDocumentation(
         option.longName(),
         option.shortName(),

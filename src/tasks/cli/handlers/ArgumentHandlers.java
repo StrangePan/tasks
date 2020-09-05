@@ -36,7 +36,8 @@ public final class ArgumentHandlers implements ArgumentHandler<CommonArguments<?
   private final ImmutableMap<Class<?>, ArgumentHandler<Object>> registeredHandlers;
 
   public static ArgumentHandlers create(
-      Memoized<TaskStore> taskStore, Memoized<Set<CommandDocumentation>> documentation) {
+      Memoized<TaskStore> taskStore,
+      Memoized<Set<CommandDocumentation>> documentation) {
     return new ArgumentHandlers(requireNonNull(taskStore), requireNonNull(documentation));
   }
 

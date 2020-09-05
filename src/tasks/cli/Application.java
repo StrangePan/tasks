@@ -32,7 +32,7 @@ final class Application {
     argumentsParser = memoize(() -> new CliArguments(taskStore));
     argumentHandler = memoize(() ->
         ArgumentHandlers.create(
-            taskStore, memoize(argumentsParser.value()::commandDocumentation)));
+            taskStore, memoize(() -> argumentsParser.value().commandDocumentation())));
   }
 
   void run() {
