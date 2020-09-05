@@ -1,6 +1,7 @@
 package tasks.cli.command.reword;
 
-import static tasks.cli.parser.ParserUtil.validateParsedTasks;
+import static tasks.cli.parser.ParserUtil.extractSuccessfulResultOrThrow;
+import static tasks.cli.parser.ParserUtil.extractSuccessfulResultsOrThrow;
 
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
@@ -46,8 +47,6 @@ public final class  RewordParser implements CommandParser<RewordArguments> {
         taskParser.value().parse(ImmutableList.of(argsList.itemAt(0))).itemAt(0);
     String description = argsList.itemAt(1);
 
-    validateParsedTasks(ImmutableList.of(targetTask));
-
-    return new RewordArguments(targetTask.successResult().get(), description);
+    return new RewordArguments(extractSuccessfulResultOrThrow(targetTask), description);
   }
 }

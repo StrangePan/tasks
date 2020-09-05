@@ -2,24 +2,19 @@ package tasks.cli.parser;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
-import static omnia.data.stream.Collectors.toImmutableList;
 import static omnia.data.stream.Collectors.toList;
 
 import io.reactivex.Observable;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.stream.Collectors;
-import omnia.algorithm.ListAlgorithms;
-import omnia.contract.Countable;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
 import omnia.data.structure.List;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableList;
+import omnia.data.structure.tuple.Couple;
+import omnia.data.structure.tuple.Tuple;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import tasks.cli.command.FlagOption;
 import tasks.cli.command.Option;
 import tasks.cli.command.Parameter;
@@ -57,27 +52,38 @@ public final class ParserUtil {
     return taskStore.allTasksMatchingCliPrefix(userInput).blockingFirst();
   }
 
-  public static void validateParsedTasks(Collection<? extends ParseResult<?>> parseResults) {
-    generateAggregateFailureMessage(parseResults)
-        .ifPresent(message -> {
-          throw new ArgumentFormatException("Unable to parse task IDs:\n" + message);
-        });
+  public static <T> T extractSuccessfulResultOrThrow(ParseResult<? extends T> parseResult) {
+    return extractSuccessfulResultsOrThrow(ImmutableList.of(parseResult)).itemAt(0);
   }
 
-  static Optional<String> generateAggregateFailureMessage(
-      Collection<? extends ParseResult<?>> parseResults) {
-    return Optional.of(
-        parseResults.stream()
-            .map(ParseResult::failureMessage)
-            .flatMap(Optional::stream)
-            .collect(toImmutableList()))
-        .filter(Countable::isPopulated)
-        .map(failureMessages -> failureMessages.stream().collect(Collectors.joining("\n")));
+  public static <T> ImmutableList<T> extractSuccessfulResultsOrThrow(
+      Collection<? extends ParseResult<? extends T>> parseResults) {
+    return Observable.fromIterable(parseResults)
+        .collectInto(
+            Tuple.of(ImmutableList.<T>builder(), ImmutableList.<String>builder()),
+            (couple, result) -> couple
+                .mapFirst(b -> maybeAdd(b, result.successResult()))
+                .mapSecond(b -> maybeAdd(b, result.failureMessage())))
+        .map(
+            couple -> couple
+                .mapFirst(ImmutableList.Builder::build)
+                .mapSecond(ImmutableList.Builder::build))
+        .doOnSuccess(couple -> throwIfPopulated(couple.second()))
+        .map(Couple::first)
+        .blockingGet();
   }
 
-  public static <T> List<T> extractSuccessfulResults(
-      Collection<? extends ParseResult<? extends T>> results) {
-    return results.stream().flatMap(result -> result.successResult().stream()).collect(toList());
+  private static <T> ImmutableList.Builder<T> maybeAdd(
+      ImmutableList.Builder<T> builder, Optional<? extends T> item) {
+    item.ifPresent(builder::add);
+    return builder;
+  }
+
+  private static void throwIfPopulated(List<? extends String> failureMessages) {
+    if (failureMessages.isPopulated()) {
+      throw new ArgumentFormatException(
+          "Unable to parse task IDs: " + failureMessages.stream().collect(joining(",", "[", "]")));
+    }
   }
 
   public static boolean getFlagPresence(CommandLine commandLine, FlagOption flagOption) {

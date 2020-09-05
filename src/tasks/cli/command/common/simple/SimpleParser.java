@@ -1,8 +1,7 @@
 package tasks.cli.command.common.simple;
 
 import static java.util.Objects.requireNonNull;
-import static tasks.cli.parser.ParserUtil.extractSuccessfulResults;
-import static tasks.cli.parser.ParserUtil.validateParsedTasks;
+import static tasks.cli.parser.ParserUtil.extractSuccessfulResultsOrThrow;
 
 import java.util.function.Function;
 import omnia.data.cache.Memoized;
@@ -38,10 +37,7 @@ public abstract class SimpleParser<T extends SimpleArguments> implements Command
       throw new ArgumentFormatException("No task IDs specified");
     }
 
-    List<? extends ParseResult<? extends Task>> parsedTasks = taskParser.value().parse(argsList);
-
-    validateParsedTasks(parsedTasks);
-
-    return constructor.apply(extractSuccessfulResults(parsedTasks));
+    return constructor.apply(
+        extractSuccessfulResultsOrThrow(taskParser.value().parse(argsList)));
   }
 }

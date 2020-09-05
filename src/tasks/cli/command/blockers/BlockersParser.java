@@ -1,10 +1,10 @@
 package tasks.cli.command.blockers;
 
 import static java.util.Objects.requireNonNull;
-import static tasks.cli.parser.ParserUtil.extractSuccessfulResults;
+import static tasks.cli.parser.ParserUtil.extractSuccessfulResultOrThrow;
 import static tasks.cli.parser.ParserUtil.getFlagPresence;
 import static tasks.cli.parser.ParserUtil.getOptionValues;
-import static tasks.cli.parser.ParserUtil.validateParsedTasks;
+import static tasks.cli.parser.ParserUtil.extractSuccessfulResultsOrThrow;
 
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
@@ -56,7 +56,7 @@ public final class BlockersParser implements CommandParser<BlockersArguments> {
     boolean isClearSet =
         getFlagPresence(commandLine, BlockersCommand.CLEAR_OPTION.value());
 
-    validateParsedTasks(
+    extractSuccessfulResultsOrThrow(
         ImmutableList.<ParseResult<?>>builder()
             .add(targetTask)
             .addAll(tasksToAdd)
@@ -64,9 +64,9 @@ public final class BlockersParser implements CommandParser<BlockersArguments> {
             .build());
 
     return new BlockersArguments(
-        targetTask.successResult().get(),
-        extractSuccessfulResults(tasksToAdd),
-        extractSuccessfulResults(tasksToRemove),
+        extractSuccessfulResultOrThrow(targetTask),
+        extractSuccessfulResultsOrThrow(tasksToAdd),
+        extractSuccessfulResultsOrThrow(tasksToRemove),
         isClearSet);
   }
 }

@@ -1,8 +1,7 @@
 package tasks.cli.command.add;
 
-import static tasks.cli.parser.ParserUtil.extractSuccessfulResults;
 import static tasks.cli.parser.ParserUtil.getOptionValues;
-import static tasks.cli.parser.ParserUtil.validateParsedTasks;
+import static tasks.cli.parser.ParserUtil.extractSuccessfulResultsOrThrow;
 
 import java.util.Optional;
 import omnia.data.cache.Memoized;
@@ -45,7 +44,8 @@ public final class AddParser implements CommandParser<AddArguments> {
     List<? extends ParseResult<? extends Task>> beforeTasks =
         taskParser.value().parse(getOptionValues(commandLine, AddCommand.BEFORE_OPTION.value()));
 
-    validateParsedTasks(
+    // Initial validation combines before and after into a nice aggregate message
+    extractSuccessfulResultsOrThrow(
         ImmutableList.<ParseResult<?>>builder()
             .addAll(afterTasks)
             .addAll(beforeTasks)
@@ -53,8 +53,8 @@ public final class AddParser implements CommandParser<AddArguments> {
 
     return new AddArguments(
         taskDescription,
-        extractSuccessfulResults(afterTasks),
-        extractSuccessfulResults(beforeTasks));
+        extractSuccessfulResultsOrThrow(afterTasks),
+        extractSuccessfulResultsOrThrow(beforeTasks));
   }
 
   private static Optional<String> extractTaskDescriptionFrom(List<String> args) {
