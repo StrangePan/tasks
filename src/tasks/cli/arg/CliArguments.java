@@ -25,6 +25,7 @@ import org.apache.commons.cli.CommandLine;
 import tasks.cli.command.add.AddCommand;
 import tasks.cli.command.blockers.BlockersCommand;
 import tasks.cli.command.common.CommonArguments;
+import tasks.cli.command.common.CommonOptions;
 import tasks.cli.command.common.CommonParser;
 import tasks.cli.command.complete.CompleteCommand;
 import tasks.cli.command.help.HelpCommand;
@@ -111,8 +112,13 @@ public final class CliArguments {
   }
 
   private static Couple<CommandLine, CommandRegistration> parseToCommandLine(Couple<List<? extends String>, CommandRegistration> argsAndCommand) {
-    return argsAndCommand.mapFirst(
-        first -> CliUtils.tryParse(first, CliUtils.toOptions(argsAndCommand.second().options())));
+    Collection<Option> commonAndSpecificOptions =
+        ImmutableSet.<Option>builder()
+            .addAll(argsAndCommand.second().options())
+            .addAll(CommonOptions.OPTIONS.value())
+            .build();
+    return argsAndCommand
+        .mapFirst(first -> CliUtils.tryParse(first, CliUtils.toOptions(commonAndSpecificOptions)));
   }
 
   private CommonArguments<?> parseToArguments(
