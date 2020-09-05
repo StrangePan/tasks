@@ -1,7 +1,7 @@
 # version 1
 # tasks
 0j6p63xvhl9s;false;Strip color codes when parsing;
-0y6dpuel9kg0;false;Add option to strip color from output;
+0y6dpuel9kg0;true;Add option to strip color from output;
 14a00nhsddz4;true;Output formatting;
 3b6ayu83gqtc;false;Create a parsing exception;
 3ga3kmzl44cg;true;Put command definition into independent packages;
