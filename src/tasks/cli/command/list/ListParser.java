@@ -16,7 +16,6 @@ public final class ListParser implements CommandParser<ListArguments> {
      * optional --blocked flag
      * optional --completed flag
      * optional --all flag
-     * optional --unblocked flag
      */
     assertNoExtraArgs(commandLine);
 
@@ -27,8 +26,8 @@ public final class ListParser implements CommandParser<ListArguments> {
         isAllSet || ParserUtil.getFlagPresence(commandLine, ListCommand.COMPLETED_OPTION.value());
     boolean isUnblockedSet =
         isAllSet
-            || (!isBlockedSet && !isCompletedSet)
-            || ParserUtil.getFlagPresence(commandLine, ListCommand.UNBLOCKED_OPTION.value());
+            || ParserUtil.getFlagPresence(commandLine, ListCommand.UNBLOCKED_OPTION.value())
+            || (!isBlockedSet && !isCompletedSet);
 
     return new ListArguments(isUnblockedSet, isBlockedSet, isCompletedSet);
   }

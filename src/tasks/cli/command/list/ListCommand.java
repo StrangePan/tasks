@@ -26,7 +26,7 @@ public final class ListCommand {
                   + "be combined with other flags.",
               NOT_REPEATABLE));
 
-  static final Memoized<FlagOption> COMPLETED_OPTION =
+  public static final Memoized<FlagOption> COMPLETED_OPTION =
       memoize(
           () -> new FlagOption(
               "completed",
@@ -43,7 +43,7 @@ public final class ListCommand {
               "List all unblocked tasks. Can be combined with other flags.",
               NOT_REPEATABLE));
 
-  static final Memoized<FlagOption> ALL_OPTION =
+  public static final Memoized<FlagOption> ALL_OPTION =
       memoize(
           () -> new FlagOption(
               "all",

@@ -28,11 +28,11 @@ public final class ListHandler implements ArgumentHandler<ListArguments> {
                 Tuple.of(
                     arguments.isUnblockedSet(),
                     "unblocked tasks:",
-                    store.allTasksWithoutOpenBlockers().firstOrError()),
+                    store.allOpenTasksWithoutOpenBlockers().firstOrError()),
                 Tuple.of(
                     arguments.isBlockedSet(),
                     "blocked tasks:",
-                    store.allTasksWithOpenBlockers().firstOrError()),
+                    store.allOpenTasksWithOpenBlockers().firstOrError()),
                 Tuple.of(
                     arguments.isCompletedSet(),
                     "completed tasks:",

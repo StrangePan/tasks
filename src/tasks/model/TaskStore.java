@@ -5,6 +5,7 @@ import io.reactivex.Flowable;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
 import java.util.function.Function;
+import omnia.data.structure.List;
 import omnia.data.structure.Set;
 
 /**
@@ -21,13 +22,15 @@ public interface TaskStore {
 
   Flowable<Set<Task>> allTasksBlockedBy(Task blockingTask);
 
-  Flowable<Set<Task>> allTasksWithoutOpenBlockers();
+  Flowable<Set<Task>> allOpenTasksWithoutOpenBlockers();
 
-  Flowable<Set<Task>> allTasksWithOpenBlockers();
+  Flowable<Set<Task>> allOpenTasksWithOpenBlockers();
 
   Flowable<Set<Task>> completedTasks();
 
   Flowable<Set<Task>> allTasksMatchingCliPrefix(String prefix);
+
+  Flowable<List<Task>> allTasksTopologicallySorted();
 
   /**
    * Attempts to create a new task and add it to the store.
