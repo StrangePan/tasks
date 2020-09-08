@@ -15,19 +15,12 @@ public final class GraphCommand {
     return COMMAND.value();
   }
 
-  static final Memoized<FlagOption> ALL_OPTION = ListCommand.ALL_OPTION;
-
-  static final Memoized<FlagOption> COMPLETED_OPTION = ListCommand.COMPLETED_OPTION;
-
   private static final Memoized<Command> COMMAND =
       memoize(
           () -> Command.builder()
               .canonicalName("graph")
               .aliases("xl")
               .parameters(ListCommand.registration().parameters())
-              .options(ImmutableList.of(COMPLETED_OPTION.value(), ALL_OPTION.value()))
-              .helpDocumentation(
-                  "Prints a list of tasks in a graph format. By default, only lists uncompleted "
-                      + "tasks. Various flags are available to list only completed tasks or all "
-                      + "tasks."));
+              .options(ImmutableList.empty())
+              .helpDocumentation("Prints all tasks in graph format."));
 }

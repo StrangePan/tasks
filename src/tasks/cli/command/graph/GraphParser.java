@@ -18,11 +18,6 @@ public final class GraphParser implements CommandParser<GraphArguments> {
      */
     assertNoExtraArgs(commandLine);
 
-    boolean isAllSet = ParserUtil.getFlagPresence(commandLine, GraphCommand.ALL_OPTION.value());
-    boolean isCompletedSet =
-        isAllSet || ParserUtil.getFlagPresence(commandLine, GraphCommand.COMPLETED_OPTION.value());
-    boolean isUncompletedSet = isAllSet || !isCompletedSet;
-
-    return new GraphArguments(isCompletedSet, isUncompletedSet);
+    return new GraphArguments();
   }
 }

@@ -5,7 +5,9 @@ import static java.util.Objects.requireNonNull;
 import io.reactivex.Single;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
+import omnia.data.structure.List;
 import tasks.cli.handler.ArgumentHandler;
+import tasks.model.Task;
 import tasks.model.TaskStore;
 
 /** Business logic for the Graph command. */
@@ -18,6 +20,13 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
 
   @Override
   public Single<Output> handle(GraphArguments arguments) {
-    return null;
+    return taskStore.value()
+        .allTasksTopologicallySorted()
+        .firstOrError()
+        .map(this::renderGraph);
+  }
+
+  private Output renderGraph(List<Task> graph) {
+    return Output.empty();
   }
 }
