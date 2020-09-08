@@ -16,6 +16,9 @@ import tasks.cli.command.blockers.BlockersParser;
 import tasks.cli.command.complete.CompleteCommand;
 import tasks.cli.command.complete.CompleteHandler;
 import tasks.cli.command.complete.CompleteParser;
+import tasks.cli.command.graph.GraphCommand;
+import tasks.cli.command.graph.GraphHandler;
+import tasks.cli.command.graph.GraphParser;
 import tasks.cli.command.help.HelpCommand;
 import tasks.cli.command.help.HelpHandler;
 import tasks.cli.command.help.HelpParser;
@@ -65,6 +68,10 @@ public final class Features {
                 CompleteCommand.registration(),
                 () -> new CompleteParser(taskListParser),
                 () -> new CompleteHandler(taskStore)),
+            new Feature<>(
+                GraphCommand.registration(),
+                GraphParser::new,
+                () -> new GraphHandler(taskStore)),
             helpFeature,
             new Feature<>(
                 InfoCommand.registration(),
