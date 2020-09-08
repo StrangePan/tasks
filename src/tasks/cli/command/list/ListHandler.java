@@ -36,7 +36,7 @@ public final class ListHandler implements ArgumentHandler<ListArguments> {
                 Tuple.of(
                     arguments.isCompletedSet(),
                     "completed tasks:",
-                    store.completedTasks().firstOrError())))
+                    store.allCompletedTasks().firstOrError())))
         .filter(Triple::first)
         .map(Triple::dropFirst)
         .concatMapEager(

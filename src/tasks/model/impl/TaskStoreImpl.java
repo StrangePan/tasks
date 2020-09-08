@@ -116,8 +116,13 @@ public final class TaskStoreImpl implements TaskStore {
   }
 
   @Override
-  public Flowable<Set<Task>> completedTasks() {
+  public Flowable<Set<Task>> allCompletedTasks() {
     return tasksFromNodesMatching(this::isCompleted);
+  }
+
+  @Override
+  public Flowable<Set<Task>> allOpenTasks() {
+    return tasksFromNodesMatching(n -> !isCompleted(n));
   }
 
   @Override

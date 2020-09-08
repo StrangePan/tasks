@@ -26,7 +26,9 @@ public interface TaskStore {
 
   Flowable<Set<Task>> allOpenTasksWithOpenBlockers();
 
-  Flowable<Set<Task>> completedTasks();
+  Flowable<Set<Task>> allCompletedTasks();
+
+  Flowable<Set<Task>> allOpenTasks();
 
   Flowable<Set<Task>> allTasksMatchingCliPrefix(String prefix);
 
