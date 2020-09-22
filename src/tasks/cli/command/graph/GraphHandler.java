@@ -2,6 +2,7 @@ package tasks.cli.command.graph;
 
 import static java.util.Objects.requireNonNull;
 
+import io.reactivex.Observable;
 import io.reactivex.Single;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
@@ -23,10 +24,13 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
     return taskStore.value()
         .allTasksTopologicallySorted()
         .firstOrError()
-        .map(this::renderGraph);
+        .flatMap(this::renderGraph);
   }
 
-  private Output renderGraph(List<Task> graph) {
-    return Output.empty();
+  private Single<Output> renderGraph(List<Task> graph) {
+    return Observable.fromIterable(graph)
+        .map(Task::render)
+        .collectInto(Output.builder(), Output.Builder::appendLine)
+        .map(Output.Builder::build);
   }
 }
