@@ -47,11 +47,10 @@ public final class TaskStoreImpl implements TaskStore {
     taskData = WritableObservableMap.copyOf(loadedData.second());
   }
 
-  Maybe<Flowable<TaskData>> lookUp(TaskId id) {
-    return Single.just(taskData.valueOf(id))
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .map(Flowable::just);
+  Flowable<Optional<TaskData>> lookUp(TaskId id) {
+    return taskData.observe()
+        .states()
+        .map(state -> state.valueOf(id));
   }
 
   @Override

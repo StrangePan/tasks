@@ -10,7 +10,7 @@ aiv2qznibj7k;true;Remove amend command;
 booswtafq3nk;false;Add help topic: tutorial;
 cystb0f3sk5c;true;Move command registration to individual command definition classes;
 e3bpgvlmhvy8;true;Add observable map;
-h5boqxunqmtc;false;Make task properties observable;
+h5boqxunqmtc;true;Make task properties observable;
 h5kiwq5wnb40;true;Output task ID when creating tasks;
 kz3kwaxll8n4;true;Add reword command;
 lzvv3qy4wa9s;true;Move parsers out of arguments;
