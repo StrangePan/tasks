@@ -25,7 +25,6 @@ final class TaskFileSource {
   private static final String END_OF_LINE = "\n";
   private static final String TASK_FIELD_DELIMITER = ";";
   private static final String TASK_ID_DELIMITER = ",";
-  private static final int ID_RADIX = Character.MAX_RADIX;
 
   private final File file;
 
@@ -120,7 +119,7 @@ final class TaskFileSource {
       TaskId id = parseId(fields[0]);
       boolean completed = Boolean.parseBoolean(fields[1]);
       String label = unescapeLabel(fields[2]);
-      tasks.put(id, new TaskData(completed, label));
+      tasks.putMapping(id, new TaskData(completed, label));
       graph.addNode(id);
       // TODO(vc0gqs1jstmo): ensure unique ids
     }

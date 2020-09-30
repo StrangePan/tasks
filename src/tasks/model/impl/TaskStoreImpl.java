@@ -31,6 +31,7 @@ import omnia.data.structure.mutable.MutableMap;
 import omnia.data.structure.mutable.MutableSet;
 import omnia.data.structure.mutable.Stack;
 import omnia.data.structure.observable.writable.WritableObservableDirectedGraph;
+import omnia.data.structure.observable.writable.WritableObservableMap;
 import omnia.data.structure.tuple.Couple;
 import omnia.data.structure.tuple.Tuple;
 import tasks.io.File;
@@ -44,21 +45,20 @@ public final class TaskStoreImpl implements TaskStore {
 
   private final TaskFileSource fileSource;
   private final WritableObservableDirectedGraph<TaskId> taskGraph;
-  private final MutableMap<TaskId, TaskData> taskData;
+  private final WritableObservableMap<TaskId, TaskData> taskData;
 
   public TaskStoreImpl(String filePath) {
     this.fileSource = new TaskFileSource(File.fromPath(filePath));
     Couple<DirectedGraph<TaskId>, Map<TaskId, TaskData>> loadedData =
         fileSource.readFromFile().blockingGet();
     taskGraph = WritableObservableDirectedGraph.copyOf(loadedData.first());
-    taskData = HashMap.copyOf(loadedData.second());
+    taskData = WritableObservableMap.copyOf(loadedData.second());
   }
 
-  Maybe<Flowable<TaskData>> lookUp(TaskId id) {
-    return Single.just(taskData.valueOf(id))
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .map(Flowable::just);
+  Flowable<Optional<TaskData>> lookUp(TaskId id) {
+    return taskData.observe()
+        .states()
+        .map(state -> state.valueOf(id));
   }
 
   @Override

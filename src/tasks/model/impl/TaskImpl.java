@@ -90,9 +90,10 @@ final class TaskImpl implements Task {
 
   @Override
   public Flowable<Boolean> isCompleted() {
-    return store().lookUp(id)
-        .toSingle()
-        .flatMapPublisher(f -> f)
+    return store()
+        .lookUp(id)
+        .takeWhile(Optional::isPresent)
+        .map(Optional::get)
         .map(TaskData::isCompleted);
   }
 
@@ -111,9 +112,10 @@ final class TaskImpl implements Task {
 
   @Override
   public Flowable<String> label() {
-    return store().lookUp(id)
-        .toSingle()
-        .flatMapPublisher(f -> f)
+    return store()
+        .lookUp(id)
+        .takeWhile(Optional::isPresent)
+        .map(Optional::get)
         .map(TaskData::label);
   }
 
