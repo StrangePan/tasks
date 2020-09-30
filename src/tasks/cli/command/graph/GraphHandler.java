@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import io.reactivex.Observable;
 import io.reactivex.Single;
+import omnia.algorithm.GraphAlgorithms;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
@@ -22,7 +23,8 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
   @Override
   public Single<Output> handle(GraphArguments arguments) {
     return taskStore.value()
-        .allTasksTopologicallySorted()
+        .taskGraph()
+        .map(GraphAlgorithms::topologicallySort)
         .firstOrError()
         .flatMap(this::renderGraph);
   }

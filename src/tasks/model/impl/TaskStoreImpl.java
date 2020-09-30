@@ -9,7 +9,6 @@ import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
-import java.util.Iterator;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -17,19 +16,14 @@ import omnia.algorithm.GraphAlgorithms;
 import omnia.data.structure.DirectedGraph;
 import omnia.data.structure.DirectedGraph.DirectedNode;
 import omnia.data.structure.Graph;
-import omnia.data.structure.List;
 import omnia.data.structure.Map;
 import omnia.data.structure.Set;
-import omnia.data.structure.immutable.ImmutableList;
+import omnia.data.structure.immutable.ImmutableDirectedGraph;
 import omnia.data.structure.immutable.ImmutableMap;
 import omnia.data.structure.immutable.ImmutableSet;
-import omnia.data.structure.mutable.ArrayStack;
 import omnia.data.structure.mutable.HashMap;
-import omnia.data.structure.mutable.HashSet;
 import omnia.data.structure.mutable.MutableDirectedGraph;
 import omnia.data.structure.mutable.MutableMap;
-import omnia.data.structure.mutable.MutableSet;
-import omnia.data.structure.mutable.Stack;
 import omnia.data.structure.observable.writable.WritableObservableDirectedGraph;
 import omnia.data.structure.observable.writable.WritableObservableMap;
 import omnia.data.structure.tuple.Couple;
@@ -139,80 +133,10 @@ public final class TaskStoreImpl implements TaskStore {
   }
 
   @Override
-  public Flowable<List<Task>> allTasksTopologicallySorted() {
+  public Flowable<DirectedGraph<Task>> taskGraph() {
     return taskGraph.observe()
         .states()
-        .map(TaskStoreImpl::topologicallySort)
-        .map(contents -> contents.stream().map(this::toTask).collect(toImmutableList()));
-  }
-
-  /**
-   * Traverses the given graph, producing a list of its nodes sorted topologically such that for
-   * every edge AB where A is the node at the edge start and B is the node at the edge end, A
-   * will precede B in the result (A will have a lower index than B).
-   *
-   * <p>If the given graph is disconnected, then each subgraph will be locally grouped in the
-   * result.</p>
-   *
-   * @param graph The graph whose nodes to topologically sort. Must be acyclic.
-   * @return an ordered list containing all nodes from the given graph sorted topologically
-   * @throws IllegalArgumentException if the graph is given graph is cyclic
-   */
-  private static <T> List<T> topologicallySort(DirectedGraph<T> graph) {
-
-    // iterative depth-first search with back tracking
-    ImmutableList.Builder<T> result = ImmutableList.builder();
-    MutableSet<DirectedNode<T>> itemsInResult = HashSet.create();
-
-    Stack<Couple<DirectedNode<T>, Iterator<? extends DirectedNode<T>>>> stack =
-        ArrayStack.create();
-    MutableSet<DirectedNode<T>> itemsInStack = HashSet.create();
-
-    // all starting nodes
-    for (DirectedNode<T> rootNode : graph.nodes()) {
-      if (rootNode.outgoingEdges().isPopulated()) {
-        continue;
-      }
-      stack.push(Tuple.of(rootNode, rootNode.predecessors().iterator()));
-      itemsInStack.add(rootNode);
-
-      // core loop
-      for (
-          Optional<Couple<DirectedNode<T>, Iterator<? extends DirectedNode<T>>>> frame =
-              stack.peek();
-          frame.isPresent(); // base case
-          frame = stack.peek()) {
-        Iterator<? extends DirectedNode<T>> iterator = frame.get().second();
-
-        if (iterator.hasNext()) {
-          DirectedNode<T> next = iterator.next();
-
-          // validation: cyclic graph detection
-          if (itemsInStack.contains(next)) {
-            throw new IllegalArgumentException(
-                "graph must be acyclic to perform a topological sort");
-          }
-
-          // deduplication: helps reduce complexity, corrects output
-          if (!itemsInResult.contains(next)) {
-
-            // put successors in the stack for future processing
-            stack.push(Tuple.of(next, next.predecessors().iterator()));
-            itemsInStack.add(next);
-          }
-        } else {
-          DirectedNode<T> current = frame.get().first();
-
-          // no other successors, add to result
-          result.add(current.item());
-          itemsInResult.add(current);
-          stack.pop();
-          itemsInStack.remove(current);
-        }
-      }
-    }
-
-    return result.build();
+        .map(this::toTaskGraph);
   }
 
   private boolean isCompleted(Graph.Node<? extends TaskId> node) {
@@ -377,6 +301,14 @@ public final class TaskStoreImpl implements TaskStore {
 
   private Task toTask(TaskId id) {
     return new TaskImpl(this, id);
+  }
+
+  private ImmutableDirectedGraph<Task> toTaskGraph(DirectedGraph<TaskId> idGraph) {
+    ImmutableDirectedGraph.Builder<Task> taskGraph = ImmutableDirectedGraph.builder();
+    idGraph.nodes().forEach(node -> taskGraph.addNode(toTask(node.item())));
+    idGraph.edges().forEach(
+        edge -> taskGraph.addEdge(toTask(edge.start().item()), toTask(edge.end().item())));
+    return taskGraph.build();
   }
 
   private void maybeApplyMutator(TaskMutator mutator) {

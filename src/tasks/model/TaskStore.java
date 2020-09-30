@@ -5,6 +5,7 @@ import io.reactivex.Flowable;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
 import java.util.function.Function;
+import omnia.data.structure.DirectedGraph;
 import omnia.data.structure.List;
 import omnia.data.structure.Set;
 
@@ -32,7 +33,7 @@ public interface TaskStore {
 
   Flowable<Set<Task>> allTasksMatchingCliPrefix(String prefix);
 
-  Flowable<List<Task>> allTasksTopologicallySorted();
+  Flowable<DirectedGraph<Task>> taskGraph();
 
   /**
    * Attempts to create a new task and add it to the store.
