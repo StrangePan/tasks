@@ -9,12 +9,13 @@
 aiv2qznibj7k;true;Remove amend command;
 booswtafq3nk;false;Add help topic: tutorial;
 cystb0f3sk5c;true;Move command registration to individual command definition classes;
-fcb8wnt4twjk;false;Omit completed tasks when reporting freshly unblocked tasks;
 e3bpgvlmhvy8;true;Add observable map;
+fcb8wnt4twjk;false;Omit completed tasks when reporting freshly unblocked tasks;
 h5boqxunqmtc;true;Make task properties observable;
 h5kiwq5wnb40;true;Output task ID when creating tasks;
 kz3kwaxll8n4;true;Add reword command;
 lzvv3qy4wa9s;true;Move parsers out of arguments;
+tw621f1euolc;false;Add tests for topological sort;
 ufklb65rjm68;true;Validate registered commands;
 vc0gqs1jstmo;false;Validate graph when parsing;
 vsyn83a6ozk0;false;Add help topic: blocking tasks;
