@@ -4,6 +4,7 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.Objects.requireNonNull;
 import static omnia.algorithm.GraphAlgorithms.topologicallySort;
+import static omnia.algorithm.ListAlgorithms.reverse;
 import static omnia.data.stream.Collectors.toImmutableList;
 import static omnia.data.stream.Collectors.toImmutableSet;
 
@@ -108,10 +109,12 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
   private Output renderGraph(
       DirectedGraph<Task> taskGraph, List<Task> taskList, Map<Task, Integer> taskColumns) {
 
+    // NOTE: taskList has blockers at the start / top and blockees at the end / bottom.
+
     Output.Builder output = Output.builder();
     int unresolvedEdges = 0;
 
-    for (Task task : taskList) {
+    for (Task task : reverse(taskList)) {
       int taskColumn = taskColumns.valueOf(task).get();
 
       // the line containing the task info
