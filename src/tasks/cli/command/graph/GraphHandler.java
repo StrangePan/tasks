@@ -4,11 +4,14 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.Objects.requireNonNull;
 import static omnia.algorithm.GraphAlgorithms.topologicallySort;
-import static omnia.algorithm.ListAlgorithms.reverse;
 import static omnia.data.stream.Collectors.toImmutableList;
 import static omnia.data.stream.Collectors.toImmutableSet;
+import static tasks.util.rx.Observables.incrementingInteger;
+import static tasks.util.rx.Observables.toImmutableMap;
 
+import io.reactivex.Observable;
 import io.reactivex.Single;
+import java.util.Comparator;
 import java.util.Optional;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
@@ -17,6 +20,7 @@ import omnia.data.structure.DirectedGraph.DirectedNode;
 import omnia.data.structure.List;
 import omnia.data.structure.Map;
 import omnia.data.structure.Set;
+import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableMap;
 import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.HashMap;
@@ -64,6 +68,13 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
   private <T> Map<T, Integer> assignColumns(DirectedGraph<T> taskGraph, List<T> taskList) {
     MutableMap<T, Integer> assignedColumns = HashMap.create();
     MutableSet<T> unresolvedSuccessors = HashSet.create();
+    ImmutableMap<T, Integer> topologicalIndexes =
+        Observable.zip(
+                Observable.fromIterable(taskList),
+                incrementingInteger(),
+                Tuple::of)
+            .to(toImmutableMap(couple -> couple.first(), couple -> couple.second()))
+            .blockingGet();
 
     for (T taskToAssign : taskList) {
       int assignedColumn =
@@ -77,14 +88,18 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
 
       unresolvedSuccessors.remove(taskToAssign);
 
-      ImmutableSet<T> successorsToAssign =
+      ImmutableList<T> successorsToAssign =
           taskGraph.nodeOf(taskToAssign)
               .map(DirectedNode::successors)
               .orElse(ImmutableSet.empty())
               .stream()
               .map(DirectedNode::item)
               .filter(successor -> assignedColumns.valueOf(successor).isEmpty())
-              .collect(toImmutableSet());
+              .sorted(
+                  Comparator.<T, Integer>comparing(
+                          item -> topologicalIndexes.valueOf(item).orElse(0))
+                      .reversed())
+              .collect(toImmutableList());
 
       int successorColumn = assignedColumn;
       for (T successor : successorsToAssign) {
