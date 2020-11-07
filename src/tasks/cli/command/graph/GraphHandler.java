@@ -53,10 +53,11 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
   }
 
   /**
-   * Assigns columns to each graph node for CLI rendering. Does so by linearly traversing the
-   * topologically sorted list of nodes, looking ahead at the number of outgoing edges for each
-   * node, tracking the number of unresolved edges, and assigning columns so that edges do not
-   * overlap any nodes.
+   * Assigns columns to each graph node for CLI rendering.
+   *
+   * <p>Columns are assigned eagerly, favoring smaller indexes. Linearly traverses the topological
+   * list of nodes and assigns columns to each node's successors if the successor doesn't yet have
+   * a column assignment.
    *
    * @param taskGraph The graph containing the edges for each item in the task list. Must contain
    *     every node in {@code taskList}.
