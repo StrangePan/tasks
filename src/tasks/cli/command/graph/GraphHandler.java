@@ -48,59 +48,50 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
         .map(triple -> renderGraph(triple.first(), triple.second(), triple.third()));
   }
 
-  private Map<Task, Integer> assignColumns(DirectedGraph<Task> taskGraph, List<Task> taskList) {
-    MutableMap<Task, Integer> assignedColumns = HashMap.create();
-    MutableSet<Task> unresolvedSuccessors = HashSet.create();
+  /**
+   * Assigns columns to each graph node for CLI rendering. Does so by linearly traversing the
+   * topologically sorted list of nodes, looking ahead at the number of outgoing edges for each
+   * node, tracking the number of unresolved edges, and assigning columns so that edges do not
+   * overlap any nodes.
+   *
+   * @param taskGraph The graph containing the edges for each item in the task list. Must contain
+   *     every node in {@code taskList}.
+   * @param taskList a topologically sorted list of tasks to assign columns for, where each node
+   *     precedes its successors
+   * @return A mapping of column assignments for each node, where 0 is the first column. Every node
+   *     passed into {@code taskList} will have an entry in the result.
+   */
+  private <T> Map<T, Integer> assignColumns(DirectedGraph<T> taskGraph, List<T> taskList) {
+    MutableMap<T, Integer> assignedColumns = HashMap.create();
+    MutableSet<T> unresolvedSuccessors = HashSet.create();
 
-    for (Task taskToAssign : taskList) {
-      Set<? extends DirectedNode<Task>> predecessors =
-          taskGraph.nodeOf(taskToAssign).get().predecessors();
+    for (T taskToAssign : taskList) {
+      int assignedColumn =
+          assignedColumns.putMappingIfAbsent(
+              taskToAssign,
+              // scan for the first available column not already claimed by a node later in the list
+              () ->
+                  unresolvedSuccessors.stream().map(assignedColumns::valueOf)
+                      .flatMap(Optional::stream)
+                      .reduce(0, (candidate, occupied) -> Math.max(candidate, occupied + 1)));
 
-      if (predecessors.isPopulated()) {
+      unresolvedSuccessors.remove(taskToAssign);
 
-        Task predecessorWithMinColumn =
-            predecessors.stream()
-                .map(DirectedNode::item)
-                .reduce(
-                    (p1, p2) ->
-                        assignedColumns.valueOf(p1).get() < assignedColumns.valueOf(p2).get()
-                            ? p1
-                            : p2)
-                .get();
-
-        int columnOfPredecessor = assignedColumns.valueOf(predecessorWithMinColumn).get();
-
-        int resolvedEdgesOfPredecessor =
-            taskGraph.nodeOf(predecessorWithMinColumn)
-                .map(DirectedNode::successors)
-                .orElse(ImmutableSet.empty())
-                .stream()
-                .map(DirectedNode::item)
-                .reduce(
-                    0,
-                    (sum, successor) ->
-                        sum + (assignedColumns.valueOf(successor).isPresent() ? 1 : 0),
-                    Integer::sum);
-
-        int assignedColumn = columnOfPredecessor + resolvedEdgesOfPredecessor;
-
-        unresolvedSuccessors.remove(taskToAssign);
-        assignedColumns.putMapping(taskToAssign, assignedColumn);
-
-      } else {
-        int assignedColumn = unresolvedSuccessors.count();
-
-        unresolvedSuccessors.remove(taskToAssign);
-        assignedColumns.putMapping(taskToAssign, assignedColumn);
-      }
-
-      unresolvedSuccessors.addAll(
+      ImmutableSet<T> successorsToAssign =
           taskGraph.nodeOf(taskToAssign)
               .map(DirectedNode::successors)
               .orElse(ImmutableSet.empty())
               .stream()
               .map(DirectedNode::item)
-              .collect(toImmutableList()));
+              .filter(successor -> assignedColumns.valueOf(successor).isEmpty())
+              .collect(toImmutableSet());
+
+      int successorColumn = assignedColumn;
+      for (T successor : successorsToAssign) {
+        assignedColumns.putMapping(successor, successorColumn);
+        unresolvedSuccessors.add(successor);
+        successorColumn++;
+      }
     }
 
     return ImmutableMap.copyOf(assignedColumns);
