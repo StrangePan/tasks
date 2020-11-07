@@ -105,7 +105,7 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
     Output.Builder output = Output.builder();
     int unresolvedEdges = 0;
 
-    for (Task task : reverse(taskList)) {
+    for (Task task : taskList) {
       int taskColumn = taskColumns.valueOf(task).get();
 
       // the line containing the task info

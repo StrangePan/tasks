@@ -81,10 +81,10 @@ public final class TaskStoreImpl implements TaskStore {
     return taskGraph.observe()
         .states()
         .map(graph -> graph.nodeOf(blockedTaskImpl.id()))
-        .map(optionalNode ->
-            optionalNode.map(DirectedNode::successors).orElse(Set.empty()))
-        .map(successors ->
-            successors.stream().map(Graph.Node::item).map(this::toTask).collect(toSet()));
+        .map(optionalNode -> optionalNode.map(DirectedNode::predecessors).orElse(Set.empty()))
+        .map(
+            predecessors ->
+                predecessors.stream().map(Graph.Node::item).map(this::toTask).collect(toSet()));
   }
 
   @Override
@@ -93,10 +93,10 @@ public final class TaskStoreImpl implements TaskStore {
     return taskGraph.observe()
         .states()
         .map(graph -> graph.nodeOf(blockingTaskImpl.id()))
-        .map(optionalNode ->
-            optionalNode.map(DirectedNode::predecessors).orElse(Set.empty()))
-        .map(predecessors ->
-            predecessors.stream().map(Graph.Node::item).map(this::toTask).collect(toSet()));
+        .map(optionalNode -> optionalNode.map(DirectedNode::successors).orElse(Set.empty()))
+        .map(
+            successors ->
+                successors.stream().map(Graph.Node::item).map(this::toTask).collect(toSet()));
   }
 
   @Override
@@ -203,8 +203,8 @@ public final class TaskStoreImpl implements TaskStore {
       TaskBuilderImpl builder) {
     taskData.putMapping(id, data);
     taskGraph.addNode(id);
-    builder.blockingTasks().forEach(blockingTask -> taskGraph.addEdge(id, blockingTask));
-    builder.blockedTasks().forEach(blockedTask -> taskGraph.addEdge(blockedTask, id));
+    builder.blockingTasks().forEach(blockingTask -> taskGraph.addEdge(blockingTask, id));
+    builder.blockedTasks().forEach(blockedTask -> taskGraph.addEdge(id, blockedTask));
   }
 
   private static void assertIsValid(
@@ -366,27 +366,27 @@ public final class TaskStoreImpl implements TaskStore {
 
     if (mutatorImpl.overwriteBlockingTasks()) {
       taskGraph.nodeOf(id)
-          .map(DirectedNode::outgoingEdges)
-          .map(ImmutableSet::copyOf)
-          .orElse(ImmutableSet.empty())
-          .forEach(edge -> taskGraph.removeEdge(edge.start(), edge.end()));
-    }
-    mutatorImpl.blockingTasksToAdd()
-        .forEach(blockingId -> taskGraph.addEdge(id, blockingId));
-    mutatorImpl.blockingTasksToRemove()
-        .forEach(blockingId -> taskGraph.removeEdge(id, blockingId));
-
-    if (mutatorImpl.overwriteBlockedTasks()) {
-      taskGraph.nodeOf(id)
           .map(DirectedNode::incomingEdges)
           .map(ImmutableSet::copyOf)
           .orElse(ImmutableSet.empty())
           .forEach(edge -> taskGraph.removeEdge(edge.start(), edge.end()));
     }
+    mutatorImpl.blockingTasksToAdd()
+        .forEach(blockingId -> taskGraph.addEdge(blockingId, id));
+    mutatorImpl.blockingTasksToRemove()
+        .forEach(blockingId -> taskGraph.removeEdge(blockingId, id));
+
+    if (mutatorImpl.overwriteBlockedTasks()) {
+      taskGraph.nodeOf(id)
+          .map(DirectedNode::outgoingEdges)
+          .map(ImmutableSet::copyOf)
+          .orElse(ImmutableSet.empty())
+          .forEach(edge -> taskGraph.removeEdge(edge.start(), edge.end()));
+    }
     mutatorImpl.blockedTasksToAdd()
-        .forEach(blockedId -> taskGraph.addEdge(blockedId, id));
+        .forEach(blockedId -> taskGraph.addEdge(id, blockedId));
     mutatorImpl.blockedTasksToRemove()
-        .forEach(blockedId -> taskGraph.removeEdge(blockedId, id));
+        .forEach(blockedId -> taskGraph.removeEdge(id, blockedId));
   }
 
   @Override
