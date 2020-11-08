@@ -1,4 +1,4 @@
-package tasks.cli.command.reopen;
+package tasks.cli.feature.reopen;
 
 import static omnia.data.cache.Memoized.memoize;
 import static tasks.cli.command.Parameter.Repeatable.REPEATABLE;

@@ -1,4 +1,4 @@
-package tasks.cli.command.reopen;
+package tasks.cli.feature.reopen;
 
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;

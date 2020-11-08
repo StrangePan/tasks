@@ -1,4 +1,4 @@
-package tasks.cli.command.reopen;
+package tasks.cli.feature.reopen;
 
 import omnia.data.structure.List;
 import tasks.cli.command.common.simple.SimpleArguments;

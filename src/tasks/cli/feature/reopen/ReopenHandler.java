@@ -1,4 +1,4 @@
-package tasks.cli.command.reopen;
+package tasks.cli.feature.reopen;
 
 import static java.util.Objects.requireNonNull;
 import static tasks.cli.handler.HandlerUtil.printIfPopulated;
