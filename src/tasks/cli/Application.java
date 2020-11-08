@@ -7,8 +7,8 @@ import io.reactivex.Single;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
-import tasks.cli.bindings.Feature;
-import tasks.cli.bindings.Features;
+import tasks.cli.feature.Feature;
+import tasks.cli.feature.Features;
 import tasks.model.impl.TaskStoreImpl;
 
 final class Application {
