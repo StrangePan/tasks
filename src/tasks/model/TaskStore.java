@@ -67,11 +67,21 @@ public interface TaskStore {
   Completable deleteTask(Task task);
 
   /**
-   * Attempts to save the the task store's contents to persistent storage.
+   * Attempts to save the task store's contents to persistent storage.
    *
    * @return A {@link Completable} that completes when the contents of the store have been
    *     been successfully committed to persistent storage, or emits an error if the operation
    *     failed for any reason, including an {@link java.io.IOException}.
    */
   Completable writeToDisk();
+
+  /**
+   * Attempts to save the task store's contents to persistent storage and cease accepting mutations
+   * or emitting results. Completes any outstanding streams, disposing their subscriptions.
+   *
+   * @return A {@link Completable} that completes when the store has completely shut down, including
+   *     committing any contents to persistent storage, or emits an error if the operation
+   *     failed for any reason, including an {@link java.io.IOException}.
+   */
+  Completable shutdown();
 }

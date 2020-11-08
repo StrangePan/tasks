@@ -5,10 +5,13 @@ import static omnia.data.stream.Collectors.toImmutableList;
 import static omnia.data.stream.Collectors.toImmutableSet;
 import static omnia.data.stream.Collectors.toSet;
 
+import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Maybe;
+import io.reactivex.Observable;
 import io.reactivex.Single;
+import io.reactivex.subjects.CompletableSubject;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -34,12 +37,18 @@ import tasks.model.TaskBuilder;
 import tasks.model.TaskMutator;
 import tasks.model.TaskStore;
 
-/** This is NOT thread-safe. */
+/** This is currently NOT thread-safe. */
 public final class TaskStoreImpl implements TaskStore {
+
+  private final CompletableSubject isShutdown = CompletableSubject.create();
+  private final Completable isShutdownComplete;
 
   private final TaskFileSource fileSource;
   private final WritableObservableDirectedGraph<TaskId> taskGraph;
   private final WritableObservableMap<TaskId, TaskData> taskData;
+
+  private final Observable<Flowable<DirectedGraph<TaskId>>> currentTaskGraphSource;
+  private final Observable<Flowable<Map<TaskId, TaskData>>> currentTaskDataSource;
 
   public TaskStoreImpl(String filePath) {
     this.fileSource = new TaskFileSource(File.fromPath(filePath));
@@ -47,19 +56,36 @@ public final class TaskStoreImpl implements TaskStore {
         fileSource.readFromFile().blockingGet();
     taskGraph = WritableObservableDirectedGraph.copyOf(loadedData.first());
     taskData = WritableObservableMap.copyOf(loadedData.second());
+
+    currentTaskGraphSource = selectWhileRunning(taskGraph.observe().states());
+    currentTaskDataSource = selectWhileRunning(taskData.observe().states());
+
+    isShutdownComplete = isShutdown.hide().andThen(writeToDisk()).cache();
+  }
+
+  private <T> Observable<Flowable<T>> selectWhileRunning(Flowable<? extends T> starter) {
+    return Observable.just(starter.map(i -> (T) i))
+        .concatWith(isShutdown.hide().andThen(Observable.just(Flowable.empty())))
+        .replay(1)
+        .autoConnect(0);
+  }
+
+  private Flowable<DirectedGraph<TaskId>> observeTaskGraph() {
+    return currentTaskGraphSource.toFlowable(BackpressureStrategy.LATEST).switchMap(f -> f);
+  }
+
+  private Flowable<Map<TaskId, TaskData>> observeTaskData() {
+    return currentTaskDataSource.toFlowable(BackpressureStrategy.LATEST).switchMap(f -> f);
   }
 
   Flowable<Optional<TaskData>> lookUp(TaskId id) {
-    return taskData.observe()
-        .states()
-        .map(state -> state.valueOf(id));
+    return observeTaskData().map(state -> state.valueOf(id));
   }
 
   @Override
   public Maybe<Task> lookUpById(long id) {
-    return taskGraph.observe()
-        .states()
-        .firstOrError()
+    return observeTaskGraph()
+        .firstElement()
         .map(graph -> graph.nodeOf(new TaskId(id)))
         .filter(Optional::isPresent)
         .map(Optional::get)
@@ -69,8 +95,7 @@ public final class TaskStoreImpl implements TaskStore {
 
   @Override
   public Flowable<Set<Task>> allTasks() {
-    return taskGraph.observe()
-        .states()
+    return observeTaskGraph()
         .map(Graph::contents)
         .map(contents -> contents.stream().map(this::toTask).collect(toSet()));
   }
@@ -78,8 +103,7 @@ public final class TaskStoreImpl implements TaskStore {
   @Override
   public Flowable<Set<Task>> allTasksBlocking(Task blockedTask) {
     TaskImpl blockedTaskImpl = validateTask(blockedTask);
-    return taskGraph.observe()
-        .states()
+    return observeTaskGraph()
         .map(graph -> graph.nodeOf(blockedTaskImpl.id()))
         .map(optionalNode -> optionalNode.map(DirectedNode::predecessors).orElse(Set.empty()))
         .map(
@@ -90,8 +114,7 @@ public final class TaskStoreImpl implements TaskStore {
   @Override
   public Flowable<Set<Task>> allTasksBlockedBy(Task blockingTask) {
     TaskImpl blockingTaskImpl = validateTask(blockingTask);
-    return taskGraph.observe()
-        .states()
+    return observeTaskGraph()
         .map(graph -> graph.nodeOf(blockingTaskImpl.id()))
         .map(optionalNode -> optionalNode.map(DirectedNode::successors).orElse(Set.empty()))
         .map(
@@ -122,8 +145,7 @@ public final class TaskStoreImpl implements TaskStore {
   @Override
   public Flowable<Set<Task>> allTasksMatchingCliPrefix(String prefix) {
     requireNonNull(prefix);
-    return taskGraph.observe()
-        .states()
+    return observeTaskGraph()
         .map(Graph::contents)
         .map(contents ->
             contents.stream()
@@ -134,9 +156,7 @@ public final class TaskStoreImpl implements TaskStore {
 
   @Override
   public Flowable<DirectedGraph<Task>> taskGraph() {
-    return taskGraph.observe()
-        .states()
-        .map(this::toTaskGraph);
+    return observeTaskGraph().map(this::toTaskGraph);
   }
 
   private boolean isCompleted(Graph.Node<? extends TaskId> node) {
@@ -153,8 +173,7 @@ public final class TaskStoreImpl implements TaskStore {
 
   private Flowable<Set<Task>> tasksFromNodesMatching(
       Predicate<? super DirectedNode<? extends TaskId>> filter) {
-    return taskGraph.observe()
-        .states()
+    return observeTaskGraph()
         .map(DirectedGraph::nodes)
         .map(Set::stream)
         .map(stream ->
@@ -404,10 +423,15 @@ public final class TaskStoreImpl implements TaskStore {
   @Override
   public Completable writeToDisk() {
     return Single.zip(
-            taskGraph.observe().states().firstOrError(),
-            Single.fromCallable(() -> ImmutableMap.copyOf(taskData)),
+            observeTaskGraph().firstOrError(),
+            observeTaskData().firstOrError(),
             Tuple::of)
         .flatMapCompletable(fileSource::writeToFile)
         .cache();
+  }
+
+  @Override
+  public Completable shutdown() {
+    return isShutdownComplete;
   }
 }
