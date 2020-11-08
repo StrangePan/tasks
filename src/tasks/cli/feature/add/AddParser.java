@@ -1,4 +1,4 @@
-package tasks.cli.command.add;
+package tasks.cli.feature.add;
 
 import static tasks.cli.parser.ParserUtil.getOptionValues;
 import static tasks.cli.parser.ParserUtil.extractSuccessfulResultsOrThrow;

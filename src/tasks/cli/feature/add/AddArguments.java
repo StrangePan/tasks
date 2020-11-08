@@ -1,4 +1,4 @@
-package tasks.cli.command.add;
+package tasks.cli.feature.add;
 
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
