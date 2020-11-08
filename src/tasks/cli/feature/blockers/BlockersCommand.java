@@ -1,4 +1,4 @@
-package tasks.cli.command.blockers;
+package tasks.cli.feature.blockers;
 
 import static omnia.data.cache.Memoized.memoize;
 import static tasks.cli.command.Parameter.Repeatable.NOT_REPEATABLE;

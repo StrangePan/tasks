@@ -1,4 +1,4 @@
-package tasks.cli.command.blockers;
+package tasks.cli.feature.blockers;
 
 import static java.util.Objects.requireNonNull;
 import static tasks.cli.handler.HandlerUtil.stringifyIfPopulated;

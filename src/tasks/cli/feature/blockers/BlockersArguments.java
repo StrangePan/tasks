@@ -1,4 +1,4 @@
-package tasks.cli.command.blockers;
+package tasks.cli.feature.blockers;
 
 import omnia.data.structure.List;
 import tasks.model.Task;
