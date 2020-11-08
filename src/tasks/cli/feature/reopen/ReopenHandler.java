@@ -47,7 +47,6 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
     // mark incomplete tasks as complete and commit to disk
     return Observable.fromIterable(completedTasks)
         .flatMapCompletable(task -> task.mutate(mutator -> mutator.setCompleted(false)))
-        .andThen(taskStore.writeToDisk())
         .andThen(Single.just(stringifyIfPopulated("task(s) reopened:", completedTasks)));
   }
 }

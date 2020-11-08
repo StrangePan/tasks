@@ -37,7 +37,6 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
             tasksAndReport ->
                 Observable.fromIterable(tasksAndReport.first())
                     .concatMapCompletable(task -> taskStore.value().deleteTask(task))
-                    .andThen(taskStore.value().writeToDisk())
                     .andThen(Single.just(tasksAndReport.second())));
   }
 }

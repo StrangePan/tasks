@@ -57,15 +57,18 @@ public final class TaskStoreImpl implements TaskStore {
     taskGraph = WritableObservableDirectedGraph.copyOf(loadedData.first());
     taskData = WritableObservableMap.copyOf(loadedData.second());
 
-    currentTaskGraphSource = selectWhileRunning(taskGraph.observe().states());
-    currentTaskDataSource = selectWhileRunning(taskData.observe().states());
+    currentTaskGraphSource =
+        selectWhileRunning(taskGraph.observe().states(), ImmutableDirectedGraph.empty());
+    currentTaskDataSource = selectWhileRunning(taskData.observe().states(), ImmutableMap.empty());
 
     isShutdownComplete = isShutdown.hide().andThen(writeToDisk()).cache();
   }
 
-  private <T> Observable<Flowable<T>> selectWhileRunning(Flowable<? extends T> starter) {
+  private <T> Observable<Flowable<T>> selectWhileRunning(
+      Flowable<? extends T> starter,
+      T ender) {
     return Observable.just(starter.map(i -> (T) i))
-        .concatWith(isShutdown.hide().andThen(Observable.just(Flowable.empty())))
+        .concatWith(isShutdown.hide().andThen(Observable.just(Flowable.just(ender))))
         .replay(1)
         .autoConnect(0);
   }
@@ -423,8 +426,8 @@ public final class TaskStoreImpl implements TaskStore {
   @Override
   public Completable writeToDisk() {
     return Single.zip(
-            observeTaskGraph().firstOrError(),
-            observeTaskData().firstOrError(),
+            taskGraph.observe().states().firstOrError(),
+            taskData.observe().states().firstOrError(),
             Tuple::of)
         .flatMapCompletable(fileSource::writeToFile)
         .cache();
@@ -432,6 +435,6 @@ public final class TaskStoreImpl implements TaskStore {
 
   @Override
   public Completable shutdown() {
-    return isShutdownComplete;
+    return isShutdownComplete.doOnSubscribe(d -> isShutdown.onComplete());
   }
 }

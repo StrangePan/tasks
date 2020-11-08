@@ -6,7 +6,6 @@ import io.reactivex.Maybe;
 import io.reactivex.Single;
 import java.util.function.Function;
 import omnia.data.structure.DirectedGraph;
-import omnia.data.structure.List;
 import omnia.data.structure.Set;
 
 /**

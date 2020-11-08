@@ -46,7 +46,6 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
                 .flatMap(b ->
                     Observable.fromIterable(blockedTasks).reduce(b, TaskBuilder::addBlockedTask))
                 .blockingGet())
-        .flatMap(task -> taskStore.writeToDisk().toSingleDefault(task))
         .map(Task::render)
         .map(output -> Output.builder().append("task created: ").append(output).build())
         .map(output -> Output.builder().appendLine(output).build());
