@@ -5,6 +5,7 @@
 14a00nhsddz4;true;Output formatting;
 3b6ayu83gqtc;true;Create a parsing exception;
 3ga3kmzl44cg;true;Put command definition into independent packages;
+3m3pf62roiyo;false;Fix: listing unblocked vs blocked tasks;
 6d0hzgifq9ds;true;Cluster graph tasks by subgraph;
 7ri8li86wfeo;true;Output unblocked tasks when completing a task;
 aiv2qznibj7k;true;Remove amend command;
@@ -15,7 +16,9 @@ fcb8wnt4twjk;false;Omit completed tasks when reporting freshly unblocked tasks;
 h5boqxunqmtc;true;Make task properties observable;
 h5kiwq5wnb40;true;Output task ID when creating tasks;
 kz3kwaxll8n4;true;Add reword command;
+lxeye4wsb3sw;false;Add feature: start / stop tasks;
 lzvv3qy4wa9s;true;Move parsers out of arguments;
+nkqqwjle0pog;false;Add immutable task store states;
 o1p99g1iyfpc;true;Fix task graph edge rendering;
 tw621f1euolc;false;Add tests for topological sort clustering;
 ufklb65rjm68;true;Validate registered commands;
