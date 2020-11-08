@@ -1,4 +1,4 @@
-package tasks.cli.command.remove;
+package tasks.cli.feature.remove;
 
 import omnia.data.structure.List;
 import tasks.cli.command.common.simple.SimpleArguments;

@@ -1,4 +1,4 @@
-package tasks.cli.command.remove;
+package tasks.cli.feature.remove;
 
 import static java.util.Objects.requireNonNull;
 
