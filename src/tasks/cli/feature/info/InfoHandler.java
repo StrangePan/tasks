@@ -1,4 +1,4 @@
-package tasks.cli.command.info;
+package tasks.cli.feature.info;
 
 import io.reactivex.Flowable;
 import io.reactivex.Observable;

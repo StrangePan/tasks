@@ -1,4 +1,4 @@
-package tasks.cli.command.info;
+package tasks.cli.feature.info;
 
 import omnia.data.structure.List;
 import tasks.cli.command.common.simple.SimpleArguments;
