@@ -144,7 +144,7 @@ public final class TaskStoreImpl implements TaskStore {
   }
 
   private boolean hasBlockingTasks(DirectedNode<? extends TaskId> node) {
-    return node.successors()
+    return node.predecessors()
         .stream()
         .anyMatch(
             successor ->

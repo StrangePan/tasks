@@ -5,7 +5,7 @@
 14a00nhsddz4;true;Output formatting;
 3b6ayu83gqtc;true;Create a parsing exception;
 3ga3kmzl44cg;true;Put command definition into independent packages;
-3m3pf62roiyo;false;Fix: listing unblocked vs blocked tasks;
+3m3pf62roiyo;true;Fix: listing unblocked vs blocked tasks;
 6d0hzgifq9ds;true;Cluster graph tasks by subgraph;
 7ri8li86wfeo;true;Output unblocked tasks when completing a task;
 aiv2qznibj7k;true;Remove amend command;
