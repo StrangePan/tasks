@@ -1,4 +1,4 @@
-package tasks.cli.bindings;
+package tasks.cli.feature;
 
 import static java.util.Objects.requireNonNull;
 import static omnia.data.stream.Collectors.toImmutableList;
