@@ -14,9 +14,11 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import omnia.algorithm.GraphAlgorithms;
 import omnia.data.structure.DirectedGraph;
+import omnia.data.structure.DirectedGraph.DirectedNode;
 import omnia.data.structure.Graph;
 import omnia.data.structure.Map;
 import omnia.data.structure.Set;
+import omnia.data.structure.immutable.ImmutableDirectedGraph;
 import omnia.data.structure.immutable.ImmutableMap;
 import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.HashMap;
@@ -79,10 +81,10 @@ public final class TaskStoreImpl implements TaskStore {
     return taskGraph.observe()
         .states()
         .map(graph -> graph.nodeOf(blockedTaskImpl.id()))
-        .map(optionalNode ->
-            optionalNode.map(DirectedGraph.DirectedNode::successors).orElse(Set.empty()))
-        .map(successors ->
-            successors.stream().map(Graph.Node::item).map(this::toTask).collect(toSet()));
+        .map(optionalNode -> optionalNode.map(DirectedNode::predecessors).orElse(Set.empty()))
+        .map(
+            predecessors ->
+                predecessors.stream().map(Graph.Node::item).map(this::toTask).collect(toSet()));
   }
 
   @Override
@@ -91,25 +93,30 @@ public final class TaskStoreImpl implements TaskStore {
     return taskGraph.observe()
         .states()
         .map(graph -> graph.nodeOf(blockingTaskImpl.id()))
-        .map(optionalNode ->
-            optionalNode.map(DirectedGraph.DirectedNode::predecessors).orElse(Set.empty()))
-        .map(predecessors ->
-            predecessors.stream().map(Graph.Node::item).map(this::toTask).collect(toSet()));
+        .map(optionalNode -> optionalNode.map(DirectedNode::successors).orElse(Set.empty()))
+        .map(
+            successors ->
+                successors.stream().map(Graph.Node::item).map(this::toTask).collect(toSet()));
   }
 
   @Override
-  public Flowable<Set<Task>> allTasksWithoutOpenBlockers() {
+  public Flowable<Set<Task>> allOpenTasksWithoutOpenBlockers() {
     return tasksFromNodesMatching(node -> !hasBlockingTasks(node) && !isCompleted(node));
   }
 
   @Override
-  public Flowable<Set<Task>> allTasksWithOpenBlockers() {
+  public Flowable<Set<Task>> allOpenTasksWithOpenBlockers() {
     return tasksFromNodesMatching(node -> hasBlockingTasks(node) && !isCompleted(node));
   }
 
   @Override
-  public Flowable<Set<Task>> completedTasks() {
+  public Flowable<Set<Task>> allCompletedTasks() {
     return tasksFromNodesMatching(this::isCompleted);
+  }
+
+  @Override
+  public Flowable<Set<Task>> allOpenTasks() {
+    return tasksFromNodesMatching(n -> !isCompleted(n));
   }
 
   @Override
@@ -125,11 +132,18 @@ public final class TaskStoreImpl implements TaskStore {
                 .collect(toImmutableSet()));
   }
 
+  @Override
+  public Flowable<DirectedGraph<Task>> taskGraph() {
+    return taskGraph.observe()
+        .states()
+        .map(this::toTaskGraph);
+  }
+
   private boolean isCompleted(Graph.Node<? extends TaskId> node) {
     return taskData.valueOf(node.item()).get().isCompleted();
   }
 
-  private boolean hasBlockingTasks(DirectedGraph.DirectedNode<? extends TaskId> node) {
+  private boolean hasBlockingTasks(DirectedNode<? extends TaskId> node) {
     return node.successors()
         .stream()
         .anyMatch(
@@ -138,7 +152,7 @@ public final class TaskStoreImpl implements TaskStore {
   }
 
   private Flowable<Set<Task>> tasksFromNodesMatching(
-      Predicate<? super DirectedGraph.DirectedNode<? extends TaskId>> filter) {
+      Predicate<? super DirectedNode<? extends TaskId>> filter) {
     return taskGraph.observe()
         .states()
         .map(DirectedGraph::nodes)
@@ -189,11 +203,11 @@ public final class TaskStoreImpl implements TaskStore {
       TaskBuilderImpl builder) {
     taskData.putMapping(id, data);
     taskGraph.addNode(id);
-    builder.blockingTasks().forEach(blockingTask -> taskGraph.addEdge(id, blockingTask));
-    builder.blockedTasks().forEach(blockedTask -> taskGraph.addEdge(blockedTask, id));
+    builder.blockingTasks().forEach(blockingTask -> taskGraph.addEdge(blockingTask, id));
+    builder.blockedTasks().forEach(blockedTask -> taskGraph.addEdge(id, blockedTask));
   }
 
-  private void assertIsValid(
+  private static void assertIsValid(
       Map<TaskId, TaskData> taskData,
       DirectedGraph<TaskId> taskGraph) {
     GraphAlgorithms.findAnyCycle(taskGraph)
@@ -289,6 +303,14 @@ public final class TaskStoreImpl implements TaskStore {
     return new TaskImpl(this, id);
   }
 
+  private ImmutableDirectedGraph<Task> toTaskGraph(DirectedGraph<TaskId> idGraph) {
+    ImmutableDirectedGraph.Builder<Task> taskGraph = ImmutableDirectedGraph.builder();
+    idGraph.nodes().forEach(node -> taskGraph.addNode(toTask(node.item())));
+    idGraph.edges().forEach(
+        edge -> taskGraph.addEdge(toTask(edge.start().item()), toTask(edge.end().item())));
+    return taskGraph.build();
+  }
+
   private void maybeApplyMutator(TaskMutator mutator) {
     TaskMutatorImpl mutatorImpl = validateMutator(mutator);
 
@@ -344,27 +366,27 @@ public final class TaskStoreImpl implements TaskStore {
 
     if (mutatorImpl.overwriteBlockingTasks()) {
       taskGraph.nodeOf(id)
-          .map(DirectedGraph.DirectedNode::outgoingEdges)
+          .map(DirectedNode::incomingEdges)
           .map(ImmutableSet::copyOf)
           .orElse(ImmutableSet.empty())
           .forEach(edge -> taskGraph.removeEdge(edge.start(), edge.end()));
     }
     mutatorImpl.blockingTasksToAdd()
-        .forEach(blockingId -> taskGraph.addEdge(id, blockingId));
+        .forEach(blockingId -> taskGraph.addEdge(blockingId, id));
     mutatorImpl.blockingTasksToRemove()
-        .forEach(blockingId -> taskGraph.removeEdge(id, blockingId));
+        .forEach(blockingId -> taskGraph.removeEdge(blockingId, id));
 
     if (mutatorImpl.overwriteBlockedTasks()) {
       taskGraph.nodeOf(id)
-          .map(DirectedGraph.DirectedNode::incomingEdges)
+          .map(DirectedNode::outgoingEdges)
           .map(ImmutableSet::copyOf)
           .orElse(ImmutableSet.empty())
           .forEach(edge -> taskGraph.removeEdge(edge.start(), edge.end()));
     }
     mutatorImpl.blockedTasksToAdd()
-        .forEach(blockedId -> taskGraph.addEdge(blockedId, id));
+        .forEach(blockedId -> taskGraph.addEdge(id, blockedId));
     mutatorImpl.blockedTasksToRemove()
-        .forEach(blockedId -> taskGraph.removeEdge(blockedId, id));
+        .forEach(blockedId -> taskGraph.removeEdge(id, blockedId));
   }
 
   @Override

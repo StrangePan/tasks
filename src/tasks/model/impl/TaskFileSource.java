@@ -109,7 +109,7 @@ final class TaskFileSource {
       TaskId id = parseId(fields[0]);
       Stream.of(fields[1].split(TASK_ID_DELIMITER))
           .map(TaskFileSource::parseId)
-          .forEach(dependency -> graph.addEdge(id, dependency));
+          .forEach(dependency -> graph.addEdge(dependency, id));
       // TODO(vc0gqs1jstmo): ensure unique ids
       // TODO(vc0gqs1jstmo): ensure we have data for all ids
     }
@@ -248,7 +248,7 @@ final class TaskFileSource {
     return Single.just(graph)
         .map(DirectedGraph::nodes)
         .flatMapObservable(Observable::fromIterable)
-        .filter(node -> node.successors().isPopulated())
+        .filter(node -> node.predecessors().isPopulated())
         .sorted(Comparator.comparing(node -> node.item().asLong()))
         .map(TaskFileSource::serialize);
   }
@@ -258,7 +258,7 @@ final class TaskFileSource {
         .append(serialize(node.item()))
         .append(TASK_FIELD_DELIMITER)
         .append(
-            node.successors().stream()
+            node.predecessors().stream()
                 .map(DirectedGraph.DirectedNode::item)
                 .sorted(Comparator.comparing(TaskId::asLong))
                 .map(TaskFileSource::serialize)

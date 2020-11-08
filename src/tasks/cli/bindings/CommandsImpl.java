@@ -17,6 +17,7 @@ import tasks.cli.command.Commands;
 import tasks.cli.command.add.AddCommand;
 import tasks.cli.command.blockers.BlockersCommand;
 import tasks.cli.command.complete.CompleteCommand;
+import tasks.cli.command.graph.GraphCommand;
 import tasks.cli.command.help.HelpCommand;
 import tasks.cli.command.info.InfoCommand;
 import tasks.cli.command.list.ListCommand;
@@ -30,6 +31,7 @@ public final class CommandsImpl implements Commands {
           AddCommand.registration(),
           BlockersCommand.registration(),
           CompleteCommand.registration(),
+          GraphCommand.registration(),
           HelpCommand.registration(),
           InfoCommand.registration(),
           ListCommand.registration(),
