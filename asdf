@@ -16,7 +16,7 @@ h5boqxunqmtc;true;Make task properties observable;
 h5kiwq5wnb40;true;Output task ID when creating tasks;
 kz3kwaxll8n4;true;Add reword command;
 lzvv3qy4wa9s;true;Move parsers out of arguments;
-o1p99g1iyfpc;false;Fix task graph edge rendering;
+o1p99g1iyfpc;true;Fix task graph edge rendering;
 tw621f1euolc;false;Add tests for topological sort clustering;
 ufklb65rjm68;true;Validate registered commands;
 vc0gqs1jstmo;false;Validate graph when parsing;
@@ -32,7 +32,7 @@ w1ckqcfs7f28;false;Add help topics infrastructure;
 1omyqxbuc98n4;false;Add confirmation to remove command;
 1so5tz4jow35s;true;Refactor commands to use same source of truth for registration as parsing;
 1u4zo38nv3fgg;false;Add undo command;
-1u8yjlsmv79q8;false;Add graph output;
+1u8yjlsmv79q8;true;Add graph output;
 # dependencies
 aiv2qznibj7k;kz3kwaxll8n4,19ywwqj6ys1ds;
 booswtafq3nk;w1ckqcfs7f28;

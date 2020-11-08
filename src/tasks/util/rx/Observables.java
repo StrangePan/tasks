@@ -3,7 +3,9 @@ package tasks.util.rx;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.functions.Function;
+import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableMap;
+import omnia.data.structure.immutable.ImmutableSet;
 public final class Observables {
 
   private Observables() {}
@@ -43,5 +45,17 @@ public final class Observables {
                 (builder, item) ->
                     builder.putMapping(keyExtractor.apply(item), valueExtractor.apply(item)))
             .map(ImmutableMap.Builder::build);
+  }
+
+  public static <T> Function<Observable<T>, Single<ImmutableList<T>>> toImmutableList() {
+    return observable ->
+        observable.collectInto(ImmutableList.<T>builder(), ImmutableList.Builder::add)
+            .map(ImmutableList.Builder::build);
+  }
+
+  public static <T> Function<Observable<T>, Single<ImmutableSet<T>>> toImmutableSet() {
+    return observable ->
+        observable.collectInto(ImmutableSet.<T>builder(), ImmutableSet.Builder::add)
+            .map(ImmutableSet.Builder::build);
   }
 }

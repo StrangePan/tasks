@@ -18,6 +18,8 @@ public final class GraphParser implements CommandParser<GraphArguments> {
      */
     assertNoExtraArgs(commandLine);
 
-    return new GraphArguments();
+    boolean isAllSet = ParserUtil.getFlagPresence(commandLine, GraphCommand.ALL_OPTION.value());
+
+    return new GraphArguments(isAllSet);
   }
 }
