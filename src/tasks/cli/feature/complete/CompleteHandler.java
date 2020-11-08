@@ -1,4 +1,4 @@
-package tasks.cli.command.complete;
+package tasks.cli.feature.complete;
 
 import static java.util.Objects.requireNonNull;
 import static tasks.cli.handler.HandlerUtil.groupByCompletionState;

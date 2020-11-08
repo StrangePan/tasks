@@ -1,4 +1,4 @@
-package tasks.cli.command.complete;
+package tasks.cli.feature.complete;
 
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
