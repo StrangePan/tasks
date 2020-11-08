@@ -1,4 +1,4 @@
-package tasks.cli.command.reword;
+package tasks.cli.feature.reword;
 
 import static java.util.Objects.requireNonNull;
 

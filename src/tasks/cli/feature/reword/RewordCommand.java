@@ -1,4 +1,4 @@
-package tasks.cli.command.reword;
+package tasks.cli.feature.reword;
 
 import static omnia.data.cache.Memoized.memoize;
 import static tasks.cli.command.Parameter.Repeatable.NOT_REPEATABLE;
