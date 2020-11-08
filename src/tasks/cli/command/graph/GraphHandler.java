@@ -13,8 +13,10 @@ import io.reactivex.Observable;
 import io.reactivex.Single;
 import java.util.Comparator;
 import java.util.Optional;
+import java.util.stream.Stream;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
+import omnia.data.stream.Collectors;
 import omnia.data.structure.DirectedGraph;
 import omnia.data.structure.DirectedGraph.DirectedNode;
 import omnia.data.structure.List;
@@ -29,7 +31,6 @@ import omnia.data.structure.mutable.MutableMap;
 import omnia.data.structure.mutable.MutableSet;
 import omnia.data.structure.tuple.Couple;
 import omnia.data.structure.tuple.Tuple;
-import omnia.data.structure.tuple.Tuplet;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.model.Task;
 import tasks.model.TaskStore;
@@ -115,101 +116,138 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
 
   private Output renderGraph(
       DirectedGraph<Task> taskGraph, List<Task> taskList, Map<Task, Integer> taskColumns) {
-
-    // NOTE: taskList has blockers at the start / top and blockees at the end / bottom.
-
     Output.Builder output = Output.builder();
-    int unresolvedEdges = 0;
+    MutableSet<Integer> columnsWithEdges = HashSet.create();
 
     for (Task task : taskList) {
-      int taskColumn = taskColumns.valueOf(task).get();
+      taskColumns.valueOf(task).ifPresent(columnsWithEdges::remove);
 
-      // the line containing the task info
-      {
-        Output.Builder line = Output.builder();
-        for (int col = 0; col < max(unresolvedEdges, taskColumn + 1); col++) {
-          line.append(col == taskColumn ? task.isCompleted().blockingFirst() ? "☑" : "☐" : "│");
-        }
-        line.append("  ").append(task.render());
-        output.appendLine(line.build());
-      }
+      output.appendLine(renderTaskLine(taskColumns, columnsWithEdges, task));
 
-      // print the line containing edge connections
-      {
-        Output.Builder line = Output.builder();
-        Set<Integer> successorColumns =
-            taskGraph.nodeOf(task)
-                .get()
-                .successors()
-                .stream()
-                .map(DirectedNode::item)
-                .map(successor -> taskColumns.valueOf(successor).get())
-                .collect(toImmutableSet());
+      renderEdgeLine(taskGraph, taskColumns, columnsWithEdges, task).ifPresent(output::appendLine);
 
-        Optional<Couple<Integer, Integer>> lateralEdgeRange =
-            successorColumns.stream()
-                .<Optional<Couple<Integer, Integer>>>reduce(
-                    Optional.empty(),
-                    (minMax, col) ->
-                        Optional.of(
-                            minMax.map(
-                                    c -> c.mapFirst(min -> min(min, col))
-                                        .mapSecond(max -> max(max, col)))
-                                .orElse(Tuplet.of(col, col))),
-                    (a, b) ->
-                        a.isPresent() && b.isPresent()
-                            ? Optional.of(
-                                Tuple.of(
-                                    min(a.get().first(), b.get().first()),
-                                    max(a.get().second(), b.get().second())))
-                            : a.isPresent() ? a : b)
-                .map(
-                    minMax ->
-                        minMax.mapFirst(min -> min(min, taskColumn))
-                            .mapSecond(max -> max(max, taskColumn)));
-
-        for (int col = 0; col < max(unresolvedEdges, taskColumn + 1); col++) {
-          boolean isTaskCol = col == taskColumn;
-          boolean isSuccessorCol = successorColumns.contains(col);
-          boolean isInLateralEdge = isInRange(col, lateralEdgeRange);
-          boolean isAtLateralEdgeMin =
-              lateralEdgeRange.isPresent() && lateralEdgeRange.get().first() == col;
-          boolean isAtLateralEdgeMax =
-              lateralEdgeRange.isPresent() && lateralEdgeRange.get().second() == col;
-
-          line.append(
-              isAtLateralEdgeMin && isAtLateralEdgeMax
-                  ? "│"
-              : isAtLateralEdgeMin
-                  ? isTaskCol
-                      ? isSuccessorCol
-                          ? "├"
-                          : "└"
-                      : "┌"
-              : isAtLateralEdgeMax
-                  ? isTaskCol
-                      ? isSuccessorCol
-                          ? "┤"
-                          : "┘"
-                      : "┐"
-              : isInLateralEdge
-                  ? "╪"
-                  : !isTaskCol
-                      ? "│"
-                      : "");
-        }
-        output.appendLine(line.build());
-      }
+      taskGraph.nodeOf(task)
+          .map(DirectedNode::successors)
+          .orElse(ImmutableSet.empty())
+          .stream()
+          .map(DirectedNode::item)
+          .map(taskColumns::valueOf)
+          .flatMap(Optional::stream)
+          .forEach(columnsWithEdges::add);
     }
 
     return output.build();
   }
 
-  private static boolean isInRange(int val, Optional<Couple<Integer, Integer>> range) {
-    return range.map(
-        minMax ->
-            val >= min(minMax.first(), val)
-                && val <= max(minMax.second(), val))
-        .orElse(false);
+  private static Output renderTaskLine(
+      Map<Task, Integer> taskColumns, Set<Integer> columnsWithEdges, Task task) {
+    int taskColumn = taskColumns.valueOf(task).orElse(0);
+
+    int maxColumnsWithEdges = columnsWithEdges.stream().reduce(taskColumn, Math::max);
+
+    return incrementingInteger()
+        .takeUntil(i -> i == maxColumnsWithEdges)
+        .map(
+            column ->
+                (column == taskColumn
+                    ? (task.isCompleted().blockingFirst()
+                        ? "☑"
+                        : "☐")
+                    : (columnsWithEdges.contains(column)
+                        ? "╎"
+                        : " ")))
+        .collectInto(Output.builder(),  Output.Builder::append)
+        .map(builder -> builder.append(" ").append(task.render()))
+        .map(Output.Builder::build)
+        .blockingGet();
+  }
+
+  private static Optional<Output> renderEdgeLine(
+      DirectedGraph<Task> taskGraph,
+      Map<Task, Integer> taskColumns,
+      Set<Integer> previousColumnsWithEdges,
+      Task task) {
+    ImmutableSet<Integer> successorColumns =
+        taskGraph.nodeOf(task)
+            .map(DirectedNode::successors)
+            .orElse(ImmutableSet.empty())
+            .stream()
+            .map(DirectedNode::item)
+            .map(taskColumns::valueOf)
+            .flatMap(Optional::stream)
+            .collect(toImmutableSet());
+
+    if (!successorColumns.isPopulated()) {
+      return Optional.empty();
+    }
+
+    int taskColumn = taskColumns.valueOf(task).orElse(0);
+    int lateralEdgeMax = successorColumns.stream().reduce(taskColumn, Math::max);
+    int lateralEdgeMin = successorColumns.stream().reduce(taskColumn, Math::min);
+    int maxColumn = previousColumnsWithEdges.stream().reduce(lateralEdgeMax, Math::max);
+
+    return incrementingInteger()
+        .takeUntil(column -> column == maxColumn)
+        .map(
+            columnInteger -> {
+              int column = columnInteger;
+              if (isInRange(lateralEdgeMin, column, lateralEdgeMax)) {
+                if (column == taskColumn) {
+                  if (successorColumns.contains(column)) {
+                    if (column == lateralEdgeMin && column != lateralEdgeMax) {
+                      return "├";
+                    } else if (column != lateralEdgeMin && column == lateralEdgeMax) {
+                      return "┤";
+                    } else if (column == lateralEdgeMin && column == lateralEdgeMax) {
+                      return "│";
+                    } else {
+                      return "┼";
+                    }
+                  } else {
+                    if (column == lateralEdgeMin && column != lateralEdgeMax) {
+                      return "└";
+                    } else if (column != lateralEdgeMin && column == lateralEdgeMax) {
+                      return "┘";
+                    } else {
+                      return "┴";
+                    }
+                  }
+                } else if (previousColumnsWithEdges.contains(column)) {
+                  if (successorColumns.contains(column)) {
+                    if (column == lateralEdgeMin) {
+                      return "┌";
+                    } else if (column == lateralEdgeMax) {
+                      return "┐";
+                    } else {
+                      return "┬";
+                    }
+                  } else {
+                    return "─";
+                  }
+                } else if (successorColumns.contains(column)) {
+                  if (column == lateralEdgeMin) {
+                    return "┌";
+                  } else if (column == lateralEdgeMax) {
+                    return "┐";
+                  } else {
+                    return "┬";
+                  }
+                } else {
+                  return "─";
+                }
+              } else if (previousColumnsWithEdges.contains(column)) {
+                return "╎";
+              } else {
+                return " ";
+              }
+            })
+        .collectInto(Output.builder(),  Output.Builder::append)
+        .map(Output.Builder::build)
+        .map(Optional::of)
+        .blockingGet();
+  }
+
+  private static boolean isInRange(int min, int mid, int max) {
+    return min <= mid && mid <= max;
   }
 }
