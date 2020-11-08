@@ -1,4 +1,4 @@
-package tasks.cli.command.help;
+package tasks.cli.feature.help;
 
 import java.util.Optional;
 import omnia.data.structure.List;

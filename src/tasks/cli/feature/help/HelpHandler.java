@@ -1,4 +1,4 @@
-package tasks.cli.command.help;
+package tasks.cli.feature.help;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -15,7 +15,7 @@ import omnia.data.structure.immutable.ImmutableList;
 import tasks.cli.command.Command;
 import tasks.cli.command.Option;
 import tasks.cli.command.Parameter;
-import tasks.cli.command.help.CommandDocumentation.OptionDocumentation;
+import tasks.cli.feature.help.CommandDocumentation.OptionDocumentation;
 import tasks.cli.command.Commands;
 import tasks.cli.command.common.CommonOptions;
 import tasks.cli.handler.ArgumentHandler;
