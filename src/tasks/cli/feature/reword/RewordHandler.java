@@ -30,7 +30,6 @@ public final class RewordHandler implements ArgumentHandler<RewordArguments> {
                 store.mutateTask(
                     arguments.targetTask(),
                     mutator -> mutator.setLabel(arguments.description())))
-        .andThen(taskStore.value().writeToDisk())
         .andThen(Single.just(arguments.targetTask()))
         .map(Task::render)
         .map(

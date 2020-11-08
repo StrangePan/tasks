@@ -9,6 +9,7 @@ import io.reactivex.Single;
 import java.util.function.Supplier;
 import omnia.algorithm.ListAlgorithms;
 import omnia.cli.out.Output;
+import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableList;
@@ -27,6 +28,7 @@ import tasks.cli.command.common.CommonParser;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.parser.ParserException;
 import tasks.cli.parser.CommandParser;
+import tasks.model.TaskStore;
 import tasks.model.impl.CyclicalDependencyException;
 
 public final class Feature<T> {
@@ -60,11 +62,14 @@ public final class Feature<T> {
   }
 
 
-  public Completable handle(List<? extends String> args) {
+  public Completable handle(
+      List<? extends String> args,
+      Memoized<? extends TaskStore> taskStore) {
     return Single.just(args)
         .to(this::toArguments)
         .flatMap(this::toOutput)
         .ignoreElement()
+        .andThen(taskStore.value().shutdown())
         .to(Feature::maybeConsumeError);
   }
 

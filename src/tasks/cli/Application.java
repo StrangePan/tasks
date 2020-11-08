@@ -24,7 +24,8 @@ final class Application {
   void run() {
     Single.just(rawArgs)
         .map(ImmutableList::copyOf)
-        .flatMapCompletable(args -> getHelpOrFallbackFeature(args).handle(args))
+        .flatMapCompletable(args -> getHelpOrFallbackFeature(args).handle(args, taskStore))
+        .andThen(taskStore.value().shutdown())
         .blockingAwait();
   }
 

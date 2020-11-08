@@ -73,8 +73,7 @@ public final class BlockersHandler implements ArgumentHandler<BlockersArguments>
             arguments.blockingTasksToAdd().forEach(mutator::addBlockingTask);
           }
           return mutator;
-        })
-        .andThen(taskStore.value().writeToDisk());
+        });
   }
 
   private static Single<Set<Task>> getTasksBlocking(Task task) {

@@ -31,7 +31,7 @@ w1ckqcfs7f28;false;Add help topics infrastructure;
 15r9jkmzl3u2o;true;Verify no graph cycles;
 19ywwqj6ys1ds;true;Add commands for modifying blockers;
 1dx84dbupx9mo;false;Add help topic: task ids;
-1eudqjntygao0;false;Move taskstore saving out of handlers;
+1eudqjntygao0;true;Move taskstore saving out of handlers;
 1omyqxbuc98n4;false;Add confirmation to remove command;
 1so5tz4jow35s;true;Refactor commands to use same source of truth for registration as parsing;
 1u4zo38nv3fgg;false;Add undo command;
