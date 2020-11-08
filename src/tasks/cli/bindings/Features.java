@@ -1,12 +1,23 @@
 package tasks.cli.bindings;
 
+import static java.util.Objects.requireNonNull;
 import static omnia.data.cache.Memoized.memoize;
+import static omnia.data.stream.Collectors.toImmutableSet;
 
+import java.util.Optional;
+import java.util.function.Function;
 import omnia.data.cache.Memoized;
+import omnia.data.stream.Collectors;
+import omnia.data.structure.Collection;
 import omnia.data.structure.List;
 import omnia.data.structure.Map;
 import omnia.data.structure.Set;
+import omnia.data.structure.immutable.ImmutableMap;
 import omnia.data.structure.immutable.ImmutableSet;
+import omnia.data.structure.tuple.Couple;
+import omnia.data.structure.tuple.Tuple;
+import tasks.cli.command.Command;
+import tasks.cli.command.Commands;
 import tasks.cli.command.add.AddCommand;
 import tasks.cli.command.add.AddHandler;
 import tasks.cli.command.add.AddParser;
@@ -43,16 +54,21 @@ import tasks.cli.parser.ParseResult;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
-public final class Features {
+public final class Features implements Commands {
 
-  private final Memoized<CommandsImpl> commands = memoize(CommandsImpl::new);
-  private final Feature<?> helpFeature =
-      new Feature<>(HelpCommand.registration(), HelpParser::new, () -> new HelpHandler(commands));
+  private final Feature<?> helpFeature;
   private final Map<String, Feature<?>> featuresByNameAndAliases;
+  private final ImmutableSet<Command> commands;
 
   public Features(Memoized<? extends TaskStore> taskStore) {
     Memoized<Parser<List<ParseResult<Task>>>> taskListParser =
         memoize(() -> ParserUtil.taskListParser(taskStore));
+
+    helpFeature =
+        new Feature<>(
+            HelpCommand.registration(),
+            HelpParser::new,
+            () -> new HelpHandler(Memoized.just(this)));
 
     Set<Feature<?>> features =
         ImmutableSet.of(
@@ -94,14 +110,43 @@ public final class Features {
                 () -> new RewordParser(taskListParser),
                 () -> new RewordHandler(taskStore)));
 
-    featuresByNameAndAliases = CommandsImpl.groupByCommandNameAndAlias(features, Feature::command);
+    commands = features.stream().map(Feature::command).collect(toImmutableSet());
+
+    featuresByNameAndAliases = groupByCommandNameAndAlias(features, Feature::command);
+  }
+
+  private static <V> ImmutableMap<String, V> groupByCommandNameAndAlias(
+      Collection<? extends V> collection, Function<? super V, ? extends Command> commandExtractor) {
+    return collection.stream()
+        .flatMap(
+            value ->
+                commandExtractor.apply(value)
+                    .canonicalNameAndAliases()
+                    .stream()
+                    .map(alias -> Tuple.of(alias, value)))
+        .collect(Collectors.toImmutableMap(Couple::first, Couple::second));
+  }
+
+  @Override
+  public ImmutableSet<Command> getAllCommands() {
+    return commands;
+  }
+
+  @Override
+  public Optional<Command> getMatchingCommand(String userInput) {
+    return getMatchingFeature(userInput).map(Feature::command);
   }
 
   public Feature<?> getMatchingOrFallbackFeature(String userInput) {
-    return featuresByNameAndAliases.valueOf(userInput).orElse(helpFeature);
+    return getMatchingFeature(userInput).orElseGet(this::getFallbackFeature);
   }
 
   public Feature<?> getFallbackFeature() {
     return helpFeature;
+  }
+
+  public Optional<Feature<?>> getMatchingFeature(String userInput) {
+    requireNonNull(userInput);
+    return featuresByNameAndAliases.valueOf(userInput);
   }
 }

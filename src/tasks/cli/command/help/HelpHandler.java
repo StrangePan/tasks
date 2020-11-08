@@ -47,7 +47,7 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
 
   private Single<Output> getHelpOutputForCommandListing() {
     return Single.fromCallable(commands::value)
-        .map(Commands::getAllRegisteredCommands)
+        .map(Commands::getAllCommands)
         .flatMapObservable(Observable::fromIterable)
         .map(HelpHandler::toCommandDocumentation)
         .sorted(Comparator.comparing(CommandDocumentation::canonicalName))
@@ -64,7 +64,7 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
 
   private Single<Output> getHelpOutputForMode(String mode) {
     return Single.fromCallable(commands::value)
-        .map(commands -> commands.getCommandMatching(mode))
+        .map(commands -> commands.getMatchingCommand(mode))
         .filter(Optional::isPresent)
         .map(Optional::get)
         .map(HelpHandler::toCommandDocumentation)
