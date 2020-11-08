@@ -1,4 +1,4 @@
-package tasks.cli.command.graph;
+package tasks.cli.feature.graph;
 
 import static tasks.cli.parser.ParserUtil.assertNoExtraArgs;
 

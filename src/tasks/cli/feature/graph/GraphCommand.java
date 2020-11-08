@@ -1,4 +1,4 @@
-package tasks.cli.command.graph;
+package tasks.cli.feature.graph;
 
 import static omnia.data.cache.Memoized.memoize;
 import static tasks.cli.command.Parameter.Repeatable.NOT_REPEATABLE;
@@ -7,7 +7,6 @@ import omnia.data.cache.Memoized;
 import omnia.data.structure.immutable.ImmutableList;
 import tasks.cli.command.Command;
 import tasks.cli.command.FlagOption;
-import tasks.cli.command.list.ListCommand;
 
 public final class GraphCommand {
   private GraphCommand() {}

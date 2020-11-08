@@ -1,4 +1,4 @@
-package tasks.cli.command.graph;
+package tasks.cli.feature.graph;
 
 /** Model for parsed graph/xl command arguments. */
 public final class GraphArguments {
