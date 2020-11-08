@@ -12,6 +12,7 @@ import static tasks.util.rx.Observables.toImmutableMap;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import omnia.cli.out.Output;
@@ -118,13 +119,20 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
       DirectedGraph<Task> taskGraph, List<Task> taskList, Map<Task, Integer> taskColumns) {
     Output.Builder output = Output.builder();
     MutableSet<Integer> columnsWithEdges = HashSet.create();
+    ImmutableMap<Task, Integer> topologicalIndexes =
+        Observable.zip(
+            Observable.fromIterable(taskList),
+            incrementingInteger(),
+            Tuple::of)
+            .to(toImmutableMap(couple -> couple.first(), couple -> couple.second()))
+            .blockingGet();
 
     for (Task task : taskList) {
       taskColumns.valueOf(task).ifPresent(columnsWithEdges::remove);
 
       output.appendLine(renderTaskLine(taskColumns, columnsWithEdges, task));
 
-      renderEdgeLine(taskGraph, taskColumns, columnsWithEdges, task).ifPresent(output::appendLine);
+      renderEdgeLine(taskGraph, topologicalIndexes, taskColumns, columnsWithEdges, task).ifPresent(output::appendLine);
 
       taskGraph.nodeOf(task)
           .map(DirectedNode::successors)
@@ -164,6 +172,7 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
 
   private static Optional<Output> renderEdgeLine(
       DirectedGraph<Task> taskGraph,
+      Map<Task, Integer> topologicalIndexes,
       Map<Task, Integer> taskColumns,
       Set<Integer> previousColumnsWithEdges,
       Task task) {
@@ -182,6 +191,25 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
     }
 
     int taskColumn = taskColumns.valueOf(task).orElse(0);
+
+    // if there's only one successor and it's not on the next row, but it's in the same column,
+    // skip drawing the edge line
+    {
+      Optional<Task> successor =
+          taskGraph.nodeOf(task)
+              .map(DirectedNode::successors)
+              .orElse(ImmutableSet.empty())
+              .stream()
+              .findFirst()
+              .map(DirectedNode::item);
+      if (successor.flatMap(taskColumns::valueOf).orElse(0) == taskColumn
+          && !Objects.equals(
+              topologicalIndexes.valueOf(task).map(row -> row + 1),
+              successor.flatMap(topologicalIndexes::valueOf))) {
+        return Optional.empty();
+      }
+    }
+
     int lateralEdgeMax = successorColumns.stream().reduce(taskColumn, Math::max);
     int lateralEdgeMin = successorColumns.stream().reduce(taskColumn, Math::min);
     int maxColumn = previousColumnsWithEdges.stream().reduce(lateralEdgeMax, Math::max);
