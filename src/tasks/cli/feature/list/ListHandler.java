@@ -1,4 +1,4 @@
-package tasks.cli.command.list;
+package tasks.cli.feature.list;
 
 import static java.util.Objects.requireNonNull;
 import static tasks.cli.handler.HandlerUtil.stringifyIfPopulated;

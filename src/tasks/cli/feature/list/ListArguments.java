@@ -1,4 +1,4 @@
-package tasks.cli.command.list;
+package tasks.cli.feature.list;
 
 /** Model for parsed List command arguments. */
 public final class ListArguments {

@@ -1,4 +1,4 @@
-package tasks.cli.command.list;
+package tasks.cli.feature.list;
 
 import static tasks.cli.parser.ParserUtil.assertNoExtraArgs;
 
