@@ -28,8 +28,8 @@ final class TaskStoreImpl implements TaskStore {
   final ImmutableMap<TaskIdImpl, TaskData> data;
 
   private final Memoized<ImmutableSet<TaskImpl>> allTasks;
-  private final Memoized<ImmutableSet<TaskImpl>> allOpenTasksWithoutOpenBlockers;
-  private final Memoized<ImmutableSet<TaskImpl>> allOpenTasksWithOpenBlockers;
+  private final Memoized<ImmutableSet<TaskImpl>> allUnblockedOpenTasks;
+  private final Memoized<ImmutableSet<TaskImpl>> allBlockedOpenTasks;
   private final Memoized<ImmutableSet<TaskImpl>> allCompletedTasks;
   private final Memoized<ImmutableSet<TaskImpl>> allOpenTasks;
   private final Memoized<ImmutableDirectedGraph<TaskImpl>> taskGraph;
@@ -49,19 +49,21 @@ final class TaskStoreImpl implements TaskStore {
 
     allTasks = memoize(() -> data.keys().stream().map(this::toTask).collect(toImmutableSet()));
 
-    allOpenTasksWithoutOpenBlockers =
+    allUnblockedOpenTasks =
         memoize(
             () -> graph.contents()
                 .stream()
-                .filter(this::hasNoOpenBlockers)
+                .filter(this::isOpen)
+                .filter(this::isUnblocked)
                 .map(this::toTask)
                 .collect(toImmutableSet()));
 
-    allOpenTasksWithOpenBlockers =
+    allBlockedOpenTasks =
         memoize(
             () -> graph.contents()
                 .stream()
-                .filter(this::hasAnyOpenBlockers)
+                .filter(this::isOpen)
+                .filter(this::isBlocked)
                 .map(this::toTask)
                 .collect(toImmutableSet()));
 
@@ -109,12 +111,12 @@ final class TaskStoreImpl implements TaskStore {
 
   @Override
   public ImmutableSet<TaskImpl> allOpenTasksWithoutOpenBlockers() {
-    return allOpenTasksWithoutOpenBlockers.value();
+    return allUnblockedOpenTasks.value();
   }
 
   @Override
   public ImmutableSet<TaskImpl> allOpenTasksWithOpenBlockers() {
-    return allOpenTasksWithOpenBlockers.value();
+    return allBlockedOpenTasks.value();
   }
 
   @Override
@@ -208,18 +210,23 @@ final class TaskStoreImpl implements TaskStore {
     return (TaskImpl) task;
   }
 
-  private boolean hasNoOpenBlockers(TaskIdImpl id) {
-    return !hasAnyOpenBlockers(id);
+  private boolean isOpen(TaskIdImpl id) {
+    return data.valueOf(id).map(taskData -> !taskData.isCompleted()).orElse(false);
   }
 
-  private boolean hasAnyOpenBlockers(TaskIdImpl id) {
+  private boolean isUnblocked(TaskIdImpl id) {
+    return !isBlocked(id);
+  }
+
+  private boolean isBlocked(TaskIdImpl id) {
     return graph.nodeOf(id)
         .map(DirectedGraph.DirectedNode::predecessors)
         .orElse(ImmutableSet.empty())
         .stream()
         .map(Graph.Node::item)
         .map(data::valueOf)
-        .map(taskData -> taskData.map(TaskData::isCompleted).orElse(false))
-        .anyMatch(isCompleted -> !isCompleted);
+        .anyMatch(
+            taskDataOptional ->
+                taskDataOptional.map(taskData -> !taskData.isCompleted()).orElse(false));
   }
 }
