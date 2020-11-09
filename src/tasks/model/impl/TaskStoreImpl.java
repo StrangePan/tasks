@@ -9,6 +9,7 @@ import java.util.Optional;
 import omnia.algorithm.SetAlgorithms;
 import omnia.data.cache.Memoized;
 import omnia.data.cache.MemoizedInt;
+import omnia.data.cache.WeakCache;
 import omnia.data.structure.DirectedGraph;
 import omnia.data.structure.Graph;
 import omnia.data.structure.Map;
@@ -19,6 +20,8 @@ import tasks.model.TaskStore;
 
 final class TaskStoreImpl implements TaskStore {
 
+  private final WeakCache<TaskId, TaskImpl> cache = new WeakCache<>();
+
   private final ImmutableDirectedGraph<TaskId> graph;
   private final ImmutableMap<TaskId, TaskData> data;
 
@@ -27,6 +30,7 @@ final class TaskStoreImpl implements TaskStore {
   private final Memoized<ImmutableSet<TaskImpl>> allOpenTasksWithOpenBlockers;
   private final Memoized<ImmutableSet<TaskImpl>> allCompletedTasks;
   private final Memoized<ImmutableSet<TaskImpl>> allOpenTasks;
+
   private final MemoizedInt hash;
 
   TaskStoreImpl(ImmutableDirectedGraph<TaskId> graph, ImmutableMap<TaskId, TaskData> data) {
@@ -164,11 +168,13 @@ final class TaskStoreImpl implements TaskStore {
   }
 
   TaskImpl toTask(TaskId id) {
-    return new TaskImpl(
-        this,
+    return cache.getOrCache(
         id,
-        data.valueOf(id)
-            .orElseThrow(() -> new IllegalArgumentException("unrecognized TaskId " + id)));
+        () -> new TaskImpl(
+            this,
+            id,
+            data.valueOf(id)
+                .orElseThrow(() -> new IllegalArgumentException("unrecognized TaskId " + id))));
   }
 
   private boolean hasNoOpenBlockers(TaskId id) {
