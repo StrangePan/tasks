@@ -18,26 +18,26 @@ import org.apache.commons.cli.CommandLine;
 import tasks.cli.command.FlagOption;
 import tasks.cli.command.Option;
 import tasks.cli.command.Parameter;
-import tasks.model.Task;
-import tasks.model.TaskStore;
+import tasks.model.ObservableTask;
+import tasks.model.ObservableTaskStore;
 
 public final class ParserUtil {
 
   private ParserUtil() {}
 
-  public static Parser<List<ParseResult<Task>>> taskListParser(
-      Memoized<? extends TaskStore> taskStore) {
+  public static Parser<List<ParseResult<ObservableTask>>> taskListParser(
+      Memoized<? extends ObservableTaskStore> taskStore) {
     return (args) -> parseTaskIds(ImmutableList.copyOf(args), taskStore.value());
   }
 
-  public static List<ParseResult<Task>> parseTaskIds(List<String> userInputs, TaskStore taskStore) {
+  public static List<ParseResult<ObservableTask>> parseTaskIds(List<String> userInputs, ObservableTaskStore taskStore) {
     return userInputs.stream()
         .map(userInput -> parseTaskId(userInput, taskStore))
         .collect(toList());
   }
 
-  public static ParseResult<Task> parseTaskId(String userInput, TaskStore taskStore) {
-    Set<Task> matchingTasks = getTasksMatching(userInput, taskStore);
+  public static ParseResult<ObservableTask> parseTaskId(String userInput, ObservableTaskStore taskStore) {
+    Set<ObservableTask> matchingTasks = getTasksMatching(userInput, taskStore);
     if (matchingTasks.count() > 1) {
       return ParseResult.failure(String.format("Ambiguous task ID: multiple tasks match '%s'", userInput));
     }
@@ -48,7 +48,7 @@ public final class ParserUtil {
             ParseResult.failure(String.format("Unknown task ID: no tasks match '%s'", userInput)));
   }
 
-  private static Set<Task> getTasksMatching(String userInput, TaskStore taskStore) {
+  private static Set<ObservableTask> getTasksMatching(String userInput, ObservableTaskStore taskStore) {
     return taskStore.allTasksMatchingCliPrefix(userInput).blockingFirst();
   }
 

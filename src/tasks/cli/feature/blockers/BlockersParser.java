@@ -14,15 +14,15 @@ import tasks.cli.parser.ParserException;
 import tasks.cli.parser.CommandParser;
 import tasks.cli.parser.Parser;
 import tasks.cli.parser.ParseResult;
-import tasks.model.Task;
+import tasks.model.ObservableTask;
 
 /** Command line argument parser for the Blockers command. */
 public final class BlockersParser implements CommandParser<BlockersArguments> {
-  private final Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
+  private final Memoized<? extends Parser<? extends List<? extends ParseResult<? extends ObservableTask>>>>
       taskParser;
 
   public BlockersParser(
-      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
+      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends ObservableTask>>>>
           taskParser) {
     this.taskParser = requireNonNull(taskParser);
   }
@@ -38,19 +38,19 @@ public final class BlockersParser implements CommandParser<BlockersArguments> {
      */
     List<String> argsList = ImmutableList.copyOf(commandLine.getArgList());
     if (argsList.count() < 1) {
-      throw new ParserException("Task not specified");
+      throw new ParserException("ObservableTask not specified");
     }
     if (argsList.count() > 1) {
       throw new ParserException("Unexpected extra arguments");
     }
 
-    ParseResult<? extends Task> targetTask =
+    ParseResult<? extends ObservableTask> targetTask =
         taskParser.value().parse(
             ImmutableList.of(argsList.itemAt(0))).itemAt(0);
-    List<? extends ParseResult<? extends Task>> tasksToAdd =
+    List<? extends ParseResult<? extends ObservableTask>> tasksToAdd =
         taskParser.value().parse(
             getOptionValues(commandLine, BlockersCommand.ADD_OPTION.value()));
-    List<? extends ParseResult<? extends Task>> tasksToRemove =
+    List<? extends ParseResult<? extends ObservableTask>> tasksToRemove =
         taskParser.value().parse(
             getOptionValues(commandLine, BlockersCommand.REMOVE_OPTION.value()));
     boolean isClearSet =

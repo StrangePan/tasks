@@ -7,13 +7,13 @@ import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
-import tasks.model.Task;
-import tasks.model.TaskStore;
+import tasks.model.ObservableTask;
+import tasks.model.ObservableTaskStore;
 
 public final class RewordHandler implements ArgumentHandler<RewordArguments> {
-  private final Memoized<? extends TaskStore> taskStore;
+  private final Memoized<? extends ObservableTaskStore> taskStore;
 
-  public RewordHandler(Memoized<? extends TaskStore> taskStore) {
+  public RewordHandler(Memoized<? extends ObservableTaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 
@@ -31,7 +31,7 @@ public final class RewordHandler implements ArgumentHandler<RewordArguments> {
                     arguments.targetTask(),
                     mutator -> mutator.setLabel(arguments.description())))
         .andThen(Single.just(arguments.targetTask()))
-        .map(Task::render)
+        .map(ObservableTask::render)
         .map(
             taskOutput ->
                 Output.builder().append("Updated description: ").append(taskOutput).build());

@@ -13,14 +13,14 @@ import omnia.data.structure.Set;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.cli.handler.HandlerUtil;
-import tasks.model.Task;
-import tasks.model.TaskStore;
+import tasks.model.ObservableTask;
+import tasks.model.ObservableTaskStore;
 
 /** Business logic for the Reopen command. */
 public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
-  private final Memoized<? extends TaskStore> taskStore;
+  private final Memoized<? extends ObservableTaskStore> taskStore;
 
-  public ReopenHandler(Memoized<? extends TaskStore> taskStore) {
+  public ReopenHandler(Memoized<? extends ObservableTaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 
@@ -31,14 +31,14 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
       throw new HandlerException("no tasks specified");
     }
 
-    TaskStore taskStore = this.taskStore.value();
+    ObservableTaskStore taskStore = this.taskStore.value();
 
-    EnumMap<HandlerUtil.CompletedState, Set<Task>> tasksGroupedByState =
+    EnumMap<HandlerUtil.CompletedState, Set<ObservableTask>> tasksGroupedByState =
         HandlerUtil.groupByCompletionState(Observable.fromIterable(arguments.tasks()));
 
-    Set<Task> completedTasks =
+    Set<ObservableTask> completedTasks =
         tasksGroupedByState.getOrDefault(HandlerUtil.CompletedState.COMPLETE, Set.empty());
-    Set<Task> alreadyOpenTasks =
+    Set<ObservableTask> alreadyOpenTasks =
         tasksGroupedByState.getOrDefault(HandlerUtil.CompletedState.INCOMPLETE, Set.empty());
 
     // report tasks already open

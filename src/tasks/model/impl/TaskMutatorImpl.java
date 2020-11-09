@@ -9,12 +9,12 @@ import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.HashSet;
 import omnia.data.structure.mutable.MutableSet;
-import tasks.model.Task;
+import tasks.model.ObservableTask;
 import tasks.model.TaskMutator;
 
 public final class TaskMutatorImpl implements TaskMutator {
 
-  private final TaskStoreImpl taskStore;
+  private final ObservableTaskStoreImpl taskStore;
   private final TaskId taskId;
 
   private Optional<String> label = Optional.empty();
@@ -26,7 +26,7 @@ public final class TaskMutatorImpl implements TaskMutator {
   private final MutableSet<TaskId> blockedTasksToAdd = HashSet.create();
   private final MutableSet<TaskId> blockedTasksToRemove = HashSet.create();
 
-  TaskMutatorImpl(TaskStoreImpl taskStore, TaskId taskId) {
+  TaskMutatorImpl(ObservableTaskStoreImpl taskStore, TaskId taskId) {
     this.taskStore = requireNonNull(taskStore);
     this.taskId = requireNonNull(taskId);
   }
@@ -44,12 +44,12 @@ public final class TaskMutatorImpl implements TaskMutator {
   }
 
   @Override
-  public TaskMutatorImpl setBlockingTasks(Iterable<Task> tasks) {
+  public TaskMutatorImpl setBlockingTasks(Iterable<ObservableTask> tasks) {
     Iterable<TaskId> taskIds =
         ImmutableList.copyOf(
             Observable.fromIterable(tasks)
                 .map(store()::validateTask)
-                .map(TaskImpl::id)
+                .map(ObservableTaskImpl::id)
                 .blockingIterable());
     overwriteBlockingTasks = true;
     blockingTasksToAdd.clear();
@@ -59,16 +59,16 @@ public final class TaskMutatorImpl implements TaskMutator {
   }
 
   @Override
-  public TaskMutatorImpl addBlockingTask(Task task) {
-    TaskImpl taskImpl = store().validateTask(task);
+  public TaskMutatorImpl addBlockingTask(ObservableTask task) {
+    ObservableTaskImpl taskImpl = store().validateTask(task);
     blockingTasksToAdd.add(taskImpl.id());
     blockingTasksToRemove.remove(taskImpl.id());
     return this;
   }
 
   @Override
-  public TaskMutatorImpl removeBlockingTask(Task task) {
-    TaskImpl taskImpl = store().validateTask(task);
+  public TaskMutatorImpl removeBlockingTask(ObservableTask task) {
+    ObservableTaskImpl taskImpl = store().validateTask(task);
     if (!overwriteBlockingTasks) {
       blockingTasksToRemove.add(taskImpl.id());
     }
@@ -77,12 +77,12 @@ public final class TaskMutatorImpl implements TaskMutator {
   }
 
   @Override
-  public TaskMutatorImpl setBlockedTasks(Iterable<Task> tasks) {
+  public TaskMutatorImpl setBlockedTasks(Iterable<ObservableTask> tasks) {
     Iterable<TaskId> taskIds =
         ImmutableList.copyOf(
             Observable.fromIterable(tasks)
                 .map(store()::validateTask)
-                .map(TaskImpl::id)
+                .map(ObservableTaskImpl::id)
                 .blockingIterable());
     overwriteBlockedTasks = true;
     blockedTasksToAdd.clear();
@@ -92,16 +92,16 @@ public final class TaskMutatorImpl implements TaskMutator {
   }
 
   @Override
-  public TaskMutatorImpl addBlockedTask(Task task) {
-    TaskImpl taskImpl = store().validateTask(task);
+  public TaskMutatorImpl addBlockedTask(ObservableTask task) {
+    ObservableTaskImpl taskImpl = store().validateTask(task);
     blockedTasksToAdd.add(taskImpl.id());
     blockedTasksToRemove.remove(taskImpl.id());
     return this;
   }
 
   @Override
-  public TaskMutatorImpl removeBlockedTask(Task task) {
-    TaskImpl taskImpl = store().validateTask(task);
+  public TaskMutatorImpl removeBlockedTask(ObservableTask task) {
+    ObservableTaskImpl taskImpl = store().validateTask(task);
     if (!overwriteBlockedTasks) {
       blockedTasksToRemove.add(taskImpl.id());
     }
@@ -109,7 +109,7 @@ public final class TaskMutatorImpl implements TaskMutator {
     return this;
   }
 
-  TaskStoreImpl store() {
+  ObservableTaskStoreImpl store() {
     return taskStore;
   }
 

@@ -11,20 +11,20 @@ import omnia.data.structure.tuple.Tuple;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.cli.handler.HandlerUtil;
-import tasks.model.Task;
-import tasks.model.TaskStore;
+import tasks.model.ObservableTask;
+import tasks.model.ObservableTaskStore;
 
 /** Business logic for the Remove command. */
 public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
-  private final Memoized<? extends TaskStore> taskStore;
+  private final Memoized<? extends ObservableTaskStore> taskStore;
 
-  public RemoveHandler(Memoized<? extends TaskStore> taskStore) {
+  public RemoveHandler(Memoized<? extends ObservableTaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 
   @Override
   public Single<Output> handle(RemoveArguments arguments) {
-    Collection<Task> tasksToDelete = arguments.tasks();
+    Collection<ObservableTask> tasksToDelete = arguments.tasks();
 
     // Validate arguments
     if (!tasksToDelete.isPopulated()) {

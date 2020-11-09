@@ -32,13 +32,13 @@ import omnia.data.structure.observable.writable.WritableObservableMap;
 import omnia.data.structure.tuple.Couple;
 import omnia.data.structure.tuple.Tuple;
 import tasks.io.File;
-import tasks.model.Task;
+import tasks.model.ObservableTask;
 import tasks.model.TaskBuilder;
 import tasks.model.TaskMutator;
-import tasks.model.TaskStore;
+import tasks.model.ObservableTaskStore;
 
 /** This is currently NOT thread-safe. */
-public final class TaskStoreImpl implements TaskStore {
+public final class ObservableTaskStoreImpl implements ObservableTaskStore {
 
   private final CompletableSubject isShutdown = CompletableSubject.create();
   private final Completable isShutdownComplete;
@@ -50,7 +50,7 @@ public final class TaskStoreImpl implements TaskStore {
   private final Observable<Flowable<DirectedGraph<TaskId>>> currentTaskGraphSource;
   private final Observable<Flowable<Map<TaskId, TaskData>>> currentTaskDataSource;
 
-  public TaskStoreImpl(String filePath) {
+  public ObservableTaskStoreImpl(String filePath) {
     this.fileSource = new TaskFileSource(File.fromPath(filePath));
     Couple<DirectedGraph<TaskId>, Map<TaskId, TaskData>> loadedData =
         fileSource.readFromFile().blockingGet();
@@ -86,7 +86,7 @@ public final class TaskStoreImpl implements TaskStore {
   }
 
   @Override
-  public Maybe<Task> lookUpById(long id) {
+  public Maybe<ObservableTask> lookUpById(long id) {
     return observeTaskGraph()
         .firstElement()
         .map(graph -> graph.nodeOf(new TaskId(id)))
@@ -97,15 +97,15 @@ public final class TaskStoreImpl implements TaskStore {
   }
 
   @Override
-  public Flowable<Set<Task>> allTasks() {
+  public Flowable<Set<ObservableTask>> allTasks() {
     return observeTaskGraph()
         .map(Graph::contents)
         .map(contents -> contents.stream().map(this::toTask).collect(toSet()));
   }
 
   @Override
-  public Flowable<Set<Task>> allTasksBlocking(Task blockedTask) {
-    TaskImpl blockedTaskImpl = validateTask(blockedTask);
+  public Flowable<Set<ObservableTask>> allTasksBlocking(ObservableTask blockedTask) {
+    ObservableTaskImpl blockedTaskImpl = validateTask(blockedTask);
     return observeTaskGraph()
         .map(graph -> graph.nodeOf(blockedTaskImpl.id()))
         .map(optionalNode -> optionalNode.map(DirectedNode::predecessors).orElse(Set.empty()))
@@ -115,8 +115,8 @@ public final class TaskStoreImpl implements TaskStore {
   }
 
   @Override
-  public Flowable<Set<Task>> allTasksBlockedBy(Task blockingTask) {
-    TaskImpl blockingTaskImpl = validateTask(blockingTask);
+  public Flowable<Set<ObservableTask>> allTasksBlockedBy(ObservableTask blockingTask) {
+    ObservableTaskImpl blockingTaskImpl = validateTask(blockingTask);
     return observeTaskGraph()
         .map(graph -> graph.nodeOf(blockingTaskImpl.id()))
         .map(optionalNode -> optionalNode.map(DirectedNode::successors).orElse(Set.empty()))
@@ -126,27 +126,27 @@ public final class TaskStoreImpl implements TaskStore {
   }
 
   @Override
-  public Flowable<Set<Task>> allOpenTasksWithoutOpenBlockers() {
+  public Flowable<Set<ObservableTask>> allOpenTasksWithoutOpenBlockers() {
     return tasksFromNodesMatching(node -> !hasBlockingTasks(node) && !isCompleted(node));
   }
 
   @Override
-  public Flowable<Set<Task>> allOpenTasksWithOpenBlockers() {
+  public Flowable<Set<ObservableTask>> allOpenTasksWithOpenBlockers() {
     return tasksFromNodesMatching(node -> hasBlockingTasks(node) && !isCompleted(node));
   }
 
   @Override
-  public Flowable<Set<Task>> allCompletedTasks() {
+  public Flowable<Set<ObservableTask>> allCompletedTasks() {
     return tasksFromNodesMatching(this::isCompleted);
   }
 
   @Override
-  public Flowable<Set<Task>> allOpenTasks() {
+  public Flowable<Set<ObservableTask>> allOpenTasks() {
     return tasksFromNodesMatching(n -> !isCompleted(n));
   }
 
   @Override
-  public Flowable<Set<Task>> allTasksMatchingCliPrefix(String prefix) {
+  public Flowable<Set<ObservableTask>> allTasksMatchingCliPrefix(String prefix) {
     requireNonNull(prefix);
     return observeTaskGraph()
         .map(Graph::contents)
@@ -158,7 +158,7 @@ public final class TaskStoreImpl implements TaskStore {
   }
 
   @Override
-  public Flowable<DirectedGraph<Task>> taskGraph() {
+  public Flowable<DirectedGraph<ObservableTask>> taskGraph() {
     return observeTaskGraph().map(this::toTaskGraph);
   }
 
@@ -174,7 +174,7 @@ public final class TaskStoreImpl implements TaskStore {
                 taskData.valueOf(successor.item()).map(data -> !data.isCompleted()).orElse(false));
   }
 
-  private Flowable<Set<Task>> tasksFromNodesMatching(
+  private Flowable<Set<ObservableTask>> tasksFromNodesMatching(
       Predicate<? super DirectedNode<? extends TaskId>> filter) {
     return observeTaskGraph()
         .map(DirectedGraph::nodes)
@@ -187,7 +187,7 @@ public final class TaskStoreImpl implements TaskStore {
   }
 
   @Override
-  public Single<Task> createTask(
+  public Single<ObservableTask> createTask(
       String label, Function<? super TaskBuilder, ? extends TaskBuilder> builder) {
     return Single.just(new TaskBuilderImpl(this, label))
         .<TaskBuilder>map(builder::apply)
@@ -285,33 +285,33 @@ public final class TaskStoreImpl implements TaskStore {
 
   @Override
   public Completable mutateTask(
-      Task task, Function<? super TaskMutator, ? extends TaskMutator> mutation) {
+      ObservableTask task, Function<? super TaskMutator, ? extends TaskMutator> mutation) {
     return mutateTask(validateTask(task), mutation);
   }
 
   Completable mutateTask(
-      TaskImpl task, Function<? super TaskMutator, ? extends TaskMutator> mutation) {
+      ObservableTaskImpl task, Function<? super TaskMutator, ? extends TaskMutator> mutation) {
     return Single.just(new TaskMutatorImpl(this, task.id()))
         .<TaskMutator>map(mutation::apply)
         .flatMapCompletable(mutator -> Completable.fromAction(() -> maybeApplyMutator(mutator)))
         .cache();
   }
 
-  TaskImpl validateTask(Task task) {
+  ObservableTaskImpl validateTask(ObservableTask task) {
     requireNonNull(task);
-    if (!(task instanceof TaskImpl)) {
+    if (!(task instanceof ObservableTaskImpl)) {
       throw new IllegalArgumentException(
           "Unrecognized task type. Expected "
-              + TaskImpl.class
+              + ObservableTaskImpl.class
               + ", received "
               + task.getClass()
               + ": "
               + task);
     }
-    TaskImpl taskImpl = (TaskImpl) task;
+    ObservableTaskImpl taskImpl = (ObservableTaskImpl) task;
     if (taskImpl.store() != this) {
       throw new IllegalArgumentException(
-          "Task associated with another store. Expected <"
+          "ObservableTask associated with another store. Expected <"
               + this
               + ">, received <"
               + taskImpl.store()
@@ -321,12 +321,12 @@ public final class TaskStoreImpl implements TaskStore {
     return taskImpl;
   }
 
-  private Task toTask(TaskId id) {
-    return new TaskImpl(this, id);
+  private ObservableTask toTask(TaskId id) {
+    return new ObservableTaskImpl(this, id);
   }
 
-  private ImmutableDirectedGraph<Task> toTaskGraph(DirectedGraph<TaskId> idGraph) {
-    ImmutableDirectedGraph.Builder<Task> taskGraph = ImmutableDirectedGraph.builder();
+  private ImmutableDirectedGraph<ObservableTask> toTaskGraph(DirectedGraph<TaskId> idGraph) {
+    ImmutableDirectedGraph.Builder<ObservableTask> taskGraph = ImmutableDirectedGraph.builder();
     idGraph.nodes().forEach(node -> taskGraph.addNode(toTask(node.item())));
     idGraph.edges().forEach(
         edge -> taskGraph.addEdge(toTask(edge.start().item()), toTask(edge.end().item())));
@@ -412,11 +412,11 @@ public final class TaskStoreImpl implements TaskStore {
   }
 
   @Override
-  public Completable deleteTask(Task task) {
+  public Completable deleteTask(ObservableTask task) {
     return deleteTask(validateTask(task));
   }
 
-  public Completable deleteTask(TaskImpl task) {
+  public Completable deleteTask(ObservableTaskImpl task) {
     return Completable.mergeArray(
         Completable.fromAction(() -> taskGraph.removeNode(task.id())),
         Completable.fromAction(() -> taskData.removeKey(task.id())))

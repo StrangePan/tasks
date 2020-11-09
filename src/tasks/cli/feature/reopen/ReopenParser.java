@@ -5,12 +5,12 @@ import omnia.data.structure.List;
 import tasks.cli.command.common.simple.SimpleParser;
 import tasks.cli.parser.ParseResult;
 import tasks.cli.parser.Parser;
-import tasks.model.Task;
+import tasks.model.ObservableTask;
 
 /** Command line argument parser for the Reopen command. */
 public final class ReopenParser extends SimpleParser<ReopenArguments> {
   public ReopenParser(
-      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
+      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends ObservableTask>>>>
           taskParser) {
     super(ReopenArguments::new, taskParser);
   }

@@ -10,29 +10,29 @@ import omnia.data.structure.Set;
 
 /**
  * A queryable, observable collection of task objects. Contains the canonical data, or knows how to
- * fetch the canonical data of an individual Task.
+ * fetch the canonical data of an individual ObservableTask.
  */
-public interface TaskStore {
+public interface ObservableTaskStore {
 
-  Maybe<Task> lookUpById(long id);
+  Maybe<ObservableTask> lookUpById(long id);
 
-  Flowable<Set<Task>> allTasks();
+  Flowable<Set<ObservableTask>> allTasks();
 
-  Flowable<Set<Task>> allTasksBlocking(Task blockedTask);
+  Flowable<Set<ObservableTask>> allTasksBlocking(ObservableTask blockedTask);
 
-  Flowable<Set<Task>> allTasksBlockedBy(Task blockingTask);
+  Flowable<Set<ObservableTask>> allTasksBlockedBy(ObservableTask blockingTask);
 
-  Flowable<Set<Task>> allOpenTasksWithoutOpenBlockers();
+  Flowable<Set<ObservableTask>> allOpenTasksWithoutOpenBlockers();
 
-  Flowable<Set<Task>> allOpenTasksWithOpenBlockers();
+  Flowable<Set<ObservableTask>> allOpenTasksWithOpenBlockers();
 
-  Flowable<Set<Task>> allCompletedTasks();
+  Flowable<Set<ObservableTask>> allCompletedTasks();
 
-  Flowable<Set<Task>> allOpenTasks();
+  Flowable<Set<ObservableTask>> allOpenTasks();
 
-  Flowable<Set<Task>> allTasksMatchingCliPrefix(String prefix);
+  Flowable<Set<ObservableTask>> allTasksMatchingCliPrefix(String prefix);
 
-  Flowable<DirectedGraph<Task>> taskGraph();
+  Flowable<DirectedGraph<ObservableTask>> taskGraph();
 
   /**
    * Attempts to create a new task and add it to the store.
@@ -43,7 +43,7 @@ public interface TaskStore {
    *     added to the store, or an error if the task mutation would have put the store in an invalid
    *     state.
    */
-  Single<Task> createTask(
+  Single<ObservableTask> createTask(
       String label, Function<? super TaskBuilder, ? extends TaskBuilder> builder);
 
   /**
@@ -54,7 +54,7 @@ public interface TaskStore {
    * @return A {@link Completable} that completes when the mutation has been successfully applied to
    *     the store, or emits an error if the mutation would have put the store in an invalid state.
    */
-  Completable mutateTask(Task task, Function<? super TaskMutator, ? extends TaskMutator> mutation);
+  Completable mutateTask(ObservableTask task, Function<? super TaskMutator, ? extends TaskMutator> mutation);
 
   /**
    * Attempts to delete a task from the store.
@@ -63,7 +63,7 @@ public interface TaskStore {
    * @return A {@link Completable} that completes when the deletion has been successfully completed,
    *     or emits an error if the mutation would have put the store in an invalid state.
    */
-  Completable deleteTask(Task task);
+  Completable deleteTask(ObservableTask task);
 
   /**
    * Attempts to save the task store's contents to persistent storage.

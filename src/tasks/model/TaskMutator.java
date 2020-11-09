@@ -8,18 +8,18 @@ public interface TaskMutator extends TaskBuilder {
   TaskMutator setLabel(String label);
 
   @Override
-  TaskMutator setBlockingTasks(Iterable<Task> task);
+  TaskMutator setBlockingTasks(Iterable<ObservableTask> task);
 
   @Override
-  TaskMutator addBlockingTask(Task task);
+  TaskMutator addBlockingTask(ObservableTask task);
 
-  TaskMutator removeBlockingTask(Task task);
-
-  @Override
-  TaskMutator setBlockedTasks(Iterable<Task> task);
+  TaskMutator removeBlockingTask(ObservableTask task);
 
   @Override
-  TaskMutator addBlockedTask(Task task);
+  TaskMutator setBlockedTasks(Iterable<ObservableTask> task);
 
-  TaskMutator removeBlockedTask(Task task);
+  @Override
+  TaskMutator addBlockedTask(ObservableTask task);
+
+  TaskMutator removeBlockedTask(ObservableTask task);
 }

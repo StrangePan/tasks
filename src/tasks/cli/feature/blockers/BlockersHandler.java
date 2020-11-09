@@ -14,14 +14,14 @@ import omnia.data.structure.tuple.Couple;
 import omnia.data.structure.tuple.Tuple;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
-import tasks.model.Task;
-import tasks.model.TaskStore;
+import tasks.model.ObservableTask;
+import tasks.model.ObservableTaskStore;
 
 /** Business logic for the Blockers command. */
 public final class BlockersHandler implements ArgumentHandler<BlockersArguments> {
-  private final Memoized<? extends TaskStore> taskStore;
+  private final Memoized<? extends ObservableTaskStore> taskStore;
 
-  public BlockersHandler(Memoized<? extends TaskStore> taskStore) {
+  public BlockersHandler(Memoized<? extends ObservableTaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 
@@ -51,7 +51,7 @@ public final class BlockersHandler implements ArgumentHandler<BlockersArguments>
                     .build());
   }
 
-  private Single<Couple<Set<Task>, Set<Task>>> mutateAndProduceBeforeAfterSnapshot(
+  private Single<Couple<Set<ObservableTask>, Set<ObservableTask>>> mutateAndProduceBeforeAfterSnapshot(
       BlockersArguments arguments) {
     return getTasksBlocking(arguments.targetTask())
         .flatMap(
@@ -76,11 +76,11 @@ public final class BlockersHandler implements ArgumentHandler<BlockersArguments>
         });
   }
 
-  private static Single<Set<Task>> getTasksBlocking(Task task) {
+  private static Single<Set<ObservableTask>> getTasksBlocking(ObservableTask task) {
     return task.query().tasksBlockingThis().firstOrError();
   }
 
-  private static Output stringifyResults(Couple<Set<Task>, Set<Task>> beforeAfterSnapshots) {
+  private static Output stringifyResults(Couple<Set<ObservableTask>, Set<ObservableTask>> beforeAfterSnapshots) {
     return Output.builder()
         .appendLine(stringifyIfPopulated("current blockers:", beforeAfterSnapshots.second()))
         .appendLine(
@@ -90,7 +90,7 @@ public final class BlockersHandler implements ArgumentHandler<BlockersArguments>
         .build();
   }
 
-  private static Set<Task> getRemovedBlockers(Set<Task> before, Set<Task> after) {
+  private static Set<ObservableTask> getRemovedBlockers(Set<ObservableTask> before, Set<ObservableTask> after) {
     return SetAlgorithms.differenceBetween(before, after);
   }
 }

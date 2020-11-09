@@ -1,17 +1,17 @@
 package tasks.cli.command.common.simple;
 
 import omnia.data.structure.List;
-import tasks.model.Task;
+import tasks.model.ObservableTask;
 
 public abstract class SimpleArguments {
-  private final List<Task> tasks;
+  private final List<ObservableTask> tasks;
 
-  protected SimpleArguments(List<Task> tasks) {
+  protected SimpleArguments(List<ObservableTask> tasks) {
     this.tasks = tasks;
   }
 
   /** The list of tasks parsed from the command line. */
-  protected List<Task> tasks() {
+  protected List<ObservableTask> tasks() {
     return tasks;
   }
 }

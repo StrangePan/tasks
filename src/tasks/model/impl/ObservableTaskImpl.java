@@ -12,24 +12,24 @@ import omnia.cli.out.Output;
 import omnia.data.structure.Set;
 import omnia.data.structure.mutable.MutableSet;
 import omnia.data.structure.mutable.TreeSet;
-import tasks.model.Task;
+import tasks.model.ObservableTask;
 import tasks.model.TaskMutator;
 
-final class TaskImpl implements Task {
+final class ObservableTaskImpl implements ObservableTask {
 
-  private final TaskStoreImpl store;
+  private final ObservableTaskStoreImpl store;
   private final TaskId id;
 
-  TaskImpl(TaskStoreImpl store, TaskId id) {
+  ObservableTaskImpl(ObservableTaskStoreImpl store, TaskId id) {
     this.store = requireNonNull(store);
     this.id = requireNonNull(id);
   }
 
   @Override
   public boolean equals(Object other) {
-    return other instanceof TaskImpl
-        && ((TaskImpl) other).store.equals(store)
-        && ((TaskImpl) other).id.equals(id);
+    return other instanceof ObservableTaskImpl
+        && ((ObservableTaskImpl) other).store.equals(store)
+        && ((ObservableTaskImpl) other).id.equals(id);
   }
 
   @Override
@@ -49,8 +49,8 @@ final class TaskImpl implements Task {
         store.allTasks()
             .firstOrError()
             .flatMapObservable(Observable::fromIterable)
-            .cast(TaskImpl.class)
-            .map(TaskImpl::id)
+            .cast(ObservableTaskImpl.class)
+            .map(ObservableTaskImpl::id)
             .map(Object::toString)
             .collectInto(TreeSet.create(String::compareTo), MutableSet::add)
             .blockingGet();
@@ -124,13 +124,13 @@ final class TaskImpl implements Task {
     return new Query() {
 
       @Override
-      public Flowable<Set<Task>> tasksBlockedByThis() {
-        return store().allTasksBlockedBy(TaskImpl.this);
+      public Flowable<Set<ObservableTask>> tasksBlockedByThis() {
+        return store().allTasksBlockedBy(ObservableTaskImpl.this);
       }
 
       @Override
-      public Flowable<Set<Task>> tasksBlockingThis() {
-        return store().allTasksBlocking(TaskImpl.this);
+      public Flowable<Set<ObservableTask>> tasksBlockingThis() {
+        return store().allTasksBlocking(ObservableTaskImpl.this);
       }
     };
   }
@@ -140,7 +140,7 @@ final class TaskImpl implements Task {
     return store().mutateTask(this, mutator);
   }
 
-  TaskStoreImpl store() {
+  ObservableTaskStoreImpl store() {
     return store;
   }
 

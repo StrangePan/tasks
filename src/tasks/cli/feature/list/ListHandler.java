@@ -10,13 +10,13 @@ import omnia.data.cache.Memoized;
 import omnia.data.structure.tuple.Triple;
 import omnia.data.structure.tuple.Tuple;
 import tasks.cli.handler.ArgumentHandler;
-import tasks.model.TaskStore;
+import tasks.model.ObservableTaskStore;
 
 /** Business logic for the List command. */
 public final class ListHandler implements ArgumentHandler<ListArguments> {
-  private final Memoized<? extends TaskStore> taskStore;
+  private final Memoized<? extends ObservableTaskStore> taskStore;
 
-  public ListHandler(Memoized<? extends TaskStore> taskStore) {
+  public ListHandler(Memoized<? extends ObservableTaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 

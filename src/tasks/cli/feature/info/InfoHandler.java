@@ -8,7 +8,7 @@ import omnia.data.structure.Set;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.cli.handler.HandlerUtil;
-import tasks.model.Task;
+import tasks.model.ObservableTask;
 
 /** Business logic for the Info command. */
 public final class InfoHandler implements ArgumentHandler<InfoArguments> {
@@ -27,7 +27,7 @@ public final class InfoHandler implements ArgumentHandler<InfoArguments> {
         .map(Output.Builder::build);
   }
 
-  private static Output stringify(Task task) {
+  private static Output stringify(ObservableTask task) {
     return Output.builder()
         .appendLine(task.render())
         .appendLine(
@@ -37,7 +37,7 @@ public final class InfoHandler implements ArgumentHandler<InfoArguments> {
         .build();
   }
 
-  private static Output stringifyIfPopulated(String prefix, Flowable<Set<Task>> tasks) {
+  private static Output stringifyIfPopulated(String prefix, Flowable<Set<ObservableTask>> tasks) {
     return tasks.firstOrError()
         .map(t -> HandlerUtil.stringifyIfPopulated(prefix, t))
         .blockingGet();

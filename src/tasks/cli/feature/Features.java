@@ -51,8 +51,8 @@ import tasks.cli.feature.reword.RewordParser;
 import tasks.cli.parser.Parser;
 import tasks.cli.parser.ParserUtil;
 import tasks.cli.parser.ParseResult;
-import tasks.model.Task;
-import tasks.model.TaskStore;
+import tasks.model.ObservableTask;
+import tasks.model.ObservableTaskStore;
 
 public final class Features implements Commands {
 
@@ -60,8 +60,8 @@ public final class Features implements Commands {
   private final Map<String, Feature<?>> featuresByNameAndAliases;
   private final ImmutableSet<Command> commands;
 
-  public Features(Memoized<? extends TaskStore> taskStore) {
-    Memoized<Parser<List<ParseResult<Task>>>> taskListParser =
+  public Features(Memoized<? extends ObservableTaskStore> taskStore) {
+    Memoized<Parser<List<ParseResult<ObservableTask>>>> taskListParser =
         memoize(() -> ParserUtil.taskListParser(taskStore));
 
     helpFeature =
