@@ -7,7 +7,7 @@ import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
-import tasks.model.ObservableTask;
+import tasks.model.Task;
 import tasks.model.ObservableTaskStore;
 
 public final class RewordHandler implements ArgumentHandler<RewordArguments> {
@@ -26,12 +26,12 @@ public final class RewordHandler implements ArgumentHandler<RewordArguments> {
 
     return Single.fromCallable(taskStore::value)
         .flatMapCompletable(
-            store ->
-                store.mutateTask(
-                    arguments.targetTask(),
-                    mutator -> mutator.setLabel(arguments.description())))
+            store -> store
+                .mutateTask(
+                    arguments.targetTask(), mutator -> mutator.setLabel(arguments.description()))
+                .ignoreElement())
         .andThen(Single.just(arguments.targetTask()))
-        .map(ObservableTask::render)
+        .map(Task::render)
         .map(
             taskOutput ->
                 Output.builder().append("Updated description: ").append(taskOutput).build());

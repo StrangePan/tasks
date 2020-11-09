@@ -47,7 +47,7 @@ public final class Observables {
             .map(ImmutableMap.Builder::build);
   }
 
-  public static <T> Function<Observable<T>, Single<ImmutableList<T>>> toImmutableList() {
+  public static <T> Function<Observable<? extends T>, Single<ImmutableList<T>>> toImmutableList() {
     return observable ->
         observable.collectInto(ImmutableList.<T>builder(), ImmutableList.Builder::add)
             .map(ImmutableList.Builder::build);

@@ -32,7 +32,7 @@ final class TaskFileSource {
     this.file = file;
   }
 
-  Single<Couple<DirectedGraph<TaskId>, Map<TaskId, TaskData>>> readFromFile() {
+  Single<Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>>> readFromFile() {
     return Single.fromCallable(() -> {
       try (BufferedReader reader = new BufferedReader(file.openReader())) {
         return parseTaskData(reader);
@@ -41,17 +41,16 @@ final class TaskFileSource {
   }
 
   Completable writeToFile(
-      Couple<
-          ? extends DirectedGraph<? extends TaskId>,
-          ? extends Map<? extends TaskId, ? extends TaskData>> data) {
+      DirectedGraph<? extends TaskIdImpl> graph, Map<? extends TaskIdImpl, ? extends TaskData> data) {
     return Completable.fromAction(() -> {
       try (BufferedWriter writer = new BufferedWriter(file.openWriter())) {
-        serializeTaskData(data, writer);
+        serializeTaskData(graph, data, writer);
       }
     });
   }
 
-  private static Couple<DirectedGraph<TaskId>, Map<TaskId, TaskData>> parseTaskData(BufferedReader reader) {
+  private static Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>>
+      parseTaskData(BufferedReader reader) {
     return Single.just(reader)
         .map(BufferedReader::lines)
         .map(Stream::iterator)
@@ -64,8 +63,8 @@ final class TaskFileSource {
   }
 
   private static final class LineCollector {
-    private final ImmutableDirectedGraph.Builder<TaskId> graph = ImmutableDirectedGraph.builder();
-    private final ImmutableMap.Builder<TaskId, TaskData> tasks = ImmutableMap.builder();
+    private final ImmutableDirectedGraph.Builder<TaskIdImpl> graph = ImmutableDirectedGraph.builder();
+    private final ImmutableMap.Builder<TaskIdImpl, TaskData> tasks = ImmutableMap.builder();
     private State state = State.PARSING_NOTHING;
 
     private enum State {
@@ -106,7 +105,7 @@ final class TaskFileSource {
 
     private void parseToGraph(String line) {
       String[] fields = line.split(TASK_FIELD_DELIMITER);
-      TaskId id = parseId(fields[0]);
+      TaskIdImpl id = parseId(fields[0]);
       Stream.of(fields[1].split(TASK_ID_DELIMITER))
           .map(TaskFileSource::parseId)
           .forEach(dependency -> graph.addEdge(dependency, id));
@@ -116,7 +115,7 @@ final class TaskFileSource {
 
     private void parseToTasks(String line) {
       String[] fields = line.split(TASK_FIELD_DELIMITER);
-      TaskId id = parseId(fields[0]);
+      TaskIdImpl id = parseId(fields[0]);
       boolean completed = Boolean.parseBoolean(fields[1]);
       String label = unescapeLabel(fields[2]);
       tasks.putMapping(id, new TaskData(completed, label));
@@ -124,33 +123,36 @@ final class TaskFileSource {
       // TODO(vc0gqs1jstmo): ensure unique ids
     }
 
-    Couple<DirectedGraph<TaskId>, Map<TaskId, TaskData>> build() {
+    Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>> build() {
       return Tuple.of(graph.build(), tasks.build());
     }
   }
 
-  private static TaskId parseId(String string) {
+  private static TaskIdImpl parseId(String string) {
     try {
-      return TaskId.parse(string);
+      return TaskIdImpl.parse(string);
     } catch (NumberFormatException ex) {
       // TODO(3b6ayu83gqtc): make a parsing exception
       throw new RuntimeException("invalid id: " + string, ex);
     }
   }
 
-  private void serializeTaskData(Couple<? extends DirectedGraph<? extends TaskId>, ? extends Map<? extends TaskId, ? extends TaskData>> data, Writer writer) {
+  private void serializeTaskData(
+      DirectedGraph<? extends TaskIdImpl> graph,
+      Map<? extends TaskIdImpl, ? extends TaskData> data,
+      Writer writer) {
     Observable.just(
             Observable.just("# version " + VERSION),
             Observable.just("# tasks"),
-            serialize(data.second()),
+            serialize(data),
             Observable.just("# dependencies"),
-            serialize(data.first()))
+            serialize(graph))
         .concatMap(o -> o)
         .concatMap(line -> Observable.just(line, END_OF_LINE))
         .blockingForEach(writer::write);
   }
 
-  private static Observable<String> serialize(Map<? extends TaskId, ? extends TaskData> tasks) {
+  private static Observable<String> serialize(Map<? extends TaskIdImpl, ? extends TaskData> tasks) {
     return Single.just(tasks)
         .map(Map::entries)
         .flatMapObservable(Observable::fromIterable)
@@ -159,7 +161,7 @@ final class TaskFileSource {
         .map(TaskFileSource::serialize);
   }
 
-  private static String serialize(Couple<? extends TaskId, ? extends TaskData> task) {
+  private static String serialize(Couple<? extends TaskIdImpl, ? extends TaskData> task) {
     return new StringBuilder()
         .append(serialize(task.first()))
         .append(TASK_FIELD_DELIMITER)
@@ -170,7 +172,7 @@ final class TaskFileSource {
         .toString();
   }
 
-  private static String serialize(TaskId id) {
+  private static String serialize(TaskIdImpl id) {
     return id.toString();
   }
 
@@ -244,7 +246,7 @@ final class TaskFileSource {
     }
   }
 
-  private static Observable<String> serialize(DirectedGraph<? extends TaskId> graph) {
+  private static Observable<String> serialize(DirectedGraph<? extends TaskIdImpl> graph) {
     return Single.just(graph)
         .map(DirectedGraph::nodes)
         .flatMapObservable(Observable::fromIterable)
@@ -253,14 +255,14 @@ final class TaskFileSource {
         .map(TaskFileSource::serialize);
   }
 
-  private static String serialize(DirectedGraph.DirectedNode<? extends TaskId> node) {
+  private static String serialize(DirectedGraph.DirectedNode<? extends TaskIdImpl> node) {
     return new StringBuilder()
         .append(serialize(node.item()))
         .append(TASK_FIELD_DELIMITER)
         .append(
             node.predecessors().stream()
                 .map(DirectedGraph.DirectedNode::item)
-                .sorted(Comparator.comparing(TaskId::asLong))
+                .sorted(Comparator.comparing(TaskIdImpl::asLong))
                 .map(TaskFileSource::serialize)
                 .collect(joining(TASK_ID_DELIMITER)))
         .append(TASK_FIELD_DELIMITER)

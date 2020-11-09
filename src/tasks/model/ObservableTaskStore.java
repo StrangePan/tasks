@@ -1,12 +1,10 @@
 package tasks.model;
 
 import io.reactivex.Completable;
-import io.reactivex.Flowable;
-import io.reactivex.Maybe;
+import io.reactivex.Observable;
 import io.reactivex.Single;
 import java.util.function.Function;
-import omnia.data.structure.DirectedGraph;
-import omnia.data.structure.Set;
+import omnia.data.structure.tuple.Triple;
 
 /**
  * A queryable, observable collection of task objects. Contains the canonical data, or knows how to
@@ -14,36 +12,18 @@ import omnia.data.structure.Set;
  */
 public interface ObservableTaskStore {
 
-  Maybe<ObservableTask> lookUpById(long id);
-
-  Flowable<Set<ObservableTask>> allTasks();
-
-  Flowable<Set<ObservableTask>> allTasksBlocking(ObservableTask blockedTask);
-
-  Flowable<Set<ObservableTask>> allTasksBlockedBy(ObservableTask blockingTask);
-
-  Flowable<Set<ObservableTask>> allOpenTasksWithoutOpenBlockers();
-
-  Flowable<Set<ObservableTask>> allOpenTasksWithOpenBlockers();
-
-  Flowable<Set<ObservableTask>> allCompletedTasks();
-
-  Flowable<Set<ObservableTask>> allOpenTasks();
-
-  Flowable<Set<ObservableTask>> allTasksMatchingCliPrefix(String prefix);
-
-  Flowable<DirectedGraph<ObservableTask>> taskGraph();
+  Observable<? extends TaskStore> observe();
 
   /**
    * Attempts to create a new task and add it to the store.
    *
    * @param label the desired label for the new task
    * @param builder a function that configures and returns a {@link TaskBuilder} for the new task
-   * @return A {@link Single} which either emits the completed task after it has been successfully
-   *     added to the store, or an error if the task mutation would have put the store in an invalid
-   *     state.
+   * @return A {@link Single} that emits the mutated task, as well as the before and after states
+   *     of the store when the new task has been successfully applied to the store, or emits an
+   *     error if the mutation would have put the store in an invalid state.
    */
-  Single<ObservableTask> createTask(
+  Single<? extends Triple<? extends TaskStore, ? extends TaskStore, ? extends Task>> createTask(
       String label, Function<? super TaskBuilder, ? extends TaskBuilder> builder);
 
   /**
@@ -51,10 +31,12 @@ public interface ObservableTaskStore {
    *
    * @param task the desired task to mutate
    * @param mutation a function that configures and returns a {@link TaskMutator}
-   * @return A {@link Completable} that completes when the mutation has been successfully applied to
-   *     the store, or emits an error if the mutation would have put the store in an invalid state.
+   * @return A {@link Single} that emits the mutated task, as well as the before and after states
+   *     of the store when the mutation has been successfully applied to the store, or emits an
+   *     error if the mutation would have put the store in an invalid state.
    */
-  Completable mutateTask(ObservableTask task, Function<? super TaskMutator, ? extends TaskMutator> mutation);
+  Single<? extends Triple<? extends TaskStore, ? extends TaskStore, ? extends Task>> mutateTask(
+      Task task, Function<? super TaskMutator, ? extends TaskMutator> mutation);
 
   /**
    * Attempts to delete a task from the store.
@@ -63,7 +45,7 @@ public interface ObservableTaskStore {
    * @return A {@link Completable} that completes when the deletion has been successfully completed,
    *     or emits an error if the mutation would have put the store in an invalid state.
    */
-  Completable deleteTask(ObservableTask task);
+  Completable deleteTask(Task task);
 
   /**
    * Attempts to save the task store's contents to persistent storage.

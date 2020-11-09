@@ -14,15 +14,15 @@ import tasks.cli.parser.ParserException;
 import tasks.cli.parser.CommandParser;
 import tasks.cli.parser.Parser;
 import tasks.cli.parser.ParseResult;
-import tasks.model.ObservableTask;
+import tasks.model.Task;
 
 /** Command line argument parser for the Blockers command. */
 public final class BlockersParser implements CommandParser<BlockersArguments> {
-  private final Memoized<? extends Parser<? extends List<? extends ParseResult<? extends ObservableTask>>>>
+  private final Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
       taskParser;
 
   public BlockersParser(
-      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends ObservableTask>>>>
+      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
           taskParser) {
     this.taskParser = requireNonNull(taskParser);
   }
@@ -44,13 +44,13 @@ public final class BlockersParser implements CommandParser<BlockersArguments> {
       throw new ParserException("Unexpected extra arguments");
     }
 
-    ParseResult<? extends ObservableTask> targetTask =
+    ParseResult<? extends Task> targetTask =
         taskParser.value().parse(
             ImmutableList.of(argsList.itemAt(0))).itemAt(0);
-    List<? extends ParseResult<? extends ObservableTask>> tasksToAdd =
+    List<? extends ParseResult<? extends Task>> tasksToAdd =
         taskParser.value().parse(
             getOptionValues(commandLine, BlockersCommand.ADD_OPTION.value()));
-    List<? extends ParseResult<? extends ObservableTask>> tasksToRemove =
+    List<? extends ParseResult<? extends Task>> tasksToRemove =
         taskParser.value().parse(
             getOptionValues(commandLine, BlockersCommand.REMOVE_OPTION.value()));
     boolean isClearSet =

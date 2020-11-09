@@ -8,9 +8,10 @@ import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableSet;
+import omnia.data.structure.tuple.Triple;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
-import tasks.model.ObservableTask;
+import tasks.model.Task;
 import tasks.model.TaskBuilder;
 import tasks.model.ObservableTaskStore;
 
@@ -31,8 +32,8 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
     }
 
     // Collect the dependencies and dependents
-    Set<ObservableTask> blockingTasks = ImmutableSet.copyOf(arguments.blockingTasks());
-    Set<ObservableTask> blockedTasks = ImmutableSet.copyOf(arguments.blockedTasks());
+    Set<Task> blockingTasks = ImmutableSet.copyOf(arguments.blockingTasks());
+    Set<Task> blockedTasks = ImmutableSet.copyOf(arguments.blockedTasks());
 
     ObservableTaskStore taskStore = this.taskStore.value();
 
@@ -46,7 +47,8 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
                 .flatMap(b ->
                     Observable.fromIterable(blockedTasks).reduce(b, TaskBuilder::addBlockedTask))
                 .blockingGet())
-        .map(ObservableTask::render)
+        .map(Triple::third)
+        .map(Task::render)
         .map(output -> Output.builder().append("task created: ").append(output).build())
         .map(output -> Output.builder().appendLine(output).build());
   }

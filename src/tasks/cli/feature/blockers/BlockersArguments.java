@@ -1,19 +1,19 @@
 package tasks.cli.feature.blockers;
 
 import omnia.data.structure.List;
-import tasks.model.ObservableTask;
+import tasks.model.Task;
 
 /** Model for parsed Blockers command arguments. */
 public final class BlockersArguments {
-  private final ObservableTask targetTask;
-  private final List<ObservableTask> blockingTasksToAdd;
-  private final List<ObservableTask> blockingTasksToRemove;
+  private final Task targetTask;
+  private final List<Task> blockingTasksToAdd;
+  private final List<Task> blockingTasksToRemove;
   private final boolean clearAllBlockers;
 
   BlockersArguments(
-      ObservableTask targetTask,
-      List<ObservableTask> blockingTasksToAdd,
-      List<ObservableTask> blockingTasksToRemove,
+      Task targetTask,
+      List<Task> blockingTasksToAdd,
+      List<Task> blockingTasksToRemove,
       boolean clearAllBlockers) {
     this.targetTask = targetTask;
     this.blockingTasksToAdd = blockingTasksToAdd;
@@ -22,12 +22,12 @@ public final class BlockersArguments {
   }
 
   /** The task whose blockers to modify. */
-  public ObservableTask targetTask() {
+  public Task targetTask() {
     return targetTask;
   }
 
   /** The collection of tasks to add as blockers to {@link #targetTask()}. */
-  public List<ObservableTask> blockingTasksToAdd() {
+  public List<Task> blockingTasksToAdd() {
     return blockingTasksToAdd;
   }
 
@@ -38,7 +38,7 @@ public final class BlockersArguments {
    * <p>This parameter is to be treated as mutually exclusive with the {@link #clearAllBlockers()}
    * flag. If {@link #clearAllBlockers()} is set, tasks listed here are redundant.</p>
    */
-  public List<ObservableTask> blockingTasksToRemove() {
+  public List<Task> blockingTasksToRemove() {
     return blockingTasksToRemove;
   }
 

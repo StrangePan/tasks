@@ -1,18 +1,18 @@
 package tasks.cli.feature.reword;
 
-import tasks.model.ObservableTask;
+import tasks.model.Task;
 
 public final class RewordArguments {
-  private final ObservableTask targetTask;
+  private final Task targetTask;
   private final String description;
 
-  RewordArguments(ObservableTask targetTask, String description) {
+  RewordArguments(Task targetTask, String description) {
     this.targetTask = targetTask;
     this.description = description;
   }
 
   /** The target to reword. */
-  public ObservableTask targetTask() {
+  public Task targetTask() {
     return targetTask;
   }
 

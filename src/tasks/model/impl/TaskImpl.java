@@ -16,14 +16,14 @@ import tasks.model.Task;
 final class TaskImpl implements Task {
 
   private final TaskStoreImpl store;
-  private final TaskId id;
+  private final TaskIdImpl id;
   private final TaskData data;
 
   private final Memoized<ImmutableSet<TaskImpl>> blockingTasks;
   private final Memoized<ImmutableSet<TaskImpl>> blockedTasks;
   private final Memoized<ImmutableSet<TaskImpl>> openBlockingTasks;
 
-  TaskImpl(TaskStoreImpl store, TaskId id, TaskData data) {
+  TaskImpl(TaskStoreImpl store, TaskIdImpl id, TaskData data) {
     this.store = requireNonNull(store);
     this.id = requireNonNull(id);
     this.data = requireNonNull(data);
@@ -33,7 +33,8 @@ final class TaskImpl implements Task {
     openBlockingTasks = memoize(() -> store.allOpenTasksBlocking(id));
   }
 
-  TaskId id() {
+  @Override
+  public TaskIdImpl id() {
     return id;
   }
 

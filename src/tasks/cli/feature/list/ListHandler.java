@@ -23,20 +23,22 @@ public final class ListHandler implements ArgumentHandler<ListArguments> {
   @Override
   public Single<Output> handle(ListArguments arguments) {
     return Single.fromCallable(taskStore::value)
+        .flatMapObservable(ObservableTaskStore::observe)
+        .firstOrError()
         .flatMapObservable(
             store -> Observable.just(
                 Tuple.of(
                     arguments.isUnblockedSet(),
                     "unblocked tasks:",
-                    store.allOpenTasksWithoutOpenBlockers().firstOrError()),
+                    Single.fromCallable(store::allOpenTasksWithoutOpenBlockers)),
                 Tuple.of(
                     arguments.isBlockedSet(),
                     "blocked tasks:",
-                    store.allOpenTasksWithOpenBlockers().firstOrError()),
+                    Single.fromCallable(store::allOpenTasksWithOpenBlockers)),
                 Tuple.of(
                     arguments.isCompletedSet(),
                     "completed tasks:",
-                    store.allCompletedTasks().firstOrError())))
+                    Single.fromCallable(store::allCompletedTasks))))
         .filter(Triple::first)
         .map(Triple::dropFirst)
         .concatMapEager(

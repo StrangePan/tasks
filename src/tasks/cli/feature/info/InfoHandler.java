@@ -1,6 +1,5 @@
 package tasks.cli.feature.info;
 
-import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import omnia.cli.out.Output;
@@ -8,7 +7,7 @@ import omnia.data.structure.Set;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.cli.handler.HandlerUtil;
-import tasks.model.ObservableTask;
+import tasks.model.Task;
 
 /** Business logic for the Info command. */
 public final class InfoHandler implements ArgumentHandler<InfoArguments> {
@@ -27,19 +26,17 @@ public final class InfoHandler implements ArgumentHandler<InfoArguments> {
         .map(Output.Builder::build);
   }
 
-  private static Output stringify(ObservableTask task) {
+  private static Output stringify(Task task) {
     return Output.builder()
         .appendLine(task.render())
         .appendLine(
-            stringifyIfPopulated("tasks blocking this:", task.query().tasksBlockingThis()))
+            stringifyIfPopulated("tasks blocking this:", task.blockingTasks()))
         .appendLine(
-            stringifyIfPopulated("tasks blocked by this:", task.query().tasksBlockedByThis()))
+            stringifyIfPopulated("tasks blocked by this:", task.blockedTasks()))
         .build();
   }
 
-  private static Output stringifyIfPopulated(String prefix, Flowable<Set<ObservableTask>> tasks) {
-    return tasks.firstOrError()
-        .map(t -> HandlerUtil.stringifyIfPopulated(prefix, t))
-        .blockingGet();
+  private static Output stringifyIfPopulated(String prefix, Set<? extends Task> tasks) {
+    return HandlerUtil.stringifyIfPopulated(prefix, tasks);
   }
 }

@@ -15,23 +15,23 @@ import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.HashSet;
 import omnia.data.structure.mutable.MutableSet;
 import omnia.data.structure.tuple.Tuple;
-import tasks.model.ObservableTask;
+import tasks.model.Task;
 
 public final class HandlerUtil {
 
   private HandlerUtil() {}
 
-  public static EnumMap<CompletedState, Set<ObservableTask>> groupByCompletionState(
-      Observable<ObservableTask> tasks) {
+  public static EnumMap<CompletedState, Set<Task>> groupByCompletionState(
+      Observable<? extends Task> tasks) {
     return tasks
         .map(task ->
             Tuple.of(
-                task.isCompleted().blockingFirst()
+                task.isCompleted()
                     ? CompletedState.COMPLETE
                     : CompletedState.INCOMPLETE,
                 task))
         .collectInto(
-            new EnumMap<CompletedState, MutableSet<ObservableTask>>(CompletedState.class),
+            new EnumMap<CompletedState, MutableSet<Task>>(CompletedState.class),
             (map, taskCouple) -> {
               map.computeIfAbsent(taskCouple.first(), c -> HashSet.create());
               map.computeIfPresent(taskCouple.first(), (state, set) -> {
@@ -40,21 +40,21 @@ public final class HandlerUtil {
               });
             })
         .map(map -> {
-          EnumMap<CompletedState, Set<ObservableTask>> newMap = new EnumMap<>(CompletedState.class);
+          EnumMap<CompletedState, Set<Task>> newMap = new EnumMap<>(CompletedState.class);
           map.forEach((state, set) -> newMap.put(state, ImmutableSet.copyOf(set)));
           return newMap;
         })
         .blockingGet();
   }
 
-  public static void printIfPopulated(String prefix, Collection<ObservableTask> tasks) {
+  public static void printIfPopulated(String prefix, Collection<? extends Task> tasks) {
     Optional.of(stringifyIfPopulated(prefix, tasks))
         .filter(Output::isPopulated)
         .map(Output::render)
         .ifPresent(System.out::print);
   }
 
-  public static Output stringifyIfPopulated(String prefix, Collection<ObservableTask> tasks) {
+  public static Output stringifyIfPopulated(String prefix, Collection<? extends Task> tasks) {
     return tasks.isPopulated()
         ? Output.builder()
             .color(Output.Color16.LIGHT_MAGENTA)
@@ -65,16 +65,16 @@ public final class HandlerUtil {
         : Output.empty();
   }
 
-  private static Output stringify(Iterable<? extends ObservableTask> tasks) {
+  private static Output stringify(Iterable<? extends Task> tasks) {
     return Observable.fromIterable(tasks)
-        .map(ObservableTask::render)
+        .map(Task::render)
         .collectInto(Output.builder(), Output.Builder::appendLine)
         .map(Output.Builder::build)
         .blockingGet();
   }
 
   public static void verifyTasksAreMutuallyExclusive(
-      String failurePrefix, Collection<? extends ObservableTask> first, Collection<? extends ObservableTask> second) {
+      String failurePrefix, Collection<? extends Task> first, Collection<? extends Task> second) {
     Optional.of(
         SetAlgorithms.intersectionOf(ImmutableSet.copyOf(first), ImmutableSet.copyOf(second))
             .stream()

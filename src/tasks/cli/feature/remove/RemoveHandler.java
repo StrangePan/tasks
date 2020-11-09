@@ -11,7 +11,7 @@ import omnia.data.structure.tuple.Tuple;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.cli.handler.HandlerUtil;
-import tasks.model.ObservableTask;
+import tasks.model.Task;
 import tasks.model.ObservableTaskStore;
 
 /** Business logic for the Remove command. */
@@ -24,7 +24,7 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
 
   @Override
   public Single<Output> handle(RemoveArguments arguments) {
-    Collection<ObservableTask> tasksToDelete = arguments.tasks();
+    Collection<Task> tasksToDelete = arguments.tasks();
 
     // Validate arguments
     if (!tasksToDelete.isPopulated()) {

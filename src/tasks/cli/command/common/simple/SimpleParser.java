@@ -12,16 +12,16 @@ import tasks.cli.parser.ParserException;
 import tasks.cli.parser.CommandParser;
 import tasks.cli.parser.ParseResult;
 import tasks.cli.parser.Parser;
-import tasks.model.ObservableTask;
+import tasks.model.Task;
 
 public abstract class SimpleParser<T extends SimpleArguments> implements CommandParser<T> {
-  private final Function<List<ObservableTask>, T> constructor;
-  private final Memoized<? extends Parser<? extends List<? extends ParseResult<? extends ObservableTask>>>>
+  private final Function<List<Task>, T> constructor;
+  private final Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
       taskParser;
 
   protected SimpleParser(
-      Function<List<ObservableTask>, T> constructor,
-      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends ObservableTask>>>>
+      Function<List<Task>, T> constructor,
+      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
           taskParser) {
     this.constructor = requireNonNull(constructor);
     this.taskParser = requireNonNull(taskParser);

@@ -4,11 +4,11 @@ public interface TaskBuilder {
 
   TaskBuilder setCompleted(boolean completed);
 
-  TaskBuilder setBlockingTasks(Iterable<ObservableTask> task);
+  TaskBuilder setBlockingTasks(Iterable<? extends Task> task);
 
-  TaskBuilder addBlockingTask(ObservableTask task);
+  TaskBuilder addBlockingTask(Task task);
 
-  TaskBuilder setBlockedTasks(Iterable<ObservableTask> task);
+  TaskBuilder setBlockedTasks(Iterable<? extends Task> task);
 
-  TaskBuilder addBlockedTask(ObservableTask task);
+  TaskBuilder addBlockedTask(Task task);
 }

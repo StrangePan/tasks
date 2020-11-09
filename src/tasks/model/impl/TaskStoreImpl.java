@@ -16,24 +16,27 @@ import omnia.data.structure.Map;
 import omnia.data.structure.immutable.ImmutableDirectedGraph;
 import omnia.data.structure.immutable.ImmutableMap;
 import omnia.data.structure.immutable.ImmutableSet;
+import tasks.model.Task;
+import tasks.model.TaskId;
 import tasks.model.TaskStore;
 
 final class TaskStoreImpl implements TaskStore {
 
-  private final WeakCache<TaskId, TaskImpl> cache = new WeakCache<>();
+  private final WeakCache<TaskIdImpl, TaskImpl> cache = new WeakCache<>();
 
-  private final ImmutableDirectedGraph<TaskId> graph;
-  private final ImmutableMap<TaskId, TaskData> data;
+  final ImmutableDirectedGraph<TaskIdImpl> graph;
+  final ImmutableMap<TaskIdImpl, TaskData> data;
 
   private final Memoized<ImmutableSet<TaskImpl>> allTasks;
   private final Memoized<ImmutableSet<TaskImpl>> allOpenTasksWithoutOpenBlockers;
   private final Memoized<ImmutableSet<TaskImpl>> allOpenTasksWithOpenBlockers;
   private final Memoized<ImmutableSet<TaskImpl>> allCompletedTasks;
   private final Memoized<ImmutableSet<TaskImpl>> allOpenTasks;
+  private final Memoized<ImmutableDirectedGraph<TaskImpl>> taskGraph;
 
   private final MemoizedInt hash;
 
-  TaskStoreImpl(ImmutableDirectedGraph<TaskId> graph, ImmutableMap<TaskId, TaskData> data) {
+  TaskStoreImpl(ImmutableDirectedGraph<TaskIdImpl> graph, ImmutableMap<TaskIdImpl, TaskData> data) {
     this.graph = requireNonNull(graph);
     this.data = requireNonNull(data);
 
@@ -80,12 +83,23 @@ final class TaskStoreImpl implements TaskStore {
                 .map(this::toTask)
                 .collect(toImmutableSet()));
 
+    taskGraph = memoize(() -> ImmutableDirectedGraph.copyOf(graph, this::toTask));
+
     hash = MemoizedInt.memoize(() -> Objects.hash(graph, data));
   }
 
   @Override
   public Optional<TaskImpl> lookUpById(long id) {
-    return Optional.empty();
+    return lookUpById(new TaskIdImpl(id));
+  }
+
+  @Override
+  public Optional<? extends Task> lookUpById(TaskId id) {
+    return id instanceof TaskIdImpl ? lookUpById((TaskIdImpl) id) : Optional.empty();
+  }
+
+  private Optional<TaskImpl> lookUpById(TaskIdImpl id) {
+    return graph.contents().contains(id) ? Optional.of(toTask(id)) : Optional.empty();
   }
 
   @Override
@@ -124,6 +138,12 @@ final class TaskStoreImpl implements TaskStore {
   }
 
   @Override
+  public ImmutableDirectedGraph<TaskImpl> taskGraph() {
+    return taskGraph.value();
+  }
+
+
+  @Override
   public int hashCode() {
     return hash.value();
   }
@@ -136,7 +156,7 @@ final class TaskStoreImpl implements TaskStore {
             && Objects.equals(data, ((TaskStoreImpl) obj).data));
   }
 
-  ImmutableSet<TaskImpl> allTasksBlocking(TaskId id) {
+  ImmutableSet<TaskImpl> allTasksBlocking(TaskIdImpl id) {
     return graph.nodeOf(id)
         .map(DirectedGraph.DirectedNode::predecessors)
         .orElse(ImmutableSet.empty())
@@ -146,7 +166,7 @@ final class TaskStoreImpl implements TaskStore {
         .collect(toImmutableSet());
   }
 
-  ImmutableSet<TaskImpl> allTasksBlockedBy(TaskId id) {
+  ImmutableSet<TaskImpl> allTasksBlockedBy(TaskIdImpl id) {
     return graph.nodeOf(id)
         .map(DirectedGraph.DirectedNode::successors)
         .orElse(ImmutableSet.empty())
@@ -156,7 +176,7 @@ final class TaskStoreImpl implements TaskStore {
         .collect(toImmutableSet());
   }
 
-  ImmutableSet<TaskImpl> allOpenTasksBlocking(TaskId id) {
+  ImmutableSet<TaskImpl> allOpenTasksBlocking(TaskIdImpl id) {
     return graph.nodeOf(id)
         .map(DirectedGraph.DirectedNode::predecessors)
         .orElse(ImmutableSet.empty())
@@ -167,21 +187,32 @@ final class TaskStoreImpl implements TaskStore {
         .collect(toImmutableSet());
   }
 
-  TaskImpl toTask(TaskId id) {
+  TaskImpl toTask(TaskIdImpl id) {
     return cache.getOrCache(
         id,
         () -> new TaskImpl(
             this,
             id,
             data.valueOf(id)
-                .orElseThrow(() -> new IllegalArgumentException("unrecognized TaskId " + id))));
+                .orElseThrow(() -> new IllegalArgumentException("unrecognized TaskIdImpl " + id))));
   }
 
-  private boolean hasNoOpenBlockers(TaskId id) {
+  TaskImpl validateTask(Task task) {
+    if (!(task instanceof TaskImpl)) {
+      throw new IllegalArgumentException("unrecognized task type: " + task);
+    }
+    TaskIdImpl id = ((TaskImpl) task).id();
+    if (!graph.contents().contains(id)) {
+      throw new IllegalArgumentException("unrecognized TaskIdImpl: " + id);
+    }
+    return (TaskImpl) task;
+  }
+
+  private boolean hasNoOpenBlockers(TaskIdImpl id) {
     return !hasAnyOpenBlockers(id);
   }
 
-  private boolean hasAnyOpenBlockers(TaskId id) {
+  private boolean hasAnyOpenBlockers(TaskIdImpl id) {
     return graph.nodeOf(id)
         .map(DirectedGraph.DirectedNode::predecessors)
         .orElse(ImmutableSet.empty())

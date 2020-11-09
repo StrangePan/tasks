@@ -11,15 +11,15 @@ import tasks.cli.parser.ParseResult;
 import tasks.cli.parser.ParserUtil;
 import tasks.cli.parser.CommandParser;
 import tasks.cli.parser.Parser;
-import tasks.model.ObservableTask;
+import tasks.model.Task;
 
 /** Command line argument parser for the Reword command. */
 public final class  RewordParser implements CommandParser<RewordArguments> {
-  private final Memoized<? extends Parser<? extends List<? extends ParseResult<? extends ObservableTask>>>>
+  private final Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
       taskParser;
 
   public RewordParser(
-      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends ObservableTask>>>>
+      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
           taskParser) {
     this.taskParser = taskParser;
   }
@@ -42,7 +42,7 @@ public final class  RewordParser implements CommandParser<RewordArguments> {
     ParserUtil.assertNoExtraArgs(commandLine, RewordCommand.COMMAND_PARAMETERS.value());
 
 
-    ParseResult<? extends ObservableTask> targetTask =
+    ParseResult<? extends Task> targetTask =
         taskParser.value().parse(ImmutableList.of(argsList.itemAt(0))).itemAt(0);
     String description = argsList.itemAt(1);
 

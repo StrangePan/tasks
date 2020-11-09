@@ -5,6 +5,8 @@ import omnia.data.structure.Set;
 
 public interface Task {
 
+  TaskId id();
+
   String label();
 
   boolean isCompleted();

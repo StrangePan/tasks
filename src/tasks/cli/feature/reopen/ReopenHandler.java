@@ -13,7 +13,7 @@ import omnia.data.structure.Set;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.cli.handler.HandlerUtil;
-import tasks.model.ObservableTask;
+import tasks.model.Task;
 import tasks.model.ObservableTaskStore;
 
 /** Business logic for the Reopen command. */
@@ -33,12 +33,12 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
 
     ObservableTaskStore taskStore = this.taskStore.value();
 
-    EnumMap<HandlerUtil.CompletedState, Set<ObservableTask>> tasksGroupedByState =
+    EnumMap<HandlerUtil.CompletedState, Set<Task>> tasksGroupedByState =
         HandlerUtil.groupByCompletionState(Observable.fromIterable(arguments.tasks()));
 
-    Set<ObservableTask> completedTasks =
+    Set<Task> completedTasks =
         tasksGroupedByState.getOrDefault(HandlerUtil.CompletedState.COMPLETE, Set.empty());
-    Set<ObservableTask> alreadyOpenTasks =
+    Set<Task> alreadyOpenTasks =
         tasksGroupedByState.getOrDefault(HandlerUtil.CompletedState.INCOMPLETE, Set.empty());
 
     // report tasks already open
@@ -46,7 +46,9 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
 
     // mark incomplete tasks as complete and commit to disk
     return Observable.fromIterable(completedTasks)
-        .flatMapCompletable(task -> task.mutate(mutator -> mutator.setCompleted(false)))
+        .flatMapCompletable(
+            task -> taskStore
+                .mutateTask(task, mutator -> mutator.setCompleted(false)).ignoreElement())
         .andThen(Single.just(stringifyIfPopulated("task(s) reopened:", completedTasks)));
   }
 }

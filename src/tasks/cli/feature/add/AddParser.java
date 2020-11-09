@@ -13,14 +13,14 @@ import tasks.cli.parser.ParserUtil;
 import tasks.cli.parser.CommandParser;
 import tasks.cli.parser.Parser;
 import tasks.cli.parser.ParseResult;
-import tasks.model.ObservableTask;
+import tasks.model.Task;
 
 /** Command line argument parser for the Add command. */
 public final class AddParser implements CommandParser<AddArguments> {
-  private final Memoized<? extends Parser<? extends List<? extends ParseResult<? extends ObservableTask>>>> taskParser;
+  private final Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>> taskParser;
 
   public AddParser(
-      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends ObservableTask>>>>
+      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
           taskParser) {
     this.taskParser = taskParser;
   }
@@ -35,13 +35,12 @@ public final class AddParser implements CommandParser<AddArguments> {
      */
     List<String> argsList = ImmutableList.copyOf(commandLine.getArgList());
     String taskDescription = extractTaskDescriptionFrom(argsList)
-        .orElseThrow(
-            () -> new ParserException("ObservableTask description not defined"));
+        .orElseThrow(() -> new ParserException("Task description not defined"));
     ParserUtil.assertNoExtraArgs(commandLine, AddCommand.COMMAND_PARAMETERS.value());
 
-    List<? extends ParseResult<? extends ObservableTask>> afterTasks =
+    List<? extends ParseResult<? extends Task>> afterTasks =
         taskParser.value().parse(getOptionValues(commandLine, AddCommand.AFTER_OPTION.value()));
-    List<? extends ParseResult<? extends ObservableTask>> beforeTasks =
+    List<? extends ParseResult<? extends Task>> beforeTasks =
         taskParser.value().parse(getOptionValues(commandLine, AddCommand.BEFORE_OPTION.value()));
 
     // Initial validation combines before and after into a nice aggregate message

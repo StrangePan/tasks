@@ -2,16 +2,16 @@ package tasks.cli.feature.add;
 
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
-import tasks.model.ObservableTask;
+import tasks.model.Task;
 
 /** Model for parsed Add command arguments. */
 public final class AddArguments {
   private final String description;
-  private final List<ObservableTask> blockingTasks;
-  private final List<ObservableTask> blockedTasks;
+  private final List<Task> blockingTasks;
+  private final List<Task> blockedTasks;
 
   AddArguments(
-      String description, List<? extends ObservableTask> blockingTasks, List<? extends ObservableTask> blockedTasks) {
+      String description, List<? extends Task> blockingTasks, List<? extends Task> blockedTasks) {
     this.description = description;
     this.blockingTasks = ImmutableList.copyOf(blockingTasks);
     this.blockedTasks = ImmutableList.copyOf(blockedTasks);
@@ -23,12 +23,12 @@ public final class AddArguments {
   }
 
   /** List empty task IDs that are blocking this new task in the order specified in the CLI. */
-  public List<ObservableTask> blockingTasks() {
+  public List<Task> blockingTasks() {
     return blockingTasks;
   }
 
   /** List empty task IDs that are blocked by this new task in the order specified in the CLI. */
-  public List<ObservableTask> blockedTasks() {
+  public List<Task> blockedTasks() {
     return blockedTasks;
   }
 }

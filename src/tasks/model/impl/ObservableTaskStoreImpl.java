@@ -2,37 +2,26 @@ package tasks.model.impl;
 
 import static java.util.Objects.requireNonNull;
 import static omnia.data.stream.Collectors.toImmutableList;
-import static omnia.data.stream.Collectors.toImmutableSet;
-import static omnia.data.stream.Collectors.toSet;
 
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
-import io.reactivex.Flowable;
-import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.subjects.CompletableSubject;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import omnia.algorithm.GraphAlgorithms;
 import omnia.data.structure.DirectedGraph;
 import omnia.data.structure.DirectedGraph.DirectedNode;
-import omnia.data.structure.Graph;
 import omnia.data.structure.Map;
-import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableDirectedGraph;
 import omnia.data.structure.immutable.ImmutableMap;
 import omnia.data.structure.immutable.ImmutableSet;
-import omnia.data.structure.mutable.HashMap;
-import omnia.data.structure.mutable.MutableDirectedGraph;
-import omnia.data.structure.mutable.MutableMap;
-import omnia.data.structure.observable.writable.WritableObservableDirectedGraph;
-import omnia.data.structure.observable.writable.WritableObservableMap;
+import omnia.data.structure.observable.ObservableState;
 import omnia.data.structure.tuple.Couple;
+import omnia.data.structure.tuple.Triple;
 import omnia.data.structure.tuple.Tuple;
 import tasks.io.File;
-import tasks.model.ObservableTask;
+import tasks.model.Task;
 import tasks.model.TaskBuilder;
 import tasks.model.TaskMutator;
 import tasks.model.ObservableTaskStore;
@@ -44,155 +33,48 @@ public final class ObservableTaskStoreImpl implements ObservableTaskStore {
   private final Completable isShutdownComplete;
 
   private final TaskFileSource fileSource;
-  private final WritableObservableDirectedGraph<TaskId> taskGraph;
-  private final WritableObservableMap<TaskId, TaskData> taskData;
 
-  private final Observable<Flowable<DirectedGraph<TaskId>>> currentTaskGraphSource;
-  private final Observable<Flowable<Map<TaskId, TaskData>>> currentTaskDataSource;
+  private final ObservableState<TaskStoreImpl> store;
+  private final Observable<Observable<TaskStoreImpl>> currentStoreSource;
 
   public ObservableTaskStoreImpl(String filePath) {
     this.fileSource = new TaskFileSource(File.fromPath(filePath));
-    Couple<DirectedGraph<TaskId>, Map<TaskId, TaskData>> loadedData =
+    Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>> loadedData =
         fileSource.readFromFile().blockingGet();
-    taskGraph = WritableObservableDirectedGraph.copyOf(loadedData.first());
-    taskData = WritableObservableMap.copyOf(loadedData.second());
 
-    currentTaskGraphSource =
-        selectWhileRunning(taskGraph.observe().states(), ImmutableDirectedGraph.empty());
-    currentTaskDataSource = selectWhileRunning(taskData.observe().states(), ImmutableMap.empty());
+    store =
+        ObservableState.create(
+            new TaskStoreImpl(
+                loadedData.first(),
+                loadedData.second()));
+
+    currentStoreSource =
+        selectWhileRunning(
+            store.observe(),
+            new TaskStoreImpl(ImmutableDirectedGraph.empty(), ImmutableMap.empty()));
 
     isShutdownComplete = isShutdown.hide().andThen(writeToDisk()).cache();
   }
 
-  private <T> Observable<Flowable<T>> selectWhileRunning(
-      Flowable<? extends T> starter,
-      T ender) {
+  private <T> Observable<Observable<T>> selectWhileRunning(
+      Observable<? extends T> starter, T finisher) {
     return Observable.just(starter.map(i -> (T) i))
-        .concatWith(isShutdown.hide().andThen(Observable.just(Flowable.just(ender))))
+        .concatWith(isShutdown.hide().andThen(Observable.just(Observable.just(finisher))))
         .replay(1)
         .autoConnect(0);
   }
 
-  private Flowable<DirectedGraph<TaskId>> observeTaskGraph() {
-    return currentTaskGraphSource.toFlowable(BackpressureStrategy.LATEST).switchMap(f -> f);
-  }
-
-  private Flowable<Map<TaskId, TaskData>> observeTaskData() {
-    return currentTaskDataSource.toFlowable(BackpressureStrategy.LATEST).switchMap(f -> f);
-  }
-
-  Flowable<Optional<TaskData>> lookUp(TaskId id) {
-    return observeTaskData().map(state -> state.valueOf(id));
+  @Override
+  public Observable<TaskStoreImpl> observe() {
+    return currentStoreSource.switchMap(store1 -> store1);
   }
 
   @Override
-  public Maybe<ObservableTask> lookUpById(long id) {
-    return observeTaskGraph()
-        .firstElement()
-        .map(graph -> graph.nodeOf(new TaskId(id)))
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .map(DirectedGraph.Node::item)
-        .map(this::toTask);
-  }
-
-  @Override
-  public Flowable<Set<ObservableTask>> allTasks() {
-    return observeTaskGraph()
-        .map(Graph::contents)
-        .map(contents -> contents.stream().map(this::toTask).collect(toSet()));
-  }
-
-  @Override
-  public Flowable<Set<ObservableTask>> allTasksBlocking(ObservableTask blockedTask) {
-    ObservableTaskImpl blockedTaskImpl = validateTask(blockedTask);
-    return observeTaskGraph()
-        .map(graph -> graph.nodeOf(blockedTaskImpl.id()))
-        .map(optionalNode -> optionalNode.map(DirectedNode::predecessors).orElse(Set.empty()))
-        .map(
-            predecessors ->
-                predecessors.stream().map(Graph.Node::item).map(this::toTask).collect(toSet()));
-  }
-
-  @Override
-  public Flowable<Set<ObservableTask>> allTasksBlockedBy(ObservableTask blockingTask) {
-    ObservableTaskImpl blockingTaskImpl = validateTask(blockingTask);
-    return observeTaskGraph()
-        .map(graph -> graph.nodeOf(blockingTaskImpl.id()))
-        .map(optionalNode -> optionalNode.map(DirectedNode::successors).orElse(Set.empty()))
-        .map(
-            successors ->
-                successors.stream().map(Graph.Node::item).map(this::toTask).collect(toSet()));
-  }
-
-  @Override
-  public Flowable<Set<ObservableTask>> allOpenTasksWithoutOpenBlockers() {
-    return tasksFromNodesMatching(node -> !hasBlockingTasks(node) && !isCompleted(node));
-  }
-
-  @Override
-  public Flowable<Set<ObservableTask>> allOpenTasksWithOpenBlockers() {
-    return tasksFromNodesMatching(node -> hasBlockingTasks(node) && !isCompleted(node));
-  }
-
-  @Override
-  public Flowable<Set<ObservableTask>> allCompletedTasks() {
-    return tasksFromNodesMatching(this::isCompleted);
-  }
-
-  @Override
-  public Flowable<Set<ObservableTask>> allOpenTasks() {
-    return tasksFromNodesMatching(n -> !isCompleted(n));
-  }
-
-  @Override
-  public Flowable<Set<ObservableTask>> allTasksMatchingCliPrefix(String prefix) {
-    requireNonNull(prefix);
-    return observeTaskGraph()
-        .map(Graph::contents)
-        .map(contents ->
-            contents.stream()
-                .filter(id -> id.toString().regionMatches(0, prefix, 0, prefix.length()))
-                .map(this::toTask)
-                .collect(toImmutableSet()));
-  }
-
-  @Override
-  public Flowable<DirectedGraph<ObservableTask>> taskGraph() {
-    return observeTaskGraph().map(this::toTaskGraph);
-  }
-
-  private boolean isCompleted(Graph.Node<? extends TaskId> node) {
-    return taskData.valueOf(node.item()).get().isCompleted();
-  }
-
-  private boolean hasBlockingTasks(DirectedNode<? extends TaskId> node) {
-    return node.predecessors()
-        .stream()
-        .anyMatch(
-            successor ->
-                taskData.valueOf(successor.item()).map(data -> !data.isCompleted()).orElse(false));
-  }
-
-  private Flowable<Set<ObservableTask>> tasksFromNodesMatching(
-      Predicate<? super DirectedNode<? extends TaskId>> filter) {
-    return observeTaskGraph()
-        .map(DirectedGraph::nodes)
-        .map(Set::stream)
-        .map(stream ->
-            stream.filter(filter)
-                .map(Graph.Node::item)
-                .map(this::toTask)
-                .collect(toSet()));
-  }
-
-  @Override
-  public Single<ObservableTask> createTask(
+  public Single<Triple<TaskStoreImpl, TaskStoreImpl, TaskImpl>> createTask(
       String label, Function<? super TaskBuilder, ? extends TaskBuilder> builder) {
     return Single.just(new TaskBuilderImpl(this, label))
         .<TaskBuilder>map(builder::apply)
-        .flatMap(taskBuilder -> Single.fromCallable(() -> maybeApplyBuilder(taskBuilder)))
-        .map(this::toTask)
+        .flatMap(this::maybeApplyBuilder)
         .cache();
   }
 
@@ -201,37 +83,38 @@ public final class ObservableTaskStoreImpl implements ObservableTaskStore {
    * to preserve internal consistency by first applying the changes to a snapshot and validating
    * the snapshot.
    */
-  private TaskId maybeApplyBuilder(TaskBuilder builder) {
+  private Single<Triple<TaskStoreImpl, TaskStoreImpl, TaskImpl>> maybeApplyBuilder(
+      TaskBuilder builder) {
     TaskBuilderImpl builderImpl = validateBuilder(builder);
-    TaskData data = new TaskData(builderImpl.completed(), builderImpl.label());
-    TaskId id = generateId();
 
-    // check that the mutation is valid
-    MutableMap<TaskId, TaskData> predictiveTaskData = HashMap.copyOf(taskData);
-    MutableDirectedGraph<TaskId> predictiveTaskGraph =
-        WritableObservableDirectedGraph.copyOf(taskGraph);
-    applyBuilderTo(predictiveTaskData, predictiveTaskGraph, id, data, builderImpl);
-    assertIsValid(predictiveTaskData, predictiveTaskGraph);
-
-    applyBuilderTo(taskData, taskGraph, id, data, builderImpl);
-    return id;
+    return store.mutateAndReturn(taskStore -> applyBuilderTo(builderImpl, taskStore))
+        .map(Couple::second);
   }
 
-  private static void applyBuilderTo(
-      MutableMap<TaskId, TaskData> taskData,
-      MutableDirectedGraph<TaskId> taskGraph,
-      TaskId id,
-      TaskData data,
-      TaskBuilderImpl builder) {
-    taskData.putMapping(id, data);
-    taskGraph.addNode(id);
-    builder.blockingTasks().forEach(blockingTask -> taskGraph.addEdge(blockingTask, id));
-    builder.blockedTasks().forEach(blockedTask -> taskGraph.addEdge(id, blockedTask));
+  private static Couple<TaskStoreImpl, Triple<TaskStoreImpl, TaskStoreImpl, TaskImpl>>
+      applyBuilderTo(TaskBuilderImpl builder, TaskStoreImpl oldStore) {
+    TaskIdImpl id = TaskIdImpl.generate(oldStore.graph.contents());
+
+    ImmutableDirectedGraph.Builder<TaskIdImpl> newGraphBuilder =
+        oldStore.graph.toBuilder().addNode(id);
+    builder.blockingTasks().forEach(blockingTask -> newGraphBuilder.addEdge(blockingTask, id));
+    builder.blockedTasks().forEach(blockedTask -> newGraphBuilder.addEdge(id, blockedTask));
+
+    ImmutableDirectedGraph<TaskIdImpl> newGraph = newGraphBuilder.build();
+    ImmutableMap<TaskIdImpl, TaskData> newData =
+        oldStore.data.toBuilder()
+            .putMapping(id, new TaskData(builder.completed(), builder.label()))
+            .build();
+
+    assertIsValid(newGraph, newData);
+
+    TaskStoreImpl newStore = new TaskStoreImpl(newGraph, newData);
+
+    return Tuple.of(newStore, Tuple.of(oldStore, newStore, newStore.toTask(id)));
   }
 
   private static void assertIsValid(
-      Map<TaskId, TaskData> taskData,
-      DirectedGraph<TaskId> taskGraph) {
+      DirectedGraph<TaskIdImpl> taskGraph, Map<TaskIdImpl, TaskData> taskData) {
     GraphAlgorithms.findAnyCycle(taskGraph)
         .map(
             cycle ->
@@ -243,9 +126,7 @@ public final class ObservableTaskStoreImpl implements ObservableTaskStore {
                     .collect(toImmutableList()))
         .ifPresent(
             cycle -> {
-              throw new CyclicalDependencyException(
-                  "Cycle detected",
-                  cycle);
+              throw new CyclicalDependencyException("Cycle detected", cycle);
             });
   }
 
@@ -273,78 +154,49 @@ public final class ObservableTaskStoreImpl implements ObservableTaskStore {
     return builderImpl;
   }
 
-  private TaskId generateId() {
-    // TODO(vxi4873454w0): more sophisticated algorithm
-    while (true) {
-      TaskId id = new TaskId((long) (Math.random() * TaskId.MAX_ID_VALUE));
-      if (!taskGraph.contents().contains(id)) {
-        return id;
-      }
-    }
-  }
-
   @Override
-  public Completable mutateTask(
-      ObservableTask task, Function<? super TaskMutator, ? extends TaskMutator> mutation) {
+  public Single<Triple<TaskStoreImpl, TaskStoreImpl, TaskImpl>> mutateTask(
+      Task task, Function<? super TaskMutator, ? extends TaskMutator> mutation) {
     return mutateTask(validateTask(task), mutation);
   }
 
-  Completable mutateTask(
-      ObservableTaskImpl task, Function<? super TaskMutator, ? extends TaskMutator> mutation) {
+  Single<Triple<TaskStoreImpl, TaskStoreImpl, TaskImpl>> mutateTask(
+      TaskImpl task, Function<? super TaskMutator, ? extends TaskMutator> mutation) {
     return Single.just(new TaskMutatorImpl(this, task.id()))
         .<TaskMutator>map(mutation::apply)
-        .flatMapCompletable(mutator -> Completable.fromAction(() -> maybeApplyMutator(mutator)))
+        .flatMap(this::maybeApplyMutator)
         .cache();
   }
 
-  ObservableTaskImpl validateTask(ObservableTask task) {
+  TaskImpl validateTask(Task task) {
     requireNonNull(task);
-    if (!(task instanceof ObservableTaskImpl)) {
+    if (!(task instanceof TaskImpl)) {
       throw new IllegalArgumentException(
           "Unrecognized task type. Expected "
-              + ObservableTaskImpl.class
+              + TaskImpl.class
               + ", received "
               + task.getClass()
               + ": "
               + task);
     }
-    ObservableTaskImpl taskImpl = (ObservableTaskImpl) task;
-    if (taskImpl.store() != this) {
-      throw new IllegalArgumentException(
-          "ObservableTask associated with another store. Expected <"
-              + this
-              + ">, received <"
-              + taskImpl.store()
-              + ">: "
-              + taskImpl);
-    }
-    return taskImpl;
+    return (TaskImpl) task;
   }
 
-  private ObservableTask toTask(TaskId id) {
-    return new ObservableTaskImpl(this, id);
-  }
-
-  private ImmutableDirectedGraph<ObservableTask> toTaskGraph(DirectedGraph<TaskId> idGraph) {
-    ImmutableDirectedGraph.Builder<ObservableTask> taskGraph = ImmutableDirectedGraph.builder();
-    idGraph.nodes().forEach(node -> taskGraph.addNode(toTask(node.item())));
-    idGraph.edges().forEach(
-        edge -> taskGraph.addEdge(toTask(edge.start().item()), toTask(edge.end().item())));
-    return taskGraph.build();
-  }
-
-  private void maybeApplyMutator(TaskMutator mutator) {
+  private Single<Triple<TaskStoreImpl, TaskStoreImpl, TaskImpl>> maybeApplyMutator(
+      TaskMutator mutator) {
     TaskMutatorImpl mutatorImpl = validateMutator(mutator);
 
-    MutableMap<TaskId, TaskData> predictiveTaskData = HashMap.copyOf(taskData);
-    MutableDirectedGraph<TaskId> predictiveTaskGraph =
-        WritableObservableDirectedGraph.copyOf(taskGraph);
-    applyMutatorTo(mutatorImpl, predictiveTaskData);
-    applyMutatorTo(mutatorImpl, predictiveTaskGraph);
-    assertIsValid(predictiveTaskData, predictiveTaskGraph);
-
-    applyMutatorTo(mutatorImpl, taskData);
-    applyMutatorTo(mutatorImpl, taskGraph);
+    return store.mutateAndReturn(
+        oldStore -> {
+          ImmutableDirectedGraph<TaskIdImpl> nextTaskGraph =
+              applyMutatorTo(oldStore.graph, mutatorImpl);
+          ImmutableMap<TaskIdImpl, TaskData> nextTaskData = applyMutatorTo(oldStore.data, mutatorImpl);
+          assertIsValid(nextTaskGraph, nextTaskData);
+          TaskStoreImpl newStore = new TaskStoreImpl(nextTaskGraph, nextTaskData);
+          return Tuple.of(
+              newStore, Tuple.of(oldStore, newStore, newStore.toTask(mutatorImpl.id())));
+        })
+        .map(Couple::second);
   }
 
   TaskMutatorImpl validateMutator(TaskMutator mutator) {
@@ -371,65 +223,86 @@ public final class ObservableTaskStoreImpl implements ObservableTaskStore {
     return mutatorImpl;
   }
 
-  private void applyMutatorTo(TaskMutatorImpl mutatorImpl, MutableMap<TaskId, TaskData> taskData) {
-    Optional.of(mutatorImpl)
+  private static ImmutableMap<TaskIdImpl, TaskData> applyMutatorTo(
+      ImmutableMap<TaskIdImpl, TaskData> taskData, TaskMutatorImpl mutatorImpl) {
+    return Optional.of(mutatorImpl)
         .filter(mutator -> mutator.completed().isPresent() || mutator.label().isPresent())
         .map(TaskMutatorImpl::id)
         .flatMap(taskData::valueOf)
-        .map(data ->
-            new TaskData(
+        .map(
+            data -> new TaskData(
                 mutatorImpl.completed().orElse(data.isCompleted()),
                 mutatorImpl.label().orElse(data.label())))
-        .ifPresent(data -> taskData.putMapping(mutatorImpl.id(), data));
+        .map(data -> taskData.toBuilder().putMapping(mutatorImpl.id(), data).build())
+        .orElse(taskData);
   }
 
-  private void applyMutatorTo(TaskMutatorImpl mutatorImpl, MutableDirectedGraph<TaskId> taskGraph) {
-    TaskId id = mutatorImpl.id();
+  private static ImmutableDirectedGraph<TaskIdImpl> applyMutatorTo(
+      ImmutableDirectedGraph<TaskIdImpl> taskGraph, TaskMutatorImpl mutatorImpl) {
+    return Optional.of(mutatorImpl)
+        .filter(
+            mutator -> mutator.overwriteBlockedTasks()
+                || mutator.blockedTasksToAdd().isPopulated()
+                || mutator.blockedTasksToRemove().isPopulated()
+                || mutator.overwriteBlockingTasks()
+                || mutator.blockingTasksToAdd().isPopulated()
+                || mutator.blockingTasksToRemove().isPopulated())
+        .map(
+            mutator -> {
+              TaskIdImpl id = mutator.id();
+              ImmutableDirectedGraph.Builder<TaskIdImpl> builder = taskGraph.toBuilder();
+              if (mutator.overwriteBlockingTasks()) {
+                taskGraph.nodeOf(id)
+                    .map(DirectedNode::incomingEdges)
+                    .map(ImmutableSet::copyOf)
+                    .orElse(ImmutableSet.empty())
+                    .forEach(edge -> builder.removeEdge(edge.start(), edge.end()));
+              }
+              mutator.blockingTasksToAdd()
+                  .forEach(blockingId -> builder.addEdge(blockingId, id));
+              mutator.blockingTasksToRemove()
+                  .forEach(blockingId -> builder.removeEdge(blockingId, id));
 
-    if (mutatorImpl.overwriteBlockingTasks()) {
-      taskGraph.nodeOf(id)
-          .map(DirectedNode::incomingEdges)
-          .map(ImmutableSet::copyOf)
-          .orElse(ImmutableSet.empty())
-          .forEach(edge -> taskGraph.removeEdge(edge.start(), edge.end()));
-    }
-    mutatorImpl.blockingTasksToAdd()
-        .forEach(blockingId -> taskGraph.addEdge(blockingId, id));
-    mutatorImpl.blockingTasksToRemove()
-        .forEach(blockingId -> taskGraph.removeEdge(blockingId, id));
+              if (mutator.overwriteBlockedTasks()) {
+                taskGraph.nodeOf(id)
+                    .map(DirectedNode::outgoingEdges)
+                    .map(ImmutableSet::copyOf)
+                    .orElse(ImmutableSet.empty())
+                    .forEach(edge -> builder.removeEdge(edge.start(), edge.end()));
+              }
+              mutator.blockedTasksToAdd()
+                  .forEach(blockedId -> builder.addEdge(id, blockedId));
+              mutator.blockedTasksToRemove()
+                  .forEach(blockedId -> builder.removeEdge(id, blockedId));
 
-    if (mutatorImpl.overwriteBlockedTasks()) {
-      taskGraph.nodeOf(id)
-          .map(DirectedNode::outgoingEdges)
-          .map(ImmutableSet::copyOf)
-          .orElse(ImmutableSet.empty())
-          .forEach(edge -> taskGraph.removeEdge(edge.start(), edge.end()));
-    }
-    mutatorImpl.blockedTasksToAdd()
-        .forEach(blockedId -> taskGraph.addEdge(id, blockedId));
-    mutatorImpl.blockedTasksToRemove()
-        .forEach(blockedId -> taskGraph.removeEdge(id, blockedId));
+              return builder.build();
+            })
+        .orElse(taskGraph);
   }
 
   @Override
-  public Completable deleteTask(ObservableTask task) {
+  public Completable deleteTask(Task task) {
     return deleteTask(validateTask(task));
   }
 
-  public Completable deleteTask(ObservableTaskImpl task) {
-    return Completable.mergeArray(
-        Completable.fromAction(() -> taskGraph.removeNode(task.id())),
-        Completable.fromAction(() -> taskData.removeKey(task.id())))
-        .cache();
+  private Completable deleteTask(TaskImpl task) {
+    return update(
+        taskStoreImpl ->
+          new TaskStoreImpl(
+              taskStoreImpl.graph.toBuilder().removeNode(task.id()).build(),
+              taskStoreImpl.data.toBuilder().removeKey(task.id()).build()))
+        .ignoreElement();
+  }
+
+  Single<TaskStoreImpl> update(Function<? super TaskStoreImpl, ? extends TaskStoreImpl> updater) {
+    return store.mutate(updater::apply).cache();
   }
 
   @Override
   public Completable writeToDisk() {
-    return Single.zip(
-            taskGraph.observe().states().firstOrError(),
-            taskData.observe().states().firstOrError(),
-            Tuple::of)
-        .flatMapCompletable(fileSource::writeToFile)
+    return observe()
+        .firstOrError()
+        .flatMapCompletable(store -> fileSource.writeToFile(store.graph, store.data))
         .cache();
   }
 

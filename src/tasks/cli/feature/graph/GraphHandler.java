@@ -1,7 +1,5 @@
 package tasks.cli.feature.graph;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
 import static java.util.Objects.requireNonNull;
 import static omnia.data.stream.Collectors.toImmutableList;
 import static omnia.data.stream.Collectors.toImmutableSet;
@@ -30,8 +28,9 @@ import omnia.data.structure.mutable.MutableMap;
 import omnia.data.structure.mutable.MutableSet;
 import omnia.data.structure.tuple.Tuple;
 import tasks.cli.handler.ArgumentHandler;
-import tasks.model.ObservableTask;
+import tasks.model.Task;
 import tasks.model.ObservableTaskStore;
+import tasks.model.TaskStore;
 import tasks.util.rx.Observables;
 
 /** Business logic for the Graph command. */
@@ -45,21 +44,21 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
   @Override
   public Single<Output> handle(GraphArguments arguments) {
     return taskStore.value()
-        .taskGraph()
-        .flatMapSingle(
+        .observe()
+        .firstOrError()
+        .map(TaskStore::taskGraph)
+        .flatMap(
             graph ->
-                Single.just(graph)
-                    .map(GraphAlgorithms::topologicallySort)
+                Single.just(GraphAlgorithms.<Task>topologicallySort(graph))
                     .compose(
                         single ->
                             arguments.isAllSet()
                                 ? single
                                 : single.flatMapObservable(Observable::fromIterable)
-                                    .flatMapMaybe(task -> task.isCompleted().firstElement().filter(isCompleted -> !isCompleted).map(b -> task))
+                                    .filter(task -> !task.isCompleted())
                                     .to(Observables.toImmutableList()))
                     .map(tasks -> Tuple.of(graph, tasks)))
         .map(couple -> couple.append(assignColumns(couple.first(), couple.second(), arguments)))
-        .firstOrError()
         .map(triple -> renderGraph(triple.first(), triple.second(), triple.third(), arguments));
   }
 
@@ -77,48 +76,43 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
    * @return A mapping of column assignments for each node, where 0 is the first column. Every node
    *     passed into {@code taskList} will have an entry in the result.
    */
-  private Map<ObservableTask, Integer> assignColumns(
-      DirectedGraph<ObservableTask> taskGraph, List<ObservableTask> taskList, GraphArguments arguments) {
-    MutableMap<ObservableTask, Integer> assignedColumns = HashMap.create();
-    MutableSet<ObservableTask> unresolvedSuccessors = HashSet.create();
-    ImmutableMap<ObservableTask, Integer> topologicalIndexes =
-        Observable.zip(
-                Observable.fromIterable(taskList),
-                incrementingInteger(),
-                Tuple::of)
+  private static Map<Task, Integer> assignColumns(
+      DirectedGraph<? extends Task> taskGraph, List<Task> taskList, GraphArguments arguments) {
+    MutableMap<Task, Integer> assignedColumns = HashMap.create();
+    MutableSet<Task> unresolvedSuccessors = HashSet.create();
+    ImmutableMap<Task, Integer> topologicalIndexes =
+        Observable.fromIterable(taskList)
+            .zipWith(incrementingInteger(), Tuple::of)
             .to(toImmutableMap(couple -> couple.first(), couple -> couple.second()))
             .blockingGet();
 
-    for (ObservableTask taskToAssign : taskList) {
+    for (Task taskToAssign : taskList) {
       int assignedColumn =
           assignedColumns.putMappingIfAbsent(
               taskToAssign,
               // scan for the first available column not already claimed by a node later in the list
-              () ->
-                  unresolvedSuccessors.stream().map(assignedColumns::valueOf)
-                      .flatMap(Optional::stream)
-                      .reduce(0, (candidate, occupied) -> Math.max(candidate, occupied + 1)));
+              () -> unresolvedSuccessors.stream().map(assignedColumns::valueOf)
+                  .flatMap(Optional::stream)
+                  .reduce(0, (candidate, occupied) -> Math.max(candidate, occupied + 1)));
 
       unresolvedSuccessors.remove(taskToAssign);
 
-      ImmutableList<ObservableTask> successorsToAssign =
+      ImmutableList<Task> successorsToAssign =
           taskGraph.nodeOf(taskToAssign)
               .map(DirectedNode::successors)
               .orElse(ImmutableSet.empty())
               .stream()
               .map(DirectedNode::item)
               .filter(successor -> assignedColumns.valueOf(successor).isEmpty())
-              .filter(
-                  successor ->
-                      arguments.isAllSet() || !successor.isCompleted().blockingFirst(false))
+              .filter(successor -> arguments.isAllSet() || !successor.isCompleted())
               .sorted(
-                  Comparator.<ObservableTask, Integer>comparing(
+                  Comparator.<Task, Integer>comparing(
                           item -> topologicalIndexes.valueOf(item).orElse(0))
                       .reversed())
               .collect(toImmutableList());
 
       int successorColumn = assignedColumn;
-      for (ObservableTask successor : successorsToAssign) {
+      for (Task successor : successorsToAssign) {
         assignedColumns.putMapping(successor, successorColumn);
         unresolvedSuccessors.add(successor);
         successorColumn++;
@@ -128,24 +122,26 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
     return ImmutableMap.copyOf(assignedColumns);
   }
 
-  private Output renderGraph(
-      DirectedGraph<ObservableTask> taskGraph, List<ObservableTask> taskList, Map<ObservableTask, Integer> taskColumns, GraphArguments arguments) {
+  private static Output renderGraph(
+      DirectedGraph<? extends Task> taskGraph,
+      List<Task> taskList,
+      Map<Task, Integer> taskColumns,
+      GraphArguments arguments) {
     Output.Builder output = Output.builder();
     MutableSet<Integer> columnsWithEdges = HashSet.create();
-    ImmutableMap<ObservableTask, Integer> topologicalIndexes =
-        Observable.zip(
-            Observable.fromIterable(taskList),
-            incrementingInteger(),
-            Tuple::of)
+    ImmutableMap<Task, Integer> topologicalIndexes =
+        Observable.fromIterable(taskList)
+            .zipWith(incrementingInteger(), Tuple::of)
             .to(toImmutableMap(couple -> couple.first(), couple -> couple.second()))
             .blockingGet();
 
-    for (ObservableTask task : taskList) {
+    for (Task task : taskList) {
       taskColumns.valueOf(task).ifPresent(columnsWithEdges::remove);
 
       output.appendLine(renderTaskLine(taskColumns, columnsWithEdges, task));
 
-      renderEdgeLine(taskGraph, topologicalIndexes, taskColumns, columnsWithEdges, arguments, task).ifPresent(output::appendLine);
+      renderEdgeLine(taskGraph, topologicalIndexes, taskColumns, columnsWithEdges, arguments, task)
+          .ifPresent(output::appendLine);
 
       taskGraph.nodeOf(task)
           .map(DirectedNode::successors)
@@ -160,8 +156,8 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
     return output.build();
   }
 
-  private static Output renderTaskLine(
-      Map<ObservableTask, Integer> taskColumns, Set<Integer> columnsWithEdges, ObservableTask task) {
+  private static <T extends Task> Output renderTaskLine(
+      Map<T, Integer> taskColumns, Set<Integer> columnsWithEdges, T task) {
     int taskColumn = taskColumns.valueOf(task).orElse(0);
 
     int maxColumnsWithEdges = columnsWithEdges.stream().reduce(taskColumn, Math::max);
@@ -171,32 +167,28 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
         .map(
             column ->
                 (column == taskColumn
-                    ? (task.isCompleted().blockingFirst()
-                        ? "☑"
-                        : "☐")
-                    : (columnsWithEdges.contains(column)
-                        ? "╎"
-                        : " ")))
+                    ? (task.isCompleted() ? "☑" : "☐")
+                    : (columnsWithEdges.contains(column) ? "╎" : " ")))
         .collectInto(Output.builder(),  Output.Builder::append)
         .map(builder -> builder.append(" ").append(task.render()))
         .map(Output.Builder::build)
         .blockingGet();
   }
 
-  private static Optional<Output> renderEdgeLine(
-      DirectedGraph<ObservableTask> taskGraph,
-      Map<ObservableTask, Integer> topologicalIndexes,
-      Map<ObservableTask, Integer> taskColumns,
+  private static <T extends Task> Optional<Output> renderEdgeLine(
+      DirectedGraph<? extends T> taskGraph,
+      Map<T, Integer> topologicalIndexes,
+      Map<T, Integer> taskColumns,
       Set<Integer> previousColumnsWithEdges,
       GraphArguments arguments,
-      ObservableTask task) {
+      T task) {
     ImmutableSet<Integer> successorColumns =
         taskGraph.nodeOf(task)
             .map(DirectedNode::successors)
             .orElse(ImmutableSet.empty())
             .stream()
             .map(DirectedNode::item)
-            .filter(item -> arguments.isAllSet() || !item.isCompleted().blockingFirst(false))
+            .filter(item -> arguments.isAllSet() || !item.isCompleted())
             .map(taskColumns::valueOf)
             .flatMap(Optional::stream)
             .collect(toImmutableSet());
@@ -210,7 +202,7 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
     // if there's only one successor and it's not on the next row, but it's in the same column,
     // skip drawing the edge line
     if (successorColumns.count() == 1){
-      Optional<ObservableTask> successor =
+      Optional<T> successor =
           taskGraph.nodeOf(task)
               .map(DirectedNode::successors)
               .orElse(ImmutableSet.empty())
