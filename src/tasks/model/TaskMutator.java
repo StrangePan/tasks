@@ -8,7 +8,7 @@ public interface TaskMutator extends TaskBuilder {
   TaskMutator setLabel(String label);
 
   @Override
-  TaskMutator setBlockingTasks(Iterable<Task> task);
+  TaskMutator setBlockingTasks(Iterable<? extends Task> task);
 
   @Override
   TaskMutator addBlockingTask(Task task);
@@ -16,7 +16,7 @@ public interface TaskMutator extends TaskBuilder {
   TaskMutator removeBlockingTask(Task task);
 
   @Override
-  TaskMutator setBlockedTasks(Iterable<Task> task);
+  TaskMutator setBlockedTasks(Iterable<? extends Task> task);
 
   @Override
   TaskMutator addBlockedTask(Task task);

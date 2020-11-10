@@ -1,6 +1,5 @@
 package tasks.cli.feature.info;
 
-import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import omnia.cli.out.Output;
@@ -31,15 +30,13 @@ public final class InfoHandler implements ArgumentHandler<InfoArguments> {
     return Output.builder()
         .appendLine(task.render())
         .appendLine(
-            stringifyIfPopulated("tasks blocking this:", task.query().tasksBlockingThis()))
+            stringifyIfPopulated("tasks blocking this:", task.blockingTasks()))
         .appendLine(
-            stringifyIfPopulated("tasks blocked by this:", task.query().tasksBlockedByThis()))
+            stringifyIfPopulated("tasks blocked by this:", task.blockedTasks()))
         .build();
   }
 
-  private static Output stringifyIfPopulated(String prefix, Flowable<Set<Task>> tasks) {
-    return tasks.firstOrError()
-        .map(t -> HandlerUtil.stringifyIfPopulated(prefix, t))
-        .blockingGet();
+  private static Output stringifyIfPopulated(String prefix, Set<? extends Task> tasks) {
+    return HandlerUtil.stringifyIfPopulated(prefix, tasks);
   }
 }

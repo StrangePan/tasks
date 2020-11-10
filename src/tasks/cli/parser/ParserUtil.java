@@ -10,14 +10,15 @@ import java.util.OptionalInt;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
 import omnia.data.structure.List;
-import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableList;
+import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.tuple.Couple;
 import omnia.data.structure.tuple.Tuple;
 import org.apache.commons.cli.CommandLine;
 import tasks.cli.command.FlagOption;
 import tasks.cli.command.Option;
 import tasks.cli.command.Parameter;
+import tasks.model.ObservableTaskStore;
 import tasks.model.Task;
 import tasks.model.TaskStore;
 
@@ -25,31 +26,33 @@ public final class ParserUtil {
 
   private ParserUtil() {}
 
-  public static Parser<List<ParseResult<Task>>> taskListParser(
-      Memoized<? extends TaskStore> taskStore) {
+  public static Parser<List<ParseResult<? extends Task>>> taskListParser(
+      Memoized<? extends ObservableTaskStore> taskStore) {
     return (args) -> parseTaskIds(ImmutableList.copyOf(args), taskStore.value());
   }
 
-  public static List<ParseResult<Task>> parseTaskIds(List<String> userInputs, TaskStore taskStore) {
-    return userInputs.stream()
-        .map(userInput -> parseTaskId(userInput, taskStore))
-        .collect(toList());
+  public static List<ParseResult<? extends Task>> parseTaskIds(
+      List<String> userInputs, ObservableTaskStore observableTaskStore) {
+    return observableTaskStore.observe()
+        .firstOrError()
+        .<List<ParseResult<? extends Task>>>map(
+            taskStore -> userInputs.stream()
+                .map(userInput -> parseTaskId(userInput, taskStore))
+                .collect(toList()))
+        .blockingGet();
   }
 
-  public static ParseResult<Task> parseTaskId(String userInput, TaskStore taskStore) {
-    Set<Task> matchingTasks = getTasksMatching(userInput, taskStore);
+  private static ParseResult<? extends Task> parseTaskId(String userInput, TaskStore taskStore) {
+    ImmutableSet<? extends Task> matchingTasks = taskStore.allTasksMatchingCliPrefix(userInput);
     if (matchingTasks.count() > 1) {
-      return ParseResult.failure(String.format("Ambiguous task ID: multiple tasks match '%s'", userInput));
+      return ParseResult.failure(
+          String.format("Ambiguous task ID: multiple tasks match '%s'", userInput));
     }
     return matchingTasks.stream()
         .findFirst()
         .map(ParseResult::success)
         .orElse(
             ParseResult.failure(String.format("Unknown task ID: no tasks match '%s'", userInput)));
-  }
-
-  private static Set<Task> getTasksMatching(String userInput, TaskStore taskStore) {
-    return taskStore.allTasksMatchingCliPrefix(userInput).blockingFirst();
   }
 
   public static <T> T extractSuccessfulResultOrThrow(ParseResult<? extends T> parseResult) {

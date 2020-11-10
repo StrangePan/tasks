@@ -22,11 +22,11 @@ public final class HandlerUtil {
   private HandlerUtil() {}
 
   public static EnumMap<CompletedState, Set<Task>> groupByCompletionState(
-      Observable<Task> tasks) {
+      Observable<? extends Task> tasks) {
     return tasks
         .map(task ->
             Tuple.of(
-                task.isCompleted().blockingFirst()
+                task.isCompleted()
                     ? CompletedState.COMPLETE
                     : CompletedState.INCOMPLETE,
                 task))
@@ -47,14 +47,14 @@ public final class HandlerUtil {
         .blockingGet();
   }
 
-  public static void printIfPopulated(String prefix, Collection<Task> tasks) {
+  public static void printIfPopulated(String prefix, Collection<? extends Task> tasks) {
     Optional.of(stringifyIfPopulated(prefix, tasks))
         .filter(Output::isPopulated)
         .map(Output::render)
         .ifPresent(System.out::print);
   }
 
-  public static Output stringifyIfPopulated(String prefix, Collection<Task> tasks) {
+  public static Output stringifyIfPopulated(String prefix, Collection<? extends Task> tasks) {
     return tasks.isPopulated()
         ? Output.builder()
             .color(Output.Color16.LIGHT_MAGENTA)

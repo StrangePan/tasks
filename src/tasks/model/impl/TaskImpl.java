@@ -1,40 +1,80 @@
 package tasks.model.impl;
 
 import static java.util.Objects.requireNonNull;
+import static omnia.data.cache.Memoized.memoize;
 
-import io.reactivex.Completable;
-import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import omnia.cli.out.Output;
-import omnia.data.structure.Set;
+import omnia.data.cache.Memoized;
+import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.mutable.MutableSet;
 import omnia.data.structure.mutable.TreeSet;
 import tasks.model.Task;
-import tasks.model.TaskMutator;
 
 final class TaskImpl implements Task {
 
   private final TaskStoreImpl store;
-  private final TaskId id;
+  private final TaskIdImpl id;
+  private final TaskData data;
 
-  TaskImpl(TaskStoreImpl store, TaskId id) {
+  private final Memoized<ImmutableSet<TaskImpl>> blockingTasks;
+  private final Memoized<ImmutableSet<TaskImpl>> blockedTasks;
+  private final Memoized<ImmutableSet<TaskImpl>> openBlockingTasks;
+
+  TaskImpl(TaskStoreImpl store, TaskIdImpl id, TaskData data) {
     this.store = requireNonNull(store);
     this.id = requireNonNull(id);
+    this.data = requireNonNull(data);
+
+    blockingTasks = memoize(() -> store.allTasksBlocking(id));
+    blockedTasks = memoize(() -> store.allTasksBlockedBy(id));
+    openBlockingTasks = memoize(() -> store.allOpenTasksBlocking(id));
   }
 
   @Override
-  public boolean equals(Object other) {
-    return other instanceof TaskImpl
-        && ((TaskImpl) other).store.equals(store)
-        && ((TaskImpl) other).id.equals(id);
+  public TaskIdImpl id() {
+    return id;
+  }
+
+  @Override
+  public String label() {
+    return data.label();
+  }
+
+  @Override
+  public boolean isCompleted() {
+    return data.isCompleted();
+  }
+
+  @Override
+  public boolean isUnblocked() {
+    return !openBlockingTasks.value().isPopulated();
+  }
+
+  @Override
+  public ImmutableSet<TaskImpl> blockingTasks() {
+    return blockingTasks.value();
+  }
+
+  @Override
+  public ImmutableSet<TaskImpl> blockedTasks() {
+    return blockedTasks.value();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    return obj == this
+        || (obj instanceof TaskImpl
+            && Objects.equals(id, ((TaskImpl) obj).id)
+            && Objects.equals(store, ((TaskImpl) obj).store)
+            && Objects.equals(data, ((TaskImpl) obj).data));
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(store, id);
+    return Objects.hash(store, id, data);
   }
 
   @Override
@@ -46,9 +86,7 @@ final class TaskImpl implements Task {
   public Output render() {
     String stringId = id.toString();
     TreeSet<String> allIds =
-        store.allTasks()
-            .firstOrError()
-            .flatMapObservable(Observable::fromIterable)
+        Observable.fromIterable(store.allTasks())
             .cast(TaskImpl.class)
             .map(TaskImpl::id)
             .map(Object::toString)
@@ -68,15 +106,15 @@ final class TaskImpl implements Task {
         .append(stringId.substring(longestCommonPrefix))
         .defaultColor()
         .append(
-            isCompleted().blockingFirst()
+            isCompleted()
                 ? Output.builder()
-                .color(Output.Color16.LIGHT_CYAN)
-                .append(" (completed)")
-                .build()
+                    .color(Output.Color16.LIGHT_CYAN)
+                    .append(" (completed)")
+                    .build()
                 : Output.empty())
         .append(": ")
         .defaultColor()
-        .append(label().blockingFirst())
+        .append(label())
         .build();
   }
 
@@ -86,65 +124,5 @@ final class TaskImpl implements Task {
         return i;
       }
     }
-  }
-
-  @Override
-  public Flowable<Boolean> isCompleted() {
-    return store()
-        .lookUp(id)
-        .takeWhile(Optional::isPresent)
-        .map(Optional::get)
-        .map(TaskData::isCompleted);
-  }
-
-  @Override
-  public Flowable<Boolean> isUnblocked() {
-    return query().tasksBlockingThis()
-        .flatMapSingle(
-            tasks ->
-                Observable.fromIterable(tasks)
-                    .flatMapSingle(task -> task.isCompleted().firstOrError())
-                    .map(isCompleted -> !isCompleted)
-                    .filter(isOpen -> isOpen)
-                    .first(/*or else*/ false))
-        .map(atLeastOneBlockingTaskIsOpen -> !atLeastOneBlockingTaskIsOpen);
-  }
-
-  @Override
-  public Flowable<String> label() {
-    return store()
-        .lookUp(id)
-        .takeWhile(Optional::isPresent)
-        .map(Optional::get)
-        .map(TaskData::label);
-  }
-
-  @Override
-  public Query query() {
-    return new Query() {
-
-      @Override
-      public Flowable<Set<Task>> tasksBlockedByThis() {
-        return store().allTasksBlockedBy(TaskImpl.this);
-      }
-
-      @Override
-      public Flowable<Set<Task>> tasksBlockingThis() {
-        return store().allTasksBlocking(TaskImpl.this);
-      }
-    };
-  }
-
-  @Override
-  public Completable mutate(Function<? super TaskMutator, ? extends TaskMutator> mutator) {
-    return store().mutateTask(this, mutator);
-  }
-
-  TaskStoreImpl store() {
-    return store;
-  }
-
-  TaskId id() {
-    return id;
   }
 }

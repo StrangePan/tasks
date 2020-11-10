@@ -12,14 +12,14 @@ import tasks.model.TaskBuilder;
 
 final class TaskBuilderImpl implements TaskBuilder {
 
-  private final TaskStoreImpl taskStore;
+  private final ObservableTaskStoreImpl taskStore;
   private final String label;
 
   private boolean completed = false;
-  private final MutableSet<TaskId> blockingTasksToAdd = HashSet.create();
-  private final MutableSet<TaskId> blockedTasksToAdd = HashSet.create();
+  private final MutableSet<TaskIdImpl> blockingTasksToAdd = HashSet.create();
+  private final MutableSet<TaskIdImpl> blockedTasksToAdd = HashSet.create();
 
-  TaskBuilderImpl(TaskStoreImpl taskStore, String label) {
+  TaskBuilderImpl(ObservableTaskStoreImpl taskStore, String label) {
     this.taskStore = requireNonNull(taskStore);
     this.label = requireNonNull(label);
   }
@@ -31,8 +31,8 @@ final class TaskBuilderImpl implements TaskBuilder {
   }
 
   @Override
-  public TaskBuilderImpl setBlockingTasks(Iterable<Task> tasks) {
-    Iterable<TaskId> taskIds =
+  public TaskBuilderImpl setBlockingTasks(Iterable<? extends Task> tasks) {
+    Iterable<TaskIdImpl> taskIds =
         Observable.fromIterable(tasks)
             .map(store()::validateTask)
             .map(TaskImpl::id)
@@ -50,8 +50,8 @@ final class TaskBuilderImpl implements TaskBuilder {
   }
 
   @Override
-  public TaskBuilderImpl setBlockedTasks(Iterable<Task> tasks) {
-    Iterable<TaskId> taskIds =
+  public TaskBuilderImpl setBlockedTasks(Iterable<? extends Task> tasks) {
+    Iterable<TaskIdImpl> taskIds =
         Observable.fromIterable(tasks)
             .map(store()::validateTask)
             .map(TaskImpl::id)
@@ -68,7 +68,7 @@ final class TaskBuilderImpl implements TaskBuilder {
     return this;
   }
 
-  TaskStoreImpl store() {
+  ObservableTaskStoreImpl store() {
     return taskStore;
   }
 
@@ -80,11 +80,11 @@ final class TaskBuilderImpl implements TaskBuilder {
     return label;
   }
 
-  Set<TaskId> blockingTasks() {
+  Set<TaskIdImpl> blockingTasks() {
     return ImmutableSet.copyOf(blockingTasksToAdd);
   }
 
-  Set<TaskId> blockedTasks() {
+  Set<TaskIdImpl> blockedTasks() {
     return ImmutableSet.copyOf(blockedTasksToAdd);
   }
 }

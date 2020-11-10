@@ -38,7 +38,7 @@ public final class BlockersParser implements CommandParser<BlockersArguments> {
      */
     List<String> argsList = ImmutableList.copyOf(commandLine.getArgList());
     if (argsList.count() < 1) {
-      throw new ParserException("Task not specified");
+      throw new ParserException("ObservableTask not specified");
     }
     if (argsList.count() > 1) {
       throw new ParserException("Unexpected extra arguments");

@@ -9,10 +9,10 @@ import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 import tasks.cli.feature.Feature;
 import tasks.cli.feature.Features;
-import tasks.model.impl.TaskStoreImpl;
+import tasks.model.impl.ObservableTaskStoreImpl;
 
 final class Application {
-  private final Memoized<TaskStoreImpl> taskStore = memoize(() -> new TaskStoreImpl("asdf"));
+  private final Memoized<ObservableTaskStoreImpl> taskStore = memoize(() -> new ObservableTaskStoreImpl("asdf"));
   private final Memoized<Features> features = memoize(() -> new Features(taskStore));
 
   private final String[] rawArgs;

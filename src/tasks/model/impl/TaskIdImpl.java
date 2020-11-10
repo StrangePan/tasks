@@ -1,8 +1,10 @@
 package tasks.model.impl;
 
 import java.util.Objects;
+import omnia.contract.TypedContainer;
+import tasks.model.TaskId;
 
-final class TaskId {
+final class TaskIdImpl implements TaskId {
 
   static final int TO_STRING_BASE = Character.MAX_RADIX;
   static final int TO_STRING_MAX_LENGTH = (int) Math.floor(log(Long.MAX_VALUE, TO_STRING_BASE));
@@ -10,13 +12,13 @@ final class TaskId {
 
   private final long id;
 
-  TaskId(long id) {
+  TaskIdImpl(long id) {
     this.id = id;
   }
 
   @Override
   public boolean equals(Object other) {
-    return other instanceof TaskId && ((TaskId) other).id == id;
+    return other instanceof TaskIdImpl && ((TaskIdImpl) other).id == id;
   }
 
   @Override
@@ -33,8 +35,8 @@ final class TaskId {
     return "0".repeat(Math.max(0, TO_STRING_MAX_LENGTH - s.length())).concat(s);
   }
 
-  static TaskId parse(String string) throws NumberFormatException {
-    return new TaskId(Long.parseUnsignedLong(string, TO_STRING_BASE));
+  static TaskIdImpl parse(String string) throws NumberFormatException {
+    return new TaskIdImpl(Long.parseUnsignedLong(string, TO_STRING_BASE));
   }
 
   long asLong() {
@@ -43,5 +45,15 @@ final class TaskId {
 
   private static double log(double value, double base) {
     return Math.log(value) / Math.log(base);
+  }
+
+  static TaskIdImpl generate(TypedContainer<TaskIdImpl> b) {
+    // TODO(vxi4873454w0): more sophisticated algorithm
+    while (true) {
+      TaskIdImpl id = new TaskIdImpl((long) (Math.random() * TaskIdImpl.MAX_ID_VALUE));
+      if (!b.contains(id)) {
+        return id;
+      }
+    }
   }
 }

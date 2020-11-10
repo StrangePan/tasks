@@ -8,17 +8,18 @@ import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableSet;
+import omnia.data.structure.tuple.Triple;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.model.Task;
 import tasks.model.TaskBuilder;
-import tasks.model.TaskStore;
+import tasks.model.ObservableTaskStore;
 
 /** Business logic for the Add command. */
 public final class AddHandler implements ArgumentHandler<AddArguments> {
-  private final Memoized<? extends TaskStore> taskStore;
+  private final Memoized<? extends ObservableTaskStore> taskStore;
 
-  public AddHandler(Memoized<? extends TaskStore> taskStore) {
+  public AddHandler(Memoized<? extends ObservableTaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 
@@ -34,7 +35,7 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
     Set<Task> blockingTasks = ImmutableSet.copyOf(arguments.blockingTasks());
     Set<Task> blockedTasks = ImmutableSet.copyOf(arguments.blockedTasks());
 
-    TaskStore taskStore = this.taskStore.value();
+    ObservableTaskStore taskStore = this.taskStore.value();
 
     // Construct the new task, commit to disk, print output
     return taskStore.createTask(
@@ -46,6 +47,7 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
                 .flatMap(b ->
                     Observable.fromIterable(blockedTasks).reduce(b, TaskBuilder::addBlockedTask))
                 .blockingGet())
+        .map(Triple::third)
         .map(Task::render)
         .map(output -> Output.builder().append("task created: ").append(output).build())
         .map(output -> Output.builder().appendLine(output).build());

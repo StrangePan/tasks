@@ -35,8 +35,7 @@ public final class AddParser implements CommandParser<AddArguments> {
      */
     List<String> argsList = ImmutableList.copyOf(commandLine.getArgList());
     String taskDescription = extractTaskDescriptionFrom(argsList)
-        .orElseThrow(
-            () -> new ParserException("Task description not defined"));
+        .orElseThrow(() -> new ParserException("Task description not defined"));
     ParserUtil.assertNoExtraArgs(commandLine, AddCommand.COMMAND_PARAMETERS.value());
 
     List<? extends ParseResult<? extends Task>> afterTasks =

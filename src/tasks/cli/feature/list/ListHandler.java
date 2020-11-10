@@ -10,33 +10,35 @@ import omnia.data.cache.Memoized;
 import omnia.data.structure.tuple.Triple;
 import omnia.data.structure.tuple.Tuple;
 import tasks.cli.handler.ArgumentHandler;
-import tasks.model.TaskStore;
+import tasks.model.ObservableTaskStore;
 
 /** Business logic for the List command. */
 public final class ListHandler implements ArgumentHandler<ListArguments> {
-  private final Memoized<? extends TaskStore> taskStore;
+  private final Memoized<? extends ObservableTaskStore> taskStore;
 
-  public ListHandler(Memoized<? extends TaskStore> taskStore) {
+  public ListHandler(Memoized<? extends ObservableTaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 
   @Override
   public Single<Output> handle(ListArguments arguments) {
     return Single.fromCallable(taskStore::value)
+        .flatMapObservable(ObservableTaskStore::observe)
+        .firstOrError()
         .flatMapObservable(
             store -> Observable.just(
                 Tuple.of(
                     arguments.isUnblockedSet(),
                     "unblocked tasks:",
-                    store.allOpenTasksWithoutOpenBlockers().firstOrError()),
+                    Single.fromCallable(store::allOpenTasksWithoutOpenBlockers)),
                 Tuple.of(
                     arguments.isBlockedSet(),
                     "blocked tasks:",
-                    store.allOpenTasksWithOpenBlockers().firstOrError()),
+                    Single.fromCallable(store::allOpenTasksWithOpenBlockers)),
                 Tuple.of(
                     arguments.isCompletedSet(),
                     "completed tasks:",
-                    store.allCompletedTasks().firstOrError())))
+                    Single.fromCallable(store::allCompletedTasks))))
         .filter(Triple::first)
         .map(Triple::dropFirst)
         .concatMapEager(

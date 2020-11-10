@@ -28,7 +28,7 @@ import tasks.cli.command.common.CommonParser;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.parser.ParserException;
 import tasks.cli.parser.CommandParser;
-import tasks.model.TaskStore;
+import tasks.model.ObservableTaskStore;
 import tasks.model.impl.CyclicalDependencyException;
 
 public final class Feature<T> {
@@ -64,7 +64,7 @@ public final class Feature<T> {
 
   public Completable handle(
       List<? extends String> args,
-      Memoized<? extends TaskStore> taskStore) {
+      Memoized<? extends ObservableTaskStore> taskStore) {
     return Single.just(args)
         .to(this::toArguments)
         .flatMap(this::toOutput)

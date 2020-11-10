@@ -4,24 +4,27 @@ import static java.util.Objects.requireNonNull;
 import static tasks.cli.handler.HandlerUtil.stringifyIfPopulated;
 import static tasks.cli.handler.HandlerUtil.verifyTasksAreMutuallyExclusive;
 
-import io.reactivex.Completable;
 import io.reactivex.Single;
 import omnia.algorithm.SetAlgorithms;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
+import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.tuple.Couple;
-import omnia.data.structure.tuple.Tuple;
+import omnia.data.structure.tuple.Couplet;
+import omnia.data.structure.tuple.Triple;
+import omnia.data.structure.tuple.Tuplet;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.model.Task;
+import tasks.model.ObservableTaskStore;
 import tasks.model.TaskStore;
 
 /** Business logic for the Blockers command. */
 public final class BlockersHandler implements ArgumentHandler<BlockersArguments> {
-  private final Memoized<? extends TaskStore> taskStore;
+  private final Memoized<? extends ObservableTaskStore> taskStore;
 
-  public BlockersHandler(Memoized<? extends TaskStore> taskStore) {
+  public BlockersHandler(Memoized<? extends ObservableTaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 
@@ -51,18 +54,18 @@ public final class BlockersHandler implements ArgumentHandler<BlockersArguments>
                     .build());
   }
 
-  private Single<Couple<Set<Task>, Set<Task>>> mutateAndProduceBeforeAfterSnapshot(
-      BlockersArguments arguments) {
-    return getTasksBlocking(arguments.targetTask())
-        .flatMap(
-            blockingTasksBeforeMutation ->
-                mutateTaskStore(arguments)
-                    .andThen(getTasksBlocking(arguments.targetTask()))
-                    .map(blockingTasksAfterMutation ->
-                        Tuple.of(blockingTasksBeforeMutation, blockingTasksAfterMutation)));
+  private Single<? extends Couplet<? extends Set<? extends Task>>>
+      mutateAndProduceBeforeAfterSnapshot(BlockersArguments arguments) {
+    return mutateTaskStore(arguments)
+        .map(
+            couplet -> couplet.map(
+                store -> store.lookUpById(arguments.targetTask().id())
+                    .map(Task::blockingTasks)
+                    .orElse(ImmutableSet.empty())));
   }
 
-  private Completable mutateTaskStore(BlockersArguments arguments) {
+  private Single<Couplet<TaskStore>> mutateTaskStore(
+      BlockersArguments arguments) {
     return taskStore.value().mutateTask(
         arguments.targetTask(),
         mutator -> {
@@ -73,14 +76,17 @@ public final class BlockersHandler implements ArgumentHandler<BlockersArguments>
             arguments.blockingTasksToAdd().forEach(mutator::addBlockingTask);
           }
           return mutator;
-        });
+        })
+        .map(Triple::dropThird)
+        .map(Tuplet::copyOf);
   }
 
-  private static Single<Set<Task>> getTasksBlocking(Task task) {
-    return task.query().tasksBlockingThis().firstOrError();
+  private static Set<? extends Task> getTasksBlocking(Task task) {
+    return task.blockingTasks();
   }
 
-  private static Output stringifyResults(Couple<Set<Task>, Set<Task>> beforeAfterSnapshots) {
+  private static Output stringifyResults(
+      Couple<? extends Set<? extends Task>, ? extends Set<? extends Task>> beforeAfterSnapshots) {
     return Output.builder()
         .appendLine(stringifyIfPopulated("current blockers:", beforeAfterSnapshots.second()))
         .appendLine(
@@ -90,7 +96,7 @@ public final class BlockersHandler implements ArgumentHandler<BlockersArguments>
         .build();
   }
 
-  private static Set<Task> getRemovedBlockers(Set<Task> before, Set<Task> after) {
+  private static Set<? extends Task> getRemovedBlockers(Set<? extends Task> before, Set<?> after) {
     return SetAlgorithms.differenceBetween(before, after);
   }
 }
