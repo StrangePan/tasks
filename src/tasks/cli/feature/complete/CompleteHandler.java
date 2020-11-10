@@ -1,23 +1,23 @@
 package tasks.cli.feature.complete;
 
 import static java.util.Objects.requireNonNull;
-import static tasks.cli.handler.HandlerUtil.groupByCompletionState;
-import static tasks.cli.handler.HandlerUtil.printIfPopulated;
+import static omnia.algorithm.SetAlgorithms.differenceBetween;
+import static omnia.algorithm.SetAlgorithms.unionOf;
 import static tasks.cli.handler.HandlerUtil.stringifyIfPopulated;
-import static tasks.util.rx.Observables.toImmutableSet;
 
 import io.reactivex.Observable;
 import io.reactivex.Single;
-import java.util.EnumMap;
+import java.util.Optional;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
-import omnia.data.structure.Set;
+import omnia.data.stream.Collectors;
 import omnia.data.structure.immutable.ImmutableSet;
+import omnia.data.structure.tuple.Tuplet;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
-import tasks.cli.handler.HandlerUtil.CompletedState;
 import tasks.model.Task;
 import tasks.model.ObservableTaskStore;
+import tasks.model.TaskId;
 
 /** Business logic for the Complete command. */
 public final class CompleteHandler implements ArgumentHandler<CompleteArguments> {
@@ -36,43 +36,60 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
 
     ObservableTaskStore taskStore = this.taskStore.value();
 
-    EnumMap<CompletedState, Set<Task>> tasksGroupedByState =
-        groupByCompletionState(Observable.fromIterable(arguments.tasks()));
+    return Observable.fromIterable(arguments.tasks())
+        .flatMapSingle(task -> taskStore.mutateTask(task, mutator -> mutator.setCompleted(true)))
+        .reduce(
+            Tuplet.of(
+                ImmutableSet.<TaskId>builder(), // tasks that were already completed
+                ImmutableSet.<TaskId>builder(), // tasks that were marked as completed
+                ImmutableSet.<TaskId>builder()), // tasks that became unblocked
+            (builders, mutationResult) -> {
+              boolean becameCompleted =
+                  mutationResult.first()
+                      .lookUpById(mutationResult.third().id())
+                      .map(task -> !task.isCompleted())
+                      .orElse(false);
+              (becameCompleted ? builders.second() : builders.first())
+                  .add(mutationResult.third().id());
 
-    Set<Task> alreadyCompletedTasks =
-        tasksGroupedByState.getOrDefault(CompletedState.COMPLETE, Set.empty());
-    Set<Task> incompleteTasks =
-        tasksGroupedByState.getOrDefault(CompletedState.INCOMPLETE, Set.empty());
+              if (becameCompleted) {
+                mutationResult.third()
+                    .blockedTasks()
+                    .stream()
+                    .filter(Task::isUnblocked)
+                    .filter(task -> !task.isCompleted())
+                    .map(Task::id)
+                    .forEach(builders.third()::add);
+              }
 
-    // report tasks already completed
-    printIfPopulated("task(s) already marked as completed:", alreadyCompletedTasks);
-
-    // mark incomplete tasks as complete
-    return Observable.fromIterable(incompleteTasks)
-        .concatMapCompletable(
-            task -> taskStore
-                .mutateTask(task, mutator -> mutator.setCompleted(true)).ignoreElement())
-        .andThen(findTasksBlockedBy(incompleteTasks))
-        .compose(CompleteHandler::onlyTasksThatAreUnblocked)
+              return builders;
+            })
+        .map(groupedTasks -> groupedTasks.map(ImmutableSet.Builder::build))
         .map(
-            newlyUnblockedTasks ->
-                Output.builder()
-                    .append(stringifyIfPopulated("task(s) marked as completed:", incompleteTasks))
-                    .append(
-                        stringifyIfPopulated("task(s) unblocked as a result:", newlyUnblockedTasks))
-                    .build());
-  }
-
-  private static Single<ImmutableSet<Task>> findTasksBlockedBy(Set<Task> tasks) {
-    return Observable.fromIterable(tasks)
-        .<Task>flatMapIterable(Task::blockedTasks)
-        .to(toImmutableSet());
-  }
-
-  private static Single<ImmutableSet<Task>> onlyTasksThatAreUnblocked(
-      Single<? extends Set<Task>> tasks) {
-    return tasks.flatMapObservable(Observable::fromIterable)
-        .filter(Task::isUnblocked)
-        .to(toImmutableSet());
+            groupedTasks -> Tuplet.of(
+                groupedTasks.first(),
+                groupedTasks.second(),
+                    ImmutableSet.copyOf(
+                        differenceBetween(
+                            groupedTasks.third(),
+                            unionOf(groupedTasks.first(), groupedTasks.second())))))
+        .flatMap(
+            groupedTasks -> taskStore.observe()
+                .firstOrError()
+                .map(
+                    store -> groupedTasks.map(
+                        list -> list.stream()
+                            .map(store::lookUpById)
+                            .map(Optional::orElseThrow)
+                            .collect(Collectors.toImmutableSet()))))
+        .flatMapObservable(Observable::fromIterable)
+        .zipWith(
+            Observable.just(
+                "task(s) already completed:",
+                "task(s) completed:",
+                "task(s) unblocked as a result:"),
+            (groupedTasks, header) -> stringifyIfPopulated(header, groupedTasks))
+        .collectInto(Output.builder(), Output.Builder::append)
+        .map(Output.Builder::build);
   }
 }

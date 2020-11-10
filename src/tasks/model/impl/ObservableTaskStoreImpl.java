@@ -300,7 +300,7 @@ public final class ObservableTaskStoreImpl implements ObservableTaskStore {
 
   @Override
   public Completable writeToDisk() {
-    return observe()
+    return store.observe()
         .firstOrError()
         .flatMapCompletable(store -> fileSource.writeToFile(store.graph, store.data))
         .cache();

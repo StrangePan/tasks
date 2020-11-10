@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import io.reactivex.Single;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
+import omnia.data.structure.tuple.Triple;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.model.Task;
@@ -25,15 +26,18 @@ public final class RewordHandler implements ArgumentHandler<RewordArguments> {
     }
 
     return Single.fromCallable(taskStore::value)
-        .flatMapCompletable(
+        .flatMap(
             store -> store
                 .mutateTask(
                     arguments.targetTask(), mutator -> mutator.setLabel(arguments.description()))
-                .ignoreElement())
-        .andThen(Single.just(arguments.targetTask()))
+                .map(Triple::third))
         .map(Task::render)
         .map(
             taskOutput ->
-                Output.builder().append("Updated description: ").append(taskOutput).build());
+                Output.builder()
+                    .append("Updated description: ")
+                    .append(taskOutput)
+                    .appendLine()
+                    .build());
   }
 }
