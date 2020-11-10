@@ -20,6 +20,7 @@ import tasks.cli.command.Option;
 import tasks.cli.command.Parameter;
 import tasks.model.ObservableTaskStore;
 import tasks.model.Task;
+import tasks.model.TaskStore;
 
 public final class ParserUtil {
 
@@ -31,15 +32,18 @@ public final class ParserUtil {
   }
 
   public static List<ParseResult<? extends Task>> parseTaskIds(
-      List<String> userInputs, ObservableTaskStore taskStore) {
-    return userInputs.stream()
-        .map(userInput -> parseTaskId(userInput, taskStore))
-        .collect(toList());
+      List<String> userInputs, ObservableTaskStore observableTaskStore) {
+    return observableTaskStore.observe()
+        .firstOrError()
+        .<List<ParseResult<? extends Task>>>map(
+            taskStore -> userInputs.stream()
+                .map(userInput -> parseTaskId(userInput, taskStore))
+                .collect(toList()))
+        .blockingGet();
   }
 
-  public static ParseResult<? extends Task> parseTaskId(
-      String userInput, ObservableTaskStore taskStore) {
-    ImmutableSet<? extends Task> matchingTasks = getTasksMatching(userInput, taskStore);
+  private static ParseResult<? extends Task> parseTaskId(String userInput, TaskStore taskStore) {
+    ImmutableSet<? extends Task> matchingTasks = taskStore.allTasksMatchingCliPrefix(userInput);
     if (matchingTasks.count() > 1) {
       return ParseResult.failure(
           String.format("Ambiguous task ID: multiple tasks match '%s'", userInput));
@@ -49,11 +53,6 @@ public final class ParserUtil {
         .map(ParseResult::success)
         .orElse(
             ParseResult.failure(String.format("Unknown task ID: no tasks match '%s'", userInput)));
-  }
-
-  private static ImmutableSet<? extends Task> getTasksMatching(
-      String userInput, ObservableTaskStore taskStore) {
-    return taskStore.observe().blockingFirst().allTasksMatchingCliPrefix(userInput);
   }
 
   public static <T> T extractSuccessfulResultOrThrow(ParseResult<? extends T> parseResult) {
