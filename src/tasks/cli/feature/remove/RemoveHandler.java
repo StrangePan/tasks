@@ -1,13 +1,15 @@
 package tasks.cli.feature.remove;
 
 import static java.util.Objects.requireNonNull;
+import static omnia.data.cache.Memoized.memoize;
+import static tasks.util.rx.Observables.toImmutableSet;
 
 import io.reactivex.Observable;
 import io.reactivex.Single;
+import java.util.Scanner;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
-import omnia.data.structure.tuple.Tuple;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.cli.handler.HandlerUtil;
@@ -31,12 +33,63 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
       throw new HandlerException("no tasks specified");
     }
 
-    return Single.just(tasksToDelete)
-        .map(tasks -> Tuple.of(tasks, HandlerUtil.stringifyIfPopulated("tasks deleted:", tasks)))
-        .flatMap(
-            tasksAndReport ->
-                Observable.fromIterable(tasksAndReport.first())
-                    .concatMapCompletable(task -> taskStore.value().deleteTask(task))
-                    .andThen(Single.just(tasksAndReport.second())));
+    return Observable.fromIterable(tasksToDelete)
+        .compose(
+            observable ->
+                arguments.force()
+                    ? observable
+                    : observable.concatMapMaybe(
+                        task ->
+                            getYesNoConfirmationFor(task)
+                                .filter(confirm -> confirm).map(u -> task)))
+        .flatMapMaybe(task -> taskStore.value().deleteTask(task))
+        .to(toImmutableSet())
+        .map(deletedTasks -> HandlerUtil.stringifyIfPopulated("tasks deleted:", deletedTasks));
+  }
+
+  private static Single<Boolean> getYesNoConfirmationFor(Task task) {
+    return Single.just(task)
+        .map(Task::render)
+        .map(Output::render)
+        .doOnSuccess(System.out::println)
+        .ignoreElement()
+        .andThen(getYesNoConfirmation());
+  }
+
+  private static Single<Boolean> getYesNoConfirmation() {
+    Memoized<RuntimeException> unparsedInput = memoize(RuntimeException::new);
+    return Single.just(
+        Output.builder()
+            .color(Output.Color16.YELLOW)
+            .append("Delete this task? [Y/n]: ")
+            .defaultColor()
+            .build())
+        .map(Output::render)
+        .doOnSuccess(System.out::print)
+        .ignoreElement()
+        .andThen(readUserInput())
+        .map(
+            input -> {
+              if (input.matches("\\s*[Yy]([Ee][Ss])?\\s*")) {
+                return true;
+              } else if (input.matches("\\s*[Nn]([Oo])?\\s*")) {
+                return false;
+              } else {
+                throw unparsedInput.value();
+              }
+            })
+        .retry(2, throwable -> throwable == unparsedInput.value())
+        .onErrorReturn(
+            throwable -> {
+              if (throwable == unparsedInput.value()) {
+                return false;
+              }
+              throw new RuntimeException(throwable);
+            });
+  }
+
+  private static Single<String> readUserInput() {
+    return Single.using(
+        () -> new Scanner(System.in), scanner -> Single.just(scanner.nextLine()), Scanner::close);
   }
 }

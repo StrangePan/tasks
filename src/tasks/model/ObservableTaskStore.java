@@ -1,6 +1,7 @@
 package tasks.model;
 
 import io.reactivex.Completable;
+import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import java.util.function.Function;
@@ -45,7 +46,7 @@ public interface ObservableTaskStore {
    * @return A {@link Completable} that completes when the deletion has been successfully completed,
    *     or emits an error if the mutation would have put the store in an invalid state.
    */
-  Completable deleteTask(Task task);
+  Maybe<? extends Task> deleteTask(Task task);
 
   /**
    * Attempts to save the task store's contents to persistent storage.
