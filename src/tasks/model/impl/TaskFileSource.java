@@ -12,6 +12,8 @@ import java.io.BufferedWriter;
 import java.io.Writer;
 import java.util.Comparator;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.DirectedGraph;
@@ -27,10 +29,11 @@ import tasks.model.Task;
 
 final class TaskFileSource {
 
-  private static final int VERSION = 1;
+  private static final int VERSION = 2;
   private static final String END_OF_LINE = "\n";
   private static final String TASK_FIELD_DELIMITER = ";";
   private static final String TASK_ID_DELIMITER = ",";
+  private static final Pattern VERSION_PATTERN = Pattern.compile("^# version (\\d+)$");
 
   private static final Memoized<ImmutableSet<Couple<Task.Status, ImmutableList<String>>>> STATUS_STRINGS =
       memoize(() ->
@@ -105,7 +108,9 @@ final class TaskFileSource {
     }
 
     private Optional<State> maybeParseStateChange(String line) {
-      if (line.matches("^# version \\d+$")) {
+      Matcher versionMatcher = VERSION_PATTERN.matcher(line);
+      if (versionMatcher.matches()) {
+        assertSupportedVersion(versionMatcher.group(1));
         return Optional.of(State.PARSING_NOTHING);
       } else if (line.equals("# tasks")) {
         return Optional.of(State.PARSING_TASKS);
@@ -113,6 +118,17 @@ final class TaskFileSource {
         return Optional.of(State.PARSING_GRAPH);
       }
       return Optional.empty();
+    }
+
+    private static void assertSupportedVersion(String versionString) {
+      try {
+        int version = Integer.parseInt(versionString);
+        if (version > VERSION) {
+          throw new RuntimeException("unsupported file version: " + version + ". supported versions: " + VERSION);
+        }
+      } catch (NumberFormatException ex) {
+        throw new RuntimeException("unable to parse file version code: " + versionString, ex);
+      }
     }
 
     private void parseToCollection(String line) {
