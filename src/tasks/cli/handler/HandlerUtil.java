@@ -24,12 +24,11 @@ public final class HandlerUtil {
   public static EnumMap<CompletedState, Set<Task>> groupByCompletionState(
       Observable<? extends Task> tasks) {
     return tasks
-        .map(task ->
-            Tuple.of(
-                task.isCompleted()
-                    ? CompletedState.COMPLETE
-                    : CompletedState.INCOMPLETE,
-                task))
+        .map(task -> Tuple.of(
+            task.status().isCompleted()
+                ? CompletedState.COMPLETE
+                : CompletedState.INCOMPLETE,
+            task))
         .collectInto(
             new EnumMap<CompletedState, MutableSet<Task>>(CompletedState.class),
             (map, taskCouple) -> {

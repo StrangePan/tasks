@@ -9,7 +9,7 @@ public interface Task {
 
   String label();
 
-  boolean isCompleted();
+  Status status();
 
   boolean isUnblocked();
 
@@ -18,4 +18,22 @@ public interface Task {
   Set<? extends Task> blockedTasks();
 
   Output render();
+
+  enum Status {
+    OPEN,
+    COMPLETED,
+    STARTED;
+
+    public boolean isOpen() {
+      return this.equals(OPEN);
+    }
+
+    public boolean isCompleted() {
+      return this.equals(COMPLETED);
+    }
+
+    public boolean isStarted() {
+      return this.equals(STARTED);
+    }
+  }
 }

@@ -71,7 +71,7 @@ final class TaskStoreImpl implements TaskStore {
         memoize(
             () -> data.entries()
                 .stream()
-                .filter(entry -> entry.value().isCompleted())
+                .filter(entry -> entry.value().status().isCompleted())
                 .map(Map.Entry::key)
                 .map(this::toTask)
                 .collect(toImmutableSet()));
@@ -80,7 +80,7 @@ final class TaskStoreImpl implements TaskStore {
         memoize(
             () -> data.entries()
                 .stream()
-                .filter(entry -> !entry.value().isCompleted())
+                .filter(entry -> !entry.value().status().isCompleted())
                 .map(Map.Entry::key)
                 .map(this::toTask)
                 .collect(toImmutableSet()));
@@ -185,7 +185,7 @@ final class TaskStoreImpl implements TaskStore {
         .stream()
         .map(Graph.Node::item)
         .map(this::toTask)
-        .filter(task -> !task.isCompleted())
+        .filter(task -> !task.status().isCompleted())
         .collect(toImmutableSet());
   }
 
@@ -211,7 +211,7 @@ final class TaskStoreImpl implements TaskStore {
   }
 
   private boolean isOpen(TaskIdImpl id) {
-    return data.valueOf(id).map(taskData -> !taskData.isCompleted()).orElse(false);
+    return data.valueOf(id).map(taskData -> !taskData.status().isCompleted()).orElse(false);
   }
 
   private boolean isUnblocked(TaskIdImpl id) {
@@ -227,6 +227,6 @@ final class TaskStoreImpl implements TaskStore {
         .map(data::valueOf)
         .anyMatch(
             taskDataOptional ->
-                taskDataOptional.map(taskData -> !taskData.isCompleted()).orElse(false));
+                taskDataOptional.map(taskData -> !taskData.status().isCompleted()).orElse(false));
   }
 }

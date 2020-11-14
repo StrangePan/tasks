@@ -2,10 +2,10 @@ package tasks.model;
 
 public interface TaskMutator extends TaskBuilder {
 
-  @Override
-  TaskMutator setCompleted(boolean completed);
-
   TaskMutator setLabel(String label);
+
+  @Override
+  TaskMutator setStatus(Task.Status status);
 
   @Override
   TaskMutator setBlockingTasks(Iterable<? extends Task> task);

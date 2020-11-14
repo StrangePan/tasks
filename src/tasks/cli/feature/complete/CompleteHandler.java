@@ -37,7 +37,7 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
     ObservableTaskStore taskStore = this.taskStore.value();
 
     return Observable.fromIterable(arguments.tasks())
-        .flatMapSingle(task -> taskStore.mutateTask(task, mutator -> mutator.setCompleted(true)))
+        .flatMapSingle(task -> taskStore.mutateTask(task, mutator -> mutator.setStatus(Task.Status.COMPLETED)))
         .reduce(
             Tuplet.of(
                 ImmutableSet.<TaskId>builder(), // tasks that were already completed
@@ -47,7 +47,7 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
               boolean becameCompleted =
                   mutationResult.first()
                       .lookUpById(mutationResult.third().id())
-                      .map(task -> !task.isCompleted())
+                      .map(task -> !task.status().isCompleted())
                       .orElse(false);
               (becameCompleted ? builders.second() : builders.first())
                   .add(mutationResult.third().id());
@@ -57,7 +57,7 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
                     .blockedTasks()
                     .stream()
                     .filter(Task::isUnblocked)
-                    .filter(task -> !task.isCompleted())
+                    .filter(task -> !task.status().isCompleted())
                     .map(Task::id)
                     .forEach(builders.third()::add);
               }

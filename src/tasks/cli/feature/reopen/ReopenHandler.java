@@ -1,8 +1,6 @@
 package tasks.cli.feature.reopen;
 
 import static java.util.Objects.requireNonNull;
-import static omnia.algorithm.SetAlgorithms.differenceBetween;
-import static omnia.algorithm.SetAlgorithms.unionOf;
 import static omnia.data.stream.Collectors.toImmutableSet;
 import static tasks.cli.handler.HandlerUtil.stringifyIfPopulated;
 
@@ -37,7 +35,7 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
     ObservableTaskStore taskStore = this.taskStore.value();
 
     return Observable.fromIterable(arguments.tasks())
-        .flatMapSingle(task -> taskStore.mutateTask(task, mutator -> mutator.setCompleted(false)))
+        .flatMapSingle(task -> taskStore.mutateTask(task, mutator -> mutator.setStatus(Task.Status.OPEN)))
         .reduce(
             Tuplet.of(
                 ImmutableSet.<TaskId>builder(), // tasks that were already open
@@ -47,7 +45,7 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
               boolean becameOpen =
                   mutationResult.first()
                       .lookUpById(mutationResult.third().id())
-                      .map(Task::isCompleted)
+                      .map(task -> task.status().isCompleted())
                       .orElse(false);
               (becameOpen ? builders.second() : builders.first())
                   .add(mutationResult.third().id());
@@ -78,7 +76,7 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
                 groupedTasks.second(),
                 groupedTasks.third()
                     .stream()
-                    .filter(task -> !task.isCompleted())
+                    .filter(task -> !task.status().isCompleted())
                     .collect(toImmutableSet())))
         .flatMapObservable(Observable::fromIterable)
         .zipWith(

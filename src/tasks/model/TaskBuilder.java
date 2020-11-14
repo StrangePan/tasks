@@ -2,7 +2,7 @@ package tasks.model;
 
 public interface TaskBuilder {
 
-  TaskBuilder setCompleted(boolean completed);
+  TaskBuilder setStatus(Task.Status status);
 
   TaskBuilder setBlockingTasks(Iterable<? extends Task> task);
 

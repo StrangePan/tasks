@@ -44,8 +44,8 @@ final class TaskImpl implements Task {
   }
 
   @Override
-  public boolean isCompleted() {
-    return data.isCompleted();
+  public Status status() {
+    return data.status();
   }
 
   @Override
@@ -106,7 +106,7 @@ final class TaskImpl implements Task {
         .append(stringId.substring(longestCommonPrefix))
         .defaultColor()
         .append(
-            isCompleted()
+            status().isCompleted()
                 ? Output.builder()
                     .color(Output.Color16.LIGHT_CYAN)
                     .append(" (completed)")

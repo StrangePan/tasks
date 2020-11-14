@@ -18,7 +18,7 @@ public final class TaskMutatorImpl implements TaskMutator {
   private final TaskIdImpl taskId;
 
   private Optional<String> label = Optional.empty();
-  private Optional<Boolean> completed = Optional.empty();
+  private Optional<Task.Status> status = Optional.empty();
   private boolean overwriteBlockingTasks = false;
   private final MutableSet<TaskIdImpl> blockingTasksToAdd = HashSet.create();
   private final MutableSet<TaskIdImpl> blockingTasksToRemove = HashSet.create();
@@ -32,14 +32,14 @@ public final class TaskMutatorImpl implements TaskMutator {
   }
 
   @Override
-  public TaskMutatorImpl setCompleted(boolean completed) {
-    this.completed = Optional.of(completed);
+  public TaskMutatorImpl setLabel(String label) {
+    this.label = Optional.of(label);
     return this;
   }
 
   @Override
-  public TaskMutatorImpl setLabel(String label) {
-    this.label = Optional.of(label);
+  public TaskMutator setStatus(Task.Status status) {
+    this.status = Optional.of(status);
     return this;
   }
 
@@ -122,7 +122,11 @@ public final class TaskMutatorImpl implements TaskMutator {
   }
 
   Optional<Boolean> completed() {
-    return completed;
+    return status().map(Task.Status::isCompleted);
+  }
+
+  Optional<Task.Status> status() {
+    return status;
   }
 
   boolean overwriteBlockingTasks() {

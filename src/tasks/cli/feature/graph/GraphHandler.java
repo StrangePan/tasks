@@ -55,7 +55,7 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
                             arguments.isAllSet()
                                 ? single
                                 : single.flatMapObservable(Observable::fromIterable)
-                                    .filter(task -> !task.isCompleted())
+                                    .filter(task -> !task.status().isCompleted())
                                     .to(Observables.toImmutableList()))
                     .map(tasks -> Tuple.of(graph, tasks)))
         .map(couple -> couple.append(assignColumns(couple.first(), couple.second(), arguments)))
@@ -104,7 +104,7 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
               .stream()
               .map(DirectedNode::item)
               .filter(successor -> assignedColumns.valueOf(successor).isEmpty())
-              .filter(successor -> arguments.isAllSet() || !successor.isCompleted())
+              .filter(successor -> arguments.isAllSet() || !successor.status().isCompleted())
               .sorted(
                   Comparator.<Task, Integer>comparing(
                           item -> topologicalIndexes.valueOf(item).orElse(0))
@@ -165,10 +165,9 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
     return incrementingInteger()
         .takeUntil(i -> i == maxColumnsWithEdges)
         .map(
-            column ->
-                (column == taskColumn
-                    ? (task.isCompleted() ? "☑" : "☐")
-                    : (columnsWithEdges.contains(column) ? "╎" : " ")))
+            column -> (column == taskColumn
+                ? (task.status().isCompleted() ? "☑" : "☐")
+                : (columnsWithEdges.contains(column) ? "╎" : " ")))
         .collectInto(Output.builder(),  Output.Builder::append)
         .map(builder -> builder.append(" ").append(task.render()))
         .map(Output.Builder::build)
@@ -188,7 +187,7 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
             .orElse(ImmutableSet.empty())
             .stream()
             .map(DirectedNode::item)
-            .filter(item -> arguments.isAllSet() || !item.isCompleted())
+            .filter(item -> arguments.isAllSet() || !item.status().isCompleted())
             .map(taskColumns::valueOf)
             .flatMap(Optional::stream)
             .collect(toImmutableSet());
