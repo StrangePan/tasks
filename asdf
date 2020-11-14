@@ -8,8 +8,10 @@
 3m3pf62roiyo;complete;Fix: listing unblocked vs blocked tasks;
 6d0hzgifq9ds;complete;Cluster graph tasks by subgraph;
 7ri8li86wfeo;complete;Output unblocked tasks when completing a task;
+9xpzogu0xreo;open;Add flag to list only started tasks;
 aiv2qznibj7k;complete;Remove amend command;
 booswtafq3nk;open;Add help topic: tutorial;
+ckzwyq0nw4xs;open;Fix remove confirmations not responding --no-color flag;
 cystb0f3sk5c;complete;Move command registration to individual command definition classes;
 e3bpgvlmhvy8;complete;Add observable map;
 fcb8wnt4twjk;complete;Omit completed tasks when reporting freshly unblocked tasks;
