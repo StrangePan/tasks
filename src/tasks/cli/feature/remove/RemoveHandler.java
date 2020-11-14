@@ -89,7 +89,6 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
   }
 
   private static Single<String> readUserInput() {
-    return Single.using(
-        () -> new Scanner(System.in), scanner -> Single.just(scanner.nextLine()), Scanner::close);
+    return Single.fromCallable(() ->new Scanner(System.in).nextLine());
   }
 }
