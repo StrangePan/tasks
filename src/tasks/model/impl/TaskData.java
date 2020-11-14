@@ -3,34 +3,35 @@ package tasks.model.impl;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
+import tasks.model.Task;
 
 final class TaskData {
 
-  private final boolean completed;
   private final String label;
+  private final Task.Status status;
 
-  TaskData(boolean completed, String label) {
-    this.completed = completed;
+  TaskData(String label, Task.Status status) {
     this.label = requireNonNull(label);
-  }
-
-  boolean isCompleted() {
-    return completed;
+    this.status = requireNonNull(status);
   }
 
   String label() {
     return label;
   }
 
+  Task.Status status() {
+    return status;
+  }
+
   @Override
   public boolean equals(Object other) {
     return other instanceof TaskData
-        && ((TaskData) other).completed == this.completed
-        && ((TaskData) other).label.equals(this.label);
+        && Objects.equals(this.label, ((TaskData) other).label)
+        && Objects.equals(this.status, ((TaskData) other).status);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(completed, label);
+    return Objects.hash(label, status);
   }
 }

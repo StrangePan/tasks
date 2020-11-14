@@ -1,4 +1,4 @@
-package tasks.cli.feature.reopen;
+package tasks.cli.feature.stop;
 
 import static java.util.Objects.requireNonNull;
 import static omnia.data.stream.Collectors.toImmutableSet;
@@ -10,24 +10,26 @@ import java.util.Optional;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.immutable.ImmutableSet;
+import omnia.data.structure.tuple.Couplet;
+import omnia.data.structure.tuple.Triple;
 import omnia.data.structure.tuple.Tuplet;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
-import tasks.model.Task;
 import tasks.model.ObservableTaskStore;
+import tasks.model.Task;
 import tasks.model.TaskId;
 import tasks.model.TaskMutator;
 
-/** Business logic for the Reopen command. */
-public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
+/** Business logic for the Stop command. */
+public final class StopHandler implements ArgumentHandler<StopArguments> {
   private final Memoized<? extends ObservableTaskStore> taskStore;
 
-  public ReopenHandler(Memoized<? extends ObservableTaskStore> taskStore) {
+  public StopHandler(Memoized<? extends ObservableTaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 
   @Override
-  public Single<Output> handle(ReopenArguments arguments) {
+  public Single<Output> handle(StopArguments arguments) {
     // Validate arguments
     if (!arguments.tasks().isPopulated()) {
       throw new HandlerException("no tasks specified");
@@ -36,29 +38,20 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
     ObservableTaskStore taskStore = this.taskStore.value();
 
     return Observable.fromIterable(arguments.tasks())
-        .flatMapSingle(task -> taskStore.mutateTask(task, TaskMutator::reopen))
+        .flatMapSingle(task -> taskStore.mutateTask(task, TaskMutator::stop))
         .reduce(
             Tuplet.of(
-                ImmutableSet.<TaskId>builder(), // tasks that were already open
-                ImmutableSet.<TaskId>builder(), // tasks that were reopened
-                ImmutableSet.<TaskId>builder()), // tasks that became blocked
+                ImmutableSet.<TaskId>builder(), // tasks that could not be stopped
+                ImmutableSet.<TaskId>builder()), // tasks that were stopped
             (builders, mutationResult) -> {
-              boolean becameOpen =
+              boolean becameStopped =
                   mutationResult.third().status().isOpen()
                   && mutationResult.first()
                       .lookUpById(mutationResult.third().id())
-                      .map(task -> task.status().isCompleted())
+                      .map(task -> !task.status().isOpen())
                       .orElse(false);
-              (becameOpen ? builders.second() : builders.first())
+              (becameStopped ? builders.second() : builders.first())
                   .add(mutationResult.third().id());
-
-              if (becameOpen) {
-                mutationResult.third()
-                    .blockedTasks()
-                    .stream()
-                    .map(Task::id)
-                    .forEach(builders.third()::add);
-              }
 
               return builders;
             })
@@ -72,20 +65,11 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
                             .map(store::lookUpById)
                             .map(Optional::orElseThrow)
                             .collect(toImmutableSet()))))
-        .map(
-            groupedTasks -> Tuplet.of(
-                groupedTasks.first(),
-                groupedTasks.second(),
-                groupedTasks.third()
-                    .stream()
-                    .filter(task -> !task.status().isCompleted())
-                    .collect(toImmutableSet())))
         .flatMapObservable(Observable::fromIterable)
         .zipWith(
             Observable.just(
-                "task(s) already open:",
-                "task(s) reopened:",
-                "task(s) blocked as a result:"),
+                "task(s) already stopped:",
+                "task(s) stopped:"),
             (groupedTasks, header) -> stringifyIfPopulated(header, groupedTasks))
         .collectInto(Output.builder(), Output.Builder::append)
         .map(Output.Builder::build);

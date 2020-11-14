@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import io.reactivex.Observable;
 import java.util.Optional;
+import java.util.function.Function;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
@@ -18,7 +19,7 @@ public final class TaskMutatorImpl implements TaskMutator {
   private final TaskIdImpl taskId;
 
   private Optional<String> label = Optional.empty();
-  private Optional<Boolean> completed = Optional.empty();
+  private Optional<Function<TaskData, Task.Status>> statusMutator = Optional.empty();
   private boolean overwriteBlockingTasks = false;
   private final MutableSet<TaskIdImpl> blockingTasksToAdd = HashSet.create();
   private final MutableSet<TaskIdImpl> blockingTasksToRemove = HashSet.create();
@@ -32,14 +33,40 @@ public final class TaskMutatorImpl implements TaskMutator {
   }
 
   @Override
-  public TaskMutatorImpl setCompleted(boolean completed) {
-    this.completed = Optional.of(completed);
+  public TaskMutatorImpl setLabel(String label) {
+    this.label = Optional.of(label);
     return this;
   }
 
   @Override
-  public TaskMutatorImpl setLabel(String label) {
-    this.label = Optional.of(label);
+  public TaskMutator setStatus(Task.Status status) {
+    this.statusMutator = Optional.of(task -> status);
+    return this;
+  }
+
+  @Override
+  public TaskMutator complete() {
+    this.statusMutator = Optional.of(task -> Task.Status.COMPLETED);
+    return this;
+  }
+
+  @Override
+  public TaskMutator reopen() {
+    this.statusMutator =
+        Optional.of(task -> task.status().isCompleted() ? Task.Status.OPEN : task.status());
+    return this;
+  }
+
+  @Override
+  public TaskMutator start() {
+    this.statusMutator = Optional.of(task -> Task.Status.STARTED);
+    return this;
+  }
+
+  @Override
+  public TaskMutator stop() {
+    this.statusMutator =
+        Optional.of(task -> task.status().isStarted() ? Task.Status.OPEN : task.status());
     return this;
   }
 
@@ -121,8 +148,8 @@ public final class TaskMutatorImpl implements TaskMutator {
     return label;
   }
 
-  Optional<Boolean> completed() {
-    return completed;
+  Optional<Function<TaskData, Task.Status>> statusMutator() {
+    return statusMutator;
   }
 
   boolean overwriteBlockingTasks() {

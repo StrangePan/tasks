@@ -1,8 +1,7 @@
-package tasks.cli.feature.complete;
+package tasks.cli.feature.start;
 
 import static java.util.Objects.requireNonNull;
-import static omnia.algorithm.SetAlgorithms.differenceBetween;
-import static omnia.algorithm.SetAlgorithms.unionOf;
+import static omnia.data.stream.Collectors.toImmutableSet;
 import static tasks.cli.handler.HandlerUtil.stringifyIfPopulated;
 
 import io.reactivex.Observable;
@@ -10,26 +9,25 @@ import io.reactivex.Single;
 import java.util.Optional;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
-import omnia.data.stream.Collectors;
 import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.tuple.Tuplet;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
-import tasks.model.Task;
 import tasks.model.ObservableTaskStore;
+import tasks.model.Task;
 import tasks.model.TaskId;
 import tasks.model.TaskMutator;
 
-/** Business logic for the Complete command. */
-public final class CompleteHandler implements ArgumentHandler<CompleteArguments> {
+/** Business logic for the Start command. */
+public final class StartHandler implements ArgumentHandler<StartArguments> {
   private final Memoized<? extends ObservableTaskStore> taskStore;
 
-  public CompleteHandler(Memoized<? extends ObservableTaskStore> taskStore) {
+  public StartHandler(Memoized<? extends ObservableTaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 
   @Override
-  public Single<Output> handle(CompleteArguments arguments) {
+  public Single<Output> handle(StartArguments arguments) {
     // Validate arguments
     if (!arguments.tasks().isPopulated()) {
       throw new HandlerException("no tasks specified");
@@ -38,27 +36,26 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
     ObservableTaskStore taskStore = this.taskStore.value();
 
     return Observable.fromIterable(arguments.tasks())
-        .flatMapSingle(task -> taskStore.mutateTask(task, TaskMutator::complete))
+        .flatMapSingle(task -> taskStore.mutateTask(task, TaskMutator::start))
         .reduce(
             Tuplet.of(
-                ImmutableSet.<TaskId>builder(), // tasks that were already completed
-                ImmutableSet.<TaskId>builder(), // tasks that were marked as completed
-                ImmutableSet.<TaskId>builder()), // tasks that became unblocked
+                ImmutableSet.<TaskId>builder(), // tasks that were already started
+                ImmutableSet.<TaskId>builder(), // tasks that were marked as started
+                ImmutableSet.<TaskId>builder()), // tasks that became blocked
             (builders, mutationResult) -> {
-              boolean becameCompleted =
+              Task.Status beforeStatus =
                   mutationResult.first()
                       .lookUpById(mutationResult.third().id())
-                      .map(task -> !task.status().isCompleted())
-                      .orElse(false);
-              (becameCompleted ? builders.second() : builders.first())
+                      .map(Task::status)
+                      .orElseThrow();
+              boolean becameStarted = !beforeStatus.isStarted();
+              (becameStarted ? builders.second() : builders.first())
                   .add(mutationResult.third().id());
 
-              if (becameCompleted) {
+              if (becameStarted && beforeStatus.isCompleted()) {
                 mutationResult.third()
                     .blockedTasks()
                     .stream()
-                    .filter(Task::isUnblocked)
-                    .filter(task -> !task.status().isCompleted())
                     .map(Task::id)
                     .forEach(builders.third()::add);
               }
@@ -66,14 +63,6 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
               return builders;
             })
         .map(groupedTasks -> groupedTasks.map(ImmutableSet.Builder::build))
-        .map(
-            groupedTasks -> Tuplet.of(
-                groupedTasks.first(),
-                groupedTasks.second(),
-                    ImmutableSet.copyOf(
-                        differenceBetween(
-                            groupedTasks.third(),
-                            unionOf(groupedTasks.first(), groupedTasks.second())))))
         .flatMap(
             groupedTasks -> taskStore.observe()
                 .firstOrError()
@@ -82,13 +71,21 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
                         list -> list.stream()
                             .map(store::lookUpById)
                             .map(Optional::orElseThrow)
-                            .collect(Collectors.toImmutableSet()))))
+                            .collect(toImmutableSet()))))
+        .map(
+            groupedTasks -> Tuplet.of(
+                groupedTasks.first(),
+                groupedTasks.second(),
+                groupedTasks.third()
+                    .stream()
+                    .filter(task -> !task.status().isCompleted())
+                    .collect(toImmutableSet())))
         .flatMapObservable(Observable::fromIterable)
         .zipWith(
             Observable.just(
-                "task(s) already completed:",
-                "task(s) completed:",
-                "task(s) unblocked as a result:"),
+                "task(s) already started:",
+                "task(s) started:",
+                "task(s) blocked as a result:"),
             (groupedTasks, header) -> stringifyIfPopulated(header, groupedTasks))
         .collectInto(Output.builder(), Output.Builder::append)
         .map(Output.Builder::build);

@@ -15,7 +15,7 @@ final class TaskBuilderImpl implements TaskBuilder {
   private final ObservableTaskStoreImpl taskStore;
   private final String label;
 
-  private boolean completed = false;
+  private Task.Status status = Task.Status.OPEN;
   private final MutableSet<TaskIdImpl> blockingTasksToAdd = HashSet.create();
   private final MutableSet<TaskIdImpl> blockedTasksToAdd = HashSet.create();
 
@@ -25,8 +25,8 @@ final class TaskBuilderImpl implements TaskBuilder {
   }
 
   @Override
-  public TaskBuilderImpl setCompleted(boolean completed) {
-    this.completed = completed;
+  public TaskBuilder setStatus(Task.Status status) {
+    this.status = requireNonNull(status);
     return this;
   }
 
@@ -73,7 +73,11 @@ final class TaskBuilderImpl implements TaskBuilder {
   }
 
   boolean completed() {
-    return completed;
+    return status().isCompleted();
+  }
+
+  Task.Status status() {
+    return status;
   }
 
   String label() {

@@ -1,6 +1,8 @@
 package tasks.model.impl;
 
 import static java.util.stream.Collectors.joining;
+import static omnia.data.cache.Memoized.memoize;
+import static omnia.data.stream.Collectors.toImmutableMap;
 
 import io.reactivex.Completable;
 import io.reactivex.Observable;
@@ -10,21 +12,47 @@ import java.io.BufferedWriter;
 import java.io.Writer;
 import java.util.Comparator;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import omnia.data.cache.Memoized;
 import omnia.data.structure.DirectedGraph;
 import omnia.data.structure.Map;
 import omnia.data.structure.immutable.ImmutableDirectedGraph;
+import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableMap;
+import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.tuple.Couple;
 import omnia.data.structure.tuple.Tuple;
 import tasks.io.File;
+import tasks.model.Task;
 
 final class TaskFileSource {
 
-  private static final int VERSION = 1;
+  private static final int VERSION = 2;
   private static final String END_OF_LINE = "\n";
   private static final String TASK_FIELD_DELIMITER = ";";
   private static final String TASK_ID_DELIMITER = ",";
+  private static final Pattern VERSION_PATTERN = Pattern.compile("^# version (\\d+)$");
+
+  private static final Memoized<ImmutableSet<Couple<Task.Status, ImmutableList<String>>>> STATUS_STRINGS =
+      memoize(() ->
+          ImmutableSet.of(
+              // false = !isCompleted, legacy
+              Tuple.of(Task.Status.OPEN, ImmutableList.of("open", "false")),
+              // true = isCompleted, legacy
+              Tuple.of(Task.Status.COMPLETED, ImmutableList.of("complete", "true")),
+              Tuple.of(Task.Status.STARTED, ImmutableList.of("started"))));
+  private static final Memoized<ImmutableMap<Task.Status, String>> STATUS_TO_STRING =
+      memoize(() ->
+          STATUS_STRINGS.value().stream()
+              .map(couple -> couple.mapSecond(list -> list.itemAt(0)))
+              .collect(toImmutableMap()));
+  private static final Memoized<ImmutableMap<String, Task.Status>> STRING_TO_STATUS =
+      memoize(() ->
+          STATUS_STRINGS.value().stream()
+              .flatMap(couple -> couple.second().stream().map(s -> Tuple.of(s, couple.first())))
+              .collect(toImmutableMap()));
 
   private final File file;
 
@@ -80,7 +108,9 @@ final class TaskFileSource {
     }
 
     private Optional<State> maybeParseStateChange(String line) {
-      if (line.matches("^# version \\d+$")) {
+      Matcher versionMatcher = VERSION_PATTERN.matcher(line);
+      if (versionMatcher.matches()) {
+        assertSupportedVersion(versionMatcher.group(1));
         return Optional.of(State.PARSING_NOTHING);
       } else if (line.equals("# tasks")) {
         return Optional.of(State.PARSING_TASKS);
@@ -88,6 +118,17 @@ final class TaskFileSource {
         return Optional.of(State.PARSING_GRAPH);
       }
       return Optional.empty();
+    }
+
+    private static void assertSupportedVersion(String versionString) {
+      try {
+        int version = Integer.parseInt(versionString);
+        if (version > VERSION) {
+          throw new RuntimeException("unsupported file version: " + version + ". supported versions: " + VERSION);
+        }
+      } catch (NumberFormatException ex) {
+        throw new RuntimeException("unable to parse file version code: " + versionString, ex);
+      }
     }
 
     private void parseToCollection(String line) {
@@ -116,11 +157,15 @@ final class TaskFileSource {
     private void parseToTasks(String line) {
       String[] fields = line.split(TASK_FIELD_DELIMITER);
       TaskIdImpl id = parseId(fields[0]);
-      boolean completed = Boolean.parseBoolean(fields[1]);
+      Task.Status status = parseStatus(fields[1]);
       String label = unescapeLabel(fields[2]);
-      tasks.putMapping(id, new TaskData(completed, label));
+      tasks.putMapping(id, new TaskData(label, status));
       graph.addNode(id);
       // TODO(vc0gqs1jstmo): ensure unique ids
+    }
+
+    private static Task.Status parseStatus(String field) {
+      return STRING_TO_STATUS.value().valueOf(field.toLowerCase()).orElse(Task.Status.OPEN);
     }
 
     Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>> build() {
@@ -165,7 +210,7 @@ final class TaskFileSource {
     return new StringBuilder()
         .append(serialize(task.first()))
         .append(TASK_FIELD_DELIMITER)
-        .append(task.second().isCompleted())
+        .append(STATUS_TO_STRING.value().valueOf(task.second().status()).orElseThrow())
         .append(TASK_FIELD_DELIMITER)
         .append(escapeLabel(task.second().label()))
         .append(TASK_FIELD_DELIMITER)

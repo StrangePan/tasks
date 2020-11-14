@@ -105,7 +105,7 @@ public final class ObservableTaskStoreImpl implements ObservableTaskStore {
     ImmutableDirectedGraph<TaskIdImpl> newGraph = newGraphBuilder.build();
     ImmutableMap<TaskIdImpl, TaskData> newData =
         oldStore.data.toBuilder()
-            .putMapping(id, new TaskData(builder.completed(), builder.label()))
+            .putMapping(id, new TaskData(builder.label(), builder.status()))
             .build();
 
     assertIsValid(newGraph, newData);
@@ -228,13 +228,13 @@ public final class ObservableTaskStoreImpl implements ObservableTaskStore {
   private static ImmutableMap<TaskIdImpl, TaskData> applyMutatorTo(
       ImmutableMap<TaskIdImpl, TaskData> taskData, TaskMutatorImpl mutatorImpl) {
     return Optional.of(mutatorImpl)
-        .filter(mutator -> mutator.completed().isPresent() || mutator.label().isPresent())
+        .filter(mutator -> mutator.statusMutator().isPresent() || mutator.label().isPresent())
         .map(TaskMutatorImpl::id)
         .flatMap(taskData::valueOf)
         .map(
             data -> new TaskData(
-                mutatorImpl.completed().orElse(data.isCompleted()),
-                mutatorImpl.label().orElse(data.label())))
+                mutatorImpl.label().orElse(data.label()),
+                mutatorImpl.statusMutator().map(m -> m.apply(data)).orElse(data.status())))
         .map(data -> taskData.toBuilder().putMapping(mutatorImpl.id(), data).build())
         .orElse(taskData);
   }

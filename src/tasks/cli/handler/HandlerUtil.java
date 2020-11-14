@@ -4,6 +4,7 @@ import static java.util.stream.Collectors.joining;
 import static omnia.data.stream.Collectors.toImmutableSet;
 
 import io.reactivex.Observable;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.Optional;
 import omnia.algorithm.SetAlgorithms;
@@ -24,12 +25,11 @@ public final class HandlerUtil {
   public static EnumMap<CompletedState, Set<Task>> groupByCompletionState(
       Observable<? extends Task> tasks) {
     return tasks
-        .map(task ->
-            Tuple.of(
-                task.isCompleted()
-                    ? CompletedState.COMPLETE
-                    : CompletedState.INCOMPLETE,
-                task))
+        .map(task -> Tuple.of(
+            task.status().isCompleted()
+                ? CompletedState.COMPLETE
+                : CompletedState.INCOMPLETE,
+            task))
         .collectInto(
             new EnumMap<CompletedState, MutableSet<Task>>(CompletedState.class),
             (map, taskCouple) -> {
@@ -67,6 +67,9 @@ public final class HandlerUtil {
 
   private static Output stringify(Iterable<? extends Task> tasks) {
     return Observable.fromIterable(tasks)
+        .sorted(
+            Comparator.<Task>comparingInt(task -> task.status().isStarted() ? 0 : 1)
+                .thenComparing(task -> task.id().toString()))
         .map(Task::render)
         .collectInto(Output.builder(), Output.Builder::appendLine)
         .map(Output.Builder::build)
