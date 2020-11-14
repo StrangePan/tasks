@@ -51,6 +51,9 @@ import tasks.cli.feature.reword.RewordParser;
 import tasks.cli.feature.start.StartCommand;
 import tasks.cli.feature.start.StartHandler;
 import tasks.cli.feature.start.StartParser;
+import tasks.cli.feature.stop.StopCommand;
+import tasks.cli.feature.stop.StopHandler;
+import tasks.cli.feature.stop.StopParser;
 import tasks.cli.parser.Parser;
 import tasks.cli.parser.ParserUtil;
 import tasks.cli.parser.ParseResult;
@@ -115,7 +118,11 @@ public final class Features implements Commands {
             new Feature<>(
                 StartCommand.registration(),
                 () -> new StartParser(taskListParser),
-                () -> new StartHandler(taskStore)));
+                () -> new StartHandler(taskStore)),
+            new Feature<>(
+                StopCommand.registration(),
+                () -> new StopParser(taskListParser),
+                () -> new StopHandler(taskStore)));
 
     commands = features.stream().map(Feature::command).collect(toImmutableSet());
 

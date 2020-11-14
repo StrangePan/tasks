@@ -7,6 +7,14 @@ public interface TaskMutator extends TaskBuilder {
   @Override
   TaskMutator setStatus(Task.Status status);
 
+  TaskMutator complete();
+
+  TaskMutator reopen();
+
+  TaskMutator start();
+
+  TaskMutator stop();
+
   @Override
   TaskMutator setBlockingTasks(Iterable<? extends Task> task);
 

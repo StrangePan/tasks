@@ -228,13 +228,13 @@ public final class ObservableTaskStoreImpl implements ObservableTaskStore {
   private static ImmutableMap<TaskIdImpl, TaskData> applyMutatorTo(
       ImmutableMap<TaskIdImpl, TaskData> taskData, TaskMutatorImpl mutatorImpl) {
     return Optional.of(mutatorImpl)
-        .filter(mutator -> mutator.completed().isPresent() || mutator.label().isPresent())
+        .filter(mutator -> mutator.statusMutator().isPresent() || mutator.label().isPresent())
         .map(TaskMutatorImpl::id)
         .flatMap(taskData::valueOf)
         .map(
             data -> new TaskData(
                 mutatorImpl.label().orElse(data.label()),
-                mutatorImpl.status().orElse(data.status())))
+                mutatorImpl.statusMutator().map(m -> m.apply(data)).orElse(data.status())))
         .map(data -> taskData.toBuilder().putMapping(mutatorImpl.id(), data).build())
         .orElse(taskData);
   }

@@ -18,6 +18,7 @@ import tasks.cli.handler.HandlerException;
 import tasks.model.Task;
 import tasks.model.ObservableTaskStore;
 import tasks.model.TaskId;
+import tasks.model.TaskMutator;
 
 /** Business logic for the Complete command. */
 public final class CompleteHandler implements ArgumentHandler<CompleteArguments> {
@@ -37,7 +38,7 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
     ObservableTaskStore taskStore = this.taskStore.value();
 
     return Observable.fromIterable(arguments.tasks())
-        .flatMapSingle(task -> taskStore.mutateTask(task, mutator -> mutator.setStatus(Task.Status.COMPLETED)))
+        .flatMapSingle(task -> taskStore.mutateTask(task, TaskMutator::complete))
         .reduce(
             Tuplet.of(
                 ImmutableSet.<TaskId>builder(), // tasks that were already completed

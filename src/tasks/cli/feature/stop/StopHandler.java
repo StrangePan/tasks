@@ -1,4 +1,4 @@
-package tasks.cli.feature.start;
+package tasks.cli.feature.stop;
 
 import static java.util.Objects.requireNonNull;
 import static omnia.data.stream.Collectors.toImmutableSet;
@@ -10,6 +10,8 @@ import java.util.Optional;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.immutable.ImmutableSet;
+import omnia.data.structure.tuple.Couplet;
+import omnia.data.structure.tuple.Triple;
 import omnia.data.structure.tuple.Tuplet;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
@@ -18,16 +20,16 @@ import tasks.model.Task;
 import tasks.model.TaskId;
 import tasks.model.TaskMutator;
 
-/** Business logic for the Start command. */
-public final class StartHandler implements ArgumentHandler<StartArguments> {
+/** Business logic for the Stop command. */
+public final class StopHandler implements ArgumentHandler<StopArguments> {
   private final Memoized<? extends ObservableTaskStore> taskStore;
 
-  public StartHandler(Memoized<? extends ObservableTaskStore> taskStore) {
+  public StopHandler(Memoized<? extends ObservableTaskStore> taskStore) {
     this.taskStore = requireNonNull(taskStore);
   }
 
   @Override
-  public Single<Output> handle(StartArguments arguments) {
+  public Single<Output> handle(StopArguments arguments) {
     // Validate arguments
     if (!arguments.tasks().isPopulated()) {
       throw new HandlerException("no tasks specified");
@@ -36,29 +38,20 @@ public final class StartHandler implements ArgumentHandler<StartArguments> {
     ObservableTaskStore taskStore = this.taskStore.value();
 
     return Observable.fromIterable(arguments.tasks())
-        .flatMapSingle(task -> taskStore.mutateTask(task, TaskMutator::start))
+        .flatMapSingle(task -> taskStore.mutateTask(task, TaskMutator::stop))
         .reduce(
             Tuplet.of(
-                ImmutableSet.<TaskId>builder(), // tasks that were already started
-                ImmutableSet.<TaskId>builder(), // tasks that were marked as started
-                ImmutableSet.<TaskId>builder()), // tasks that became blocked
+                ImmutableSet.<TaskId>builder(), // tasks that could not be stopped
+                ImmutableSet.<TaskId>builder()), // tasks that were stopped
             (builders, mutationResult) -> {
-              Task.Status beforeStatus =
-                  mutationResult.first()
+              boolean becameStopped =
+                  mutationResult.third().status().isOpen()
+                  && mutationResult.first()
                       .lookUpById(mutationResult.third().id())
-                      .map(Task::status)
-                      .orElseThrow();
-              boolean becameStarted = !beforeStatus.isStarted();
-              (becameStarted ? builders.second() : builders.first())
+                      .map(task -> !task.status().isOpen())
+                      .orElse(false);
+              (becameStopped ? builders.second() : builders.first())
                   .add(mutationResult.third().id());
-
-              if (becameStarted && beforeStatus.isCompleted()) {
-                mutationResult.third()
-                    .blockedTasks()
-                    .stream()
-                    .map(Task::id)
-                    .forEach(builders.third()::add);
-              }
 
               return builders;
             })
@@ -72,20 +65,11 @@ public final class StartHandler implements ArgumentHandler<StartArguments> {
                             .map(store::lookUpById)
                             .map(Optional::orElseThrow)
                             .collect(toImmutableSet()))))
-        .map(
-            groupedTasks -> Tuplet.of(
-                groupedTasks.first(),
-                groupedTasks.second(),
-                groupedTasks.third()
-                    .stream()
-                    .filter(task -> !task.status().isCompleted())
-                    .collect(toImmutableSet())))
         .flatMapObservable(Observable::fromIterable)
         .zipWith(
             Observable.just(
-                "task(s) already started:",
-                "task(s) started:",
-                "task(s) blocked as a result:"),
+                "task(s) already stopped:",
+                "task(s) stopped:"),
             (groupedTasks, header) -> stringifyIfPopulated(header, groupedTasks))
         .collectInto(Output.builder(), Output.Builder::append)
         .map(Output.Builder::build);

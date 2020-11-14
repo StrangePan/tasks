@@ -16,6 +16,7 @@ import tasks.cli.handler.HandlerException;
 import tasks.model.Task;
 import tasks.model.ObservableTaskStore;
 import tasks.model.TaskId;
+import tasks.model.TaskMutator;
 
 /** Business logic for the Reopen command. */
 public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
@@ -35,7 +36,7 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
     ObservableTaskStore taskStore = this.taskStore.value();
 
     return Observable.fromIterable(arguments.tasks())
-        .flatMapSingle(task -> taskStore.mutateTask(task, mutator -> mutator.setStatus(Task.Status.OPEN)))
+        .flatMapSingle(task -> taskStore.mutateTask(task, TaskMutator::reopen))
         .reduce(
             Tuplet.of(
                 ImmutableSet.<TaskId>builder(), // tasks that were already open
@@ -43,7 +44,8 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
                 ImmutableSet.<TaskId>builder()), // tasks that became blocked
             (builders, mutationResult) -> {
               boolean becameOpen =
-                  mutationResult.first()
+                  mutationResult.third().status().isOpen()
+                  && mutationResult.first()
                       .lookUpById(mutationResult.third().id())
                       .map(task -> task.status().isCompleted())
                       .orElse(false);
