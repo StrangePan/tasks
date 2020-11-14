@@ -96,7 +96,7 @@ final class TaskStoreImpl implements TaskStore {
   }
 
   @Override
-  public Optional<? extends Task> lookUpById(TaskId id) {
+  public Optional<TaskImpl> lookUpById(TaskId id) {
     return id instanceof TaskIdImpl ? lookUpById((TaskIdImpl) id) : Optional.empty();
   }
 

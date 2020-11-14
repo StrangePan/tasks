@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 import static omnia.data.stream.Collectors.toImmutableList;
 
 import io.reactivex.Completable;
+import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.subjects.CompletableSubject;
@@ -25,6 +26,7 @@ import tasks.model.Task;
 import tasks.model.TaskBuilder;
 import tasks.model.TaskMutator;
 import tasks.model.ObservableTaskStore;
+import tasks.util.rx.Maybes;
 
 /** This is currently NOT thread-safe. */
 public final class ObservableTaskStoreImpl implements ObservableTaskStore {
@@ -281,21 +283,25 @@ public final class ObservableTaskStoreImpl implements ObservableTaskStore {
   }
 
   @Override
-  public Completable deleteTask(Task task) {
+  public Maybe<TaskImpl> deleteTask(Task task) {
     return deleteTask(validateTask(task));
   }
 
-  private Completable deleteTask(TaskImpl task) {
-    return update(
-        taskStoreImpl ->
-          new TaskStoreImpl(
-              taskStoreImpl.graph.toBuilder().removeNode(task.id()).build(),
-              taskStoreImpl.data.toBuilder().removeKey(task.id()).build()))
-        .ignoreElement();
-  }
-
-  Single<TaskStoreImpl> update(Function<? super TaskStoreImpl, ? extends TaskStoreImpl> updater) {
-    return store.mutate(updater::apply).cache();
+  private Maybe<TaskImpl> deleteTask(TaskImpl task) {
+    return store.mutateAndReturn(
+        oldTaskStore -> {
+          Optional<TaskImpl> taskToRemove = oldTaskStore.lookUpById(task.id());
+          return Tuple.of(
+              taskToRemove.map(
+                  removedTask ->
+                      new TaskStoreImpl(
+                        oldTaskStore.graph.toBuilder().removeNode(removedTask.id()).build(),
+                        oldTaskStore.data.toBuilder().removeKey(removedTask.id()).build()))
+                  .orElse(oldTaskStore),
+              taskToRemove);
+        })
+        .map(Couple::second)
+        .flatMapMaybe(Maybes::fromOptional);
   }
 
   @Override
