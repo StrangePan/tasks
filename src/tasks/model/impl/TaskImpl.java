@@ -105,17 +105,28 @@ final class TaskImpl implements Task {
         .defaultUnderline()
         .append(stringId.substring(longestCommonPrefix))
         .defaultColor()
-        .append(
-            status().isCompleted()
-                ? Output.builder()
-                    .color(Output.Color16.LIGHT_CYAN)
-                    .append(" (completed)")
-                    .build()
-                : Output.empty())
+        .append(render(status()))
         .append(": ")
         .defaultColor()
         .append(label())
         .build();
+  }
+
+  private static Output render(Task.Status status) {
+    switch (status) {
+      case STARTED:
+        return Output.builder()
+            .color(Output.Color16.YELLOW)
+            .append(" (started)")
+            .build();
+      case COMPLETED:
+        return Output.builder()
+            .color(Output.Color16.LIGHT_CYAN)
+            .append(" (completed)")
+            .build();
+      default:
+        return Output.empty();
+    }
   }
 
   private static int longestCommonPrefix(String a, String b) {
