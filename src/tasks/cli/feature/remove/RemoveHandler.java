@@ -75,6 +75,12 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
               } else if (input.matches("\\s*[Nn]([Oo])?\\s*")) {
                 return false;
               } else {
+                System.out.print(
+                    Output.builder()
+                        .color(Output.Color16.YELLOW)
+                        .append("Unrecognized answer. ")
+                        .defaultColor()
+                        .build());
                 throw unparsedInput.value();
               }
             })
@@ -82,10 +88,17 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
         .onErrorReturn(
             throwable -> {
               if (throwable == unparsedInput.value()) {
+                System.out.print(
+                    Output.builder()
+                        .color(Output.Color16.YELLOW)
+                        .appendLine("Assuming \"No\".")
+                        .defaultColor()
+                        .build());
                 return false;
               }
               throw new RuntimeException(throwable);
-            });
+            })
+        .cache();
   }
 
   private static Single<String> readUserInput() {
