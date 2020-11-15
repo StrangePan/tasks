@@ -1,4 +1,6 @@
 lib/*.jar
+# custom files for workspace on your local machine
+workspace/**
 
 
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and WebStorm
