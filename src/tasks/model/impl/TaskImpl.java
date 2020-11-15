@@ -84,20 +84,14 @@ final class TaskImpl implements Task {
 
   @Override
   public Output render() {
-    String stringId = id.toString();
-    TreeSet<String> allIds =
-        Observable.fromIterable(store.allTasks())
-            .cast(TaskImpl.class)
-            .map(TaskImpl::id)
-            .map(Object::toString)
-            .collectInto(TreeSet.create(String::compareTo), MutableSet::add)
-            .blockingGet();
-    Optional<String> precedingId = allIds.itemPreceding(stringId);
-    Optional<String> followingId = allIds.itemFollowing(stringId);
+    TreeSet<TaskIdImpl> allIds = store.allTaskIds();
+    Optional<TaskIdImpl> precedingId = allIds.itemPreceding(id);
+    Optional<TaskIdImpl> followingId = allIds.itemFollowing(id);
 
+    String stringId = id.toString();
     int longestCommonPrefix = Math.max(
-        precedingId.map(other -> longestCommonPrefix(other, stringId)).orElse(0),
-        followingId.map(other -> longestCommonPrefix(other, stringId)).orElse(0)) + 1;
+        precedingId.map(other -> longestCommonPrefix(other.toString(), stringId)).orElse(0),
+        followingId.map(other -> longestCommonPrefix(other.toString(), stringId)).orElse(0)) + 1;
     return Output.builder()
         .underlined()
         .color(Output.Color16.LIGHT_GREEN)

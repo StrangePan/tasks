@@ -4,6 +4,8 @@ import static java.util.Objects.requireNonNull;
 import static omnia.data.cache.Memoized.memoize;
 import static omnia.data.stream.Collectors.toImmutableSet;
 
+import io.reactivex.Observable;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
 import omnia.algorithm.SetAlgorithms;
@@ -16,6 +18,8 @@ import omnia.data.structure.Map;
 import omnia.data.structure.immutable.ImmutableDirectedGraph;
 import omnia.data.structure.immutable.ImmutableMap;
 import omnia.data.structure.immutable.ImmutableSet;
+import omnia.data.structure.mutable.MutableSet;
+import omnia.data.structure.mutable.TreeSet;
 import tasks.model.Task;
 import tasks.model.TaskId;
 import tasks.model.TaskStore;
@@ -27,6 +31,7 @@ final class TaskStoreImpl implements TaskStore {
   final ImmutableDirectedGraph<TaskIdImpl> graph;
   final ImmutableMap<TaskIdImpl, TaskData> data;
 
+  private final Memoized<TreeSet<TaskIdImpl>> allTaskIds;
   private final Memoized<ImmutableSet<TaskImpl>> allTasks;
   private final Memoized<ImmutableSet<TaskImpl>> allUnblockedOpenTasks;
   private final Memoized<ImmutableSet<TaskImpl>> allBlockedOpenTasks;
@@ -46,6 +51,12 @@ final class TaskStoreImpl implements TaskStore {
     if (SetAlgorithms.differenceBetween(graph.contents(), data.keys()).isPopulated()) {
       throw new IllegalArgumentException("tasks in graph do not match tasks in data set");
     }
+
+    allTaskIds = memoize(
+        () -> Observable.fromIterable(data.keys())
+            .collectInto(
+                TreeSet.create(Comparator.comparingLong(TaskIdImpl::asLong)), MutableSet::add)
+            .blockingGet());
 
     allTasks = memoize(() -> data.keys().stream().map(this::toTask).collect(toImmutableSet()));
 
@@ -156,6 +167,10 @@ final class TaskStoreImpl implements TaskStore {
         || (obj instanceof TaskStoreImpl
             && Objects.equals(graph, ((TaskStoreImpl) obj).graph)
             && Objects.equals(data, ((TaskStoreImpl) obj).data));
+  }
+
+  TreeSet<TaskIdImpl> allTaskIds() {
+    return allTaskIds.value();
   }
 
   ImmutableSet<TaskImpl> allTasksBlocking(TaskIdImpl id) {
