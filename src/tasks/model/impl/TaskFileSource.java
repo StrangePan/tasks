@@ -22,6 +22,10 @@ import omnia.data.structure.immutable.ImmutableDirectedGraph;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableMap;
 import omnia.data.structure.immutable.ImmutableSet;
+import omnia.data.structure.mutable.HashMap;
+import omnia.data.structure.mutable.HashSet;
+import omnia.data.structure.mutable.MutableMap;
+import omnia.data.structure.mutable.MutableSet;
 import omnia.data.structure.tuple.Couple;
 import omnia.data.structure.tuple.Tuple;
 import tasks.io.File;
@@ -92,7 +96,8 @@ final class TaskFileSource {
 
   private static final class LineCollector {
     private final ImmutableDirectedGraph.Builder<TaskIdImpl> graph = ImmutableDirectedGraph.builder();
-    private final ImmutableMap.Builder<TaskIdImpl, TaskData> tasks = ImmutableMap.builder();
+    private final MutableSet<TaskIdImpl> tasksWithParsedEdges = HashSet.create();
+    private final MutableMap<TaskIdImpl, TaskData> tasks = HashMap.create();
     private State state = State.PARSING_NOTHING;
 
     private enum State {
@@ -147,11 +152,23 @@ final class TaskFileSource {
     private void parseToGraph(String line) {
       String[] fields = line.split(TASK_FIELD_DELIMITER);
       TaskIdImpl id = parseId(fields[0]);
-      Stream.of(fields[1].split(TASK_ID_DELIMITER))
-          .map(TaskFileSource::parseId)
-          .forEach(dependency -> graph.addEdge(dependency, id));
-      // TODO(vc0gqs1jstmo): ensure unique ids
-      // TODO(vc0gqs1jstmo): ensure we have data for all ids
+
+      if (tasksWithParsedEdges.contains(id)) {
+        // TODO(b4ahbuoudukg): Add custom parsing exceptions to FileTaskStore
+        throw new RuntimeException("edges for task defined twice: " + id);
+      }
+
+      try {
+        Stream.of(fields[1].split(TASK_ID_DELIMITER))
+            .map(TaskFileSource::parseId)
+            .forEach(dependency -> graph.addEdge(dependency, id));
+      } catch (IllegalStateException e) {
+        // TODO(b4ahbuoudukg): Add custom parsing exceptions to FileTaskStore
+        // TODO(yisiy12nlclc): Add custom exceptions for graph builder illegal states
+        throw new RuntimeException("missing task data for: " + id, e);
+      }
+
+      tasksWithParsedEdges.add(id);
     }
 
     private void parseToTasks(String line) {
@@ -159,9 +176,14 @@ final class TaskFileSource {
       TaskIdImpl id = parseId(fields[0]);
       Task.Status status = parseStatus(fields[1]);
       String label = unescapeLabel(fields[2]);
+
+      if (tasks.keys().contains(id)) {
+        // TODO(b4ahbuoudukg): Add custom parsing exceptions to FileTaskStore
+        throw new RuntimeException("task ID defined twice: " + id);
+      }
+
       tasks.putMapping(id, new TaskData(label, status));
       graph.addNode(id);
-      // TODO(vc0gqs1jstmo): ensure unique ids
     }
 
     private static Task.Status parseStatus(String field) {
@@ -169,7 +191,7 @@ final class TaskFileSource {
     }
 
     Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>> build() {
-      return Tuple.of(graph.build(), tasks.build());
+      return Tuple.of(graph.build(), ImmutableMap.copyOf(tasks));
     }
   }
 
@@ -177,7 +199,7 @@ final class TaskFileSource {
     try {
       return TaskIdImpl.parse(string);
     } catch (NumberFormatException ex) {
-      // TODO(3b6ayu83gqtc): make a parsing exception
+      // TODO(b4ahbuoudukg): Add custom parsing exceptions to FileTaskStore
       throw new RuntimeException("invalid id: " + string, ex);
     }
   }
