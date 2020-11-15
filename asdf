@@ -39,7 +39,7 @@ vxi4873454w0;open;Add more sophisticated id hashing algorithm;
 w1ckqcfs7f28;open;Add help topics infrastructure;
 wmvfjco0dqm8;open;Add ability to compose multiple task stores;
 yisiy12nlclc;open;Add custom exceptions for graph builder's IllegalStateExceptions;
-zog7380c1tkw;open;Optimize 'shortest-unique-prefix' algorithm;
+zog7380c1tkw;complete;Optimize 'shortest-unique-prefix' algorithm;
 13g106gz8dqm8;complete;Output indentation;
 147s85hhpdou8;complete;Help documentation;
 15r9jkmzl3u2o;complete;Verify no graph cycles;
