@@ -12,6 +12,7 @@
 aiv2qznibj7k;complete;Remove amend command;
 ay81g8h14tmo;open;Build iOS app;
 b0adwfapj56o;open;Build Android app;
+b4ahbuoudukg;open;Add custom parsing exceptions to FileTaskStore;
 booswtafq3nk;open;Add help topic: tutorial;
 c1haep5qd9mo;open;Update to RxJava 3;
 ckzwyq0nw4xs;open;Fix remove confirmations not responding --no-color flag;
@@ -36,6 +37,8 @@ vsyn83a6ozk0;open;Add help topic: blocking tasks;
 vxi4873454w0;open;Add more sophisticated id hashing algorithm;
 w1ckqcfs7f28;open;Add help topics infrastructure;
 wmvfjco0dqm8;open;Add ability to compuse multiple task stores;
+yisiy12nlclc;open;Add custom exceptions for graph builder illegal states;
+zog7380c1tkw;open;Optimize 'shortest-unique-prefix' algorithm;
 13g106gz8dqm8;complete;Output indentation;
 147s85hhpdou8;complete;Help documentation;
 15r9jkmzl3u2o;complete;Verify no graph cycles;
