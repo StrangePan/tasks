@@ -129,10 +129,10 @@ final class TaskFileSource {
       try {
         int version = Integer.parseInt(versionString);
         if (version > VERSION) {
-          throw new RuntimeException("unsupported file version: " + version + ". supported versions: " + VERSION);
+          throw new IncompatibleVersionError("unsupported file version: " + version + ". supported versions: " + VERSION);
         }
       } catch (NumberFormatException ex) {
-        throw new RuntimeException("unable to parse file version code: " + versionString, ex);
+        throw new TaskParseError("unable to parse file version code: " + versionString, ex);
       }
     }
 
@@ -145,7 +145,7 @@ final class TaskFileSource {
           parseToTasks(line);
           break;
         default:
-          throw new IllegalStateException("unexpected line in file: " + line);
+          throw new TaskParseError("unexpected line in file: " + line);
       }
     }
 
@@ -154,18 +154,15 @@ final class TaskFileSource {
       TaskIdImpl id = parseId(fields[0]);
 
       if (tasksWithParsedEdges.contains(id)) {
-        // TODO(b4ahbuoudukg): Add custom parsing exceptions to FileTaskStore
-        throw new RuntimeException("edges for task defined twice: " + id);
+        throw new TaskParseError("edges for task defined twice: " + id);
       }
 
       try {
         Stream.of(fields[1].split(TASK_ID_DELIMITER))
             .map(TaskFileSource::parseId)
             .forEach(dependency -> graph.addEdge(dependency, id));
-      } catch (IllegalStateException e) {
-        // TODO(b4ahbuoudukg): Add custom parsing exceptions to FileTaskStore
-        // TODO(yisiy12nlclc): Add custom exceptions for graph builder illegal states
-        throw new RuntimeException("missing task data for: " + id, e);
+      } catch (ImmutableDirectedGraph.UnknownNodeException e) {
+        throw new TaskParseError("missing task data for: " + id, e);
       }
 
       tasksWithParsedEdges.add(id);
@@ -178,8 +175,7 @@ final class TaskFileSource {
       String label = unescapeLabel(fields[2]);
 
       if (tasks.keys().contains(id)) {
-        // TODO(b4ahbuoudukg): Add custom parsing exceptions to FileTaskStore
-        throw new RuntimeException("task ID defined twice: " + id);
+        throw new TaskParseError("task ID defined twice: " + id);
       }
 
       tasks.putMapping(id, new TaskData(label, status));
@@ -199,8 +195,7 @@ final class TaskFileSource {
     try {
       return TaskIdImpl.parse(string);
     } catch (NumberFormatException ex) {
-      // TODO(b4ahbuoudukg): Add custom parsing exceptions to FileTaskStore
-      throw new RuntimeException("invalid id: " + string, ex);
+      throw new TaskParseError("invalid id: " + string, ex);
     }
   }
 
@@ -334,5 +329,35 @@ final class TaskFileSource {
                 .collect(joining(TASK_ID_DELIMITER)))
         .append(TASK_FIELD_DELIMITER)
         .toString();
+  }
+
+  public static final class IncompatibleVersionError extends ParseError {
+    private IncompatibleVersionError(String message) {
+      super(message);
+    }
+
+    private IncompatibleVersionError(String message, Throwable cause) {
+      super(message, cause);
+    }
+  }
+
+  public static final class TaskParseError extends ParseError {
+    private TaskParseError(String message) {
+      super(message);
+    }
+
+    private TaskParseError(String message, Throwable cause) {
+      super(message, cause);
+    }
+  }
+
+  public static class ParseError extends RuntimeException {
+    private ParseError(String message) {
+      super(message);
+    }
+
+    private ParseError(String message, Throwable cause) {
+      super(message, cause);
+    }
   }
 }
