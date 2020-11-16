@@ -162,9 +162,8 @@ final class TaskFileSource {
         Stream.of(fields[1].split(TASK_ID_DELIMITER))
             .map(TaskFileSource::parseId)
             .forEach(dependency -> graph.addEdge(dependency, id));
-      } catch (IllegalStateException e) {
+      } catch (ImmutableDirectedGraph.UnknownNodeException e) {
         // TODO(b4ahbuoudukg): Add custom parsing exceptions to FileTaskStore
-        // TODO(yisiy12nlclc): Add custom exceptions for graph builder illegal states
         throw new RuntimeException("missing task data for: " + id, e);
       }
 
