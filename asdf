@@ -17,7 +17,7 @@ b0adwfapj56o;open;Build Android app;
 b4ahbuoudukg;complete;Add custom parsing exceptions to FileTaskStore;
 booswtafq3nk;open;Add help topic: tutorial;
 c1haep5qd9mo;open;Update to RxJava 3;
-ckzwyq0nw4xs;open;Fix remove confirmations not respecting --no-color flag;
+ckzwyq0nw4xs;started;Fix remove confirmations not respecting --no-color flag;
 cystb0f3sk5c;complete;Move command registration to individual command definition classes;
 e3bpgvlmhvy8;complete;Add observable map;
 fcb8wnt4twjk;complete;Omit completed tasks when reporting freshly unblocked tasks;
