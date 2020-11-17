@@ -4,6 +4,7 @@ import io.reactivex.Observable;
 import io.reactivex.Single;
 import omnia.cli.out.Output;
 import omnia.data.structure.Set;
+import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.cli.handler.HandlerUtil;
@@ -13,12 +14,12 @@ import tasks.model.Task;
 public final class InfoHandler implements ArgumentHandler<InfoArguments> {
   
   @Override
-  public Single<Output> handle(InfoArguments arguments) {
-    if (!arguments.tasks().isPopulated()) {
+  public Single<Output> handle(CommonArguments<? extends InfoArguments> arguments) {
+    if (!arguments.specificArguments().tasks().isPopulated()) {
       throw new HandlerException("no tasks specified");
     }
 
-    return Observable.fromIterable(arguments.tasks())
+    return Observable.fromIterable(arguments.specificArguments().tasks())
         .map(InfoHandler::stringify)
         .flatMap(output -> Observable.just(Output.justNewline(), output))
         .skip(1)

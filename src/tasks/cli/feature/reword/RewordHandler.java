@@ -6,6 +6,7 @@ import io.reactivex.Single;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.tuple.Triple;
+import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.model.Task;
@@ -19,8 +20,8 @@ public final class RewordHandler implements ArgumentHandler<RewordArguments> {
   }
 
   @Override
-  public Single<Output> handle(RewordArguments arguments) {
-    String description = arguments.description().trim();
+  public Single<Output> handle(CommonArguments<? extends RewordArguments> arguments) {
+    String description = arguments.specificArguments().description().trim();
     if (description.isEmpty()) {
       throw new HandlerException("description cannot be empty or whitespace only");
     }
@@ -29,7 +30,8 @@ public final class RewordHandler implements ArgumentHandler<RewordArguments> {
         .flatMap(
             store -> store
                 .mutateTask(
-                    arguments.targetTask(), mutator -> mutator.setLabel(arguments.description()))
+                    arguments.specificArguments().targetTask(),
+                    mutator -> mutator.setLabel(arguments.specificArguments().description()))
                 .map(Triple::third))
         .map(Task::render)
         .map(

@@ -15,6 +15,7 @@ import omnia.data.structure.immutable.ImmutableList;
 import tasks.cli.command.Command;
 import tasks.cli.command.Option;
 import tasks.cli.command.Parameter;
+import tasks.cli.command.common.CommonArguments;
 import tasks.cli.feature.help.CommandDocumentation.OptionDocumentation;
 import tasks.cli.command.Commands;
 import tasks.cli.command.common.CommonOptions;
@@ -29,8 +30,9 @@ public final class HelpHandler implements ArgumentHandler<HelpArguments> {
   }
 
   @Override
-  public Single<Output> handle(HelpArguments arguments) {
+  public Single<Output> handle(CommonArguments<? extends HelpArguments> arguments) {
     return Single.just(arguments)
+        .map(CommonArguments::specificArguments)
         .map(HelpArguments::mode)
         .flatMap(mode -> mode.map(this::getHelpOutputForMode).orElseGet(this::getHelpOutputForSelf));
   }

@@ -10,53 +10,60 @@ import java.util.Scanner;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Collection;
+import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.cli.handler.HandlerUtil;
+import tasks.cli.output.Printer;
 import tasks.model.Task;
 import tasks.model.ObservableTaskStore;
 
 /** Business logic for the Remove command. */
 public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
-  private final Memoized<? extends ObservableTaskStore> taskStore;
 
-  public RemoveHandler(Memoized<? extends ObservableTaskStore> taskStore) {
+  private final Memoized<? extends ObservableTaskStore> taskStore;
+  private final Printer.Factory printerFactory;
+
+  public RemoveHandler(
+      Memoized<? extends ObservableTaskStore> taskStore, Printer.Factory printerFactory) {
     this.taskStore = requireNonNull(taskStore);
+    this.printerFactory = requireNonNull(printerFactory);
   }
 
   @Override
-  public Single<Output> handle(RemoveArguments arguments) {
-    Collection<Task> tasksToDelete = arguments.tasks();
+  public Single<Output> handle(CommonArguments<? extends RemoveArguments> arguments) {
+    Collection<Task> tasksToDelete = arguments.specificArguments().tasks();
 
     // Validate arguments
     if (!tasksToDelete.isPopulated()) {
       throw new HandlerException("no tasks specified");
     }
 
+    Memoized<Printer> printer = memoize(() -> printerFactory.create(arguments));
+
     return Observable.fromIterable(tasksToDelete)
         .compose(
             observable ->
-                arguments.force()
+                arguments.specificArguments().force()
                     ? observable
                     : observable.concatMapMaybe(
                         task ->
-                            getYesNoConfirmationFor(task)
+                            getYesNoConfirmationFor(task, printer)
                                 .filter(confirm -> confirm).map(u -> task)))
         .flatMapMaybe(task -> taskStore.value().deleteTask(task))
         .to(toImmutableSet())
         .map(deletedTasks -> HandlerUtil.stringifyIfPopulated("tasks deleted:", deletedTasks));
   }
 
-  private static Single<Boolean> getYesNoConfirmationFor(Task task) {
+  private static Single<Boolean> getYesNoConfirmationFor(Task task, Memoized<? extends Printer> printer) {
     return Single.just(task)
         .map(Task::render)
-        .map(Output::render)
-        .doOnSuccess(System.out::println)
+        .doOnSuccess(output -> printer.value().printLine(output))
         .ignoreElement()
-        .andThen(getYesNoConfirmation());
+        .andThen(getYesNoConfirmation(printer));
   }
 
-  private static Single<Boolean> getYesNoConfirmation() {
+  private static Single<Boolean> getYesNoConfirmation(Memoized<? extends Printer> printer) {
     Memoized<RuntimeException> unparsedInput = memoize(RuntimeException::new);
     return Single.just(
         Output.builder()
@@ -64,8 +71,7 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
             .append("Delete this task? [Y/n]: ")
             .defaultColor()
             .build())
-        .map(Output::render)
-        .doOnSuccess(System.out::print)
+        .doOnSuccess(output -> printer.value().print(output))
         .ignoreElement()
         .andThen(readUserInput())
         .map(
@@ -75,7 +81,7 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
               } else if (input.matches("\\s*[Nn]([Oo])?\\s*")) {
                 return false;
               } else {
-                System.out.print(
+                printer.value().print(
                     Output.builder()
                         .color(Output.Color16.YELLOW)
                         .append("Unrecognized answer. ")
@@ -88,7 +94,7 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
         .onErrorReturn(
             throwable -> {
               if (throwable == unparsedInput.value()) {
-                System.out.print(
+                printer.value().print(
                     Output.builder()
                         .color(Output.Color16.YELLOW)
                         .appendLine("Assuming \"No\".")
@@ -102,6 +108,6 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
   }
 
   private static Single<String> readUserInput() {
-    return Single.fromCallable(() ->new Scanner(System.in).nextLine());
+    return Single.fromCallable(() -> new Scanner(System.in).nextLine());
   }
 }

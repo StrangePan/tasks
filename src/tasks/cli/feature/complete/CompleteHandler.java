@@ -13,6 +13,7 @@ import omnia.data.cache.Memoized;
 import omnia.data.stream.Collectors;
 import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.tuple.Tuplet;
+import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.model.Task;
@@ -29,15 +30,15 @@ public final class CompleteHandler implements ArgumentHandler<CompleteArguments>
   }
 
   @Override
-  public Single<Output> handle(CompleteArguments arguments) {
+  public Single<Output> handle(CommonArguments<? extends CompleteArguments> arguments) {
     // Validate arguments
-    if (!arguments.tasks().isPopulated()) {
+    if (!arguments.specificArguments().tasks().isPopulated()) {
       throw new HandlerException("no tasks specified");
     }
 
     ObservableTaskStore taskStore = this.taskStore.value();
 
-    return Observable.fromIterable(arguments.tasks())
+    return Observable.fromIterable(arguments.specificArguments().tasks())
         .flatMapSingle(task -> taskStore.mutateTask(task, TaskMutator::complete))
         .reduce(
             Tuplet.of(

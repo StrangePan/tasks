@@ -9,6 +9,7 @@ import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.tuple.Triple;
 import omnia.data.structure.tuple.Tuple;
+import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.model.ObservableTaskStore;
 
@@ -21,22 +22,22 @@ public final class ListHandler implements ArgumentHandler<ListArguments> {
   }
 
   @Override
-  public Single<Output> handle(ListArguments arguments) {
+  public Single<Output> handle(CommonArguments<? extends ListArguments> arguments) {
     return Single.fromCallable(taskStore::value)
         .flatMapObservable(ObservableTaskStore::observe)
         .firstOrError()
         .flatMapObservable(
             store -> Observable.just(
                 Tuple.of(
-                    arguments.isUnblockedSet(),
+                    arguments.specificArguments().isUnblockedSet(),
                     "unblocked tasks:",
                     Single.fromCallable(store::allOpenTasksWithoutOpenBlockers)),
                 Tuple.of(
-                    arguments.isBlockedSet(),
+                    arguments.specificArguments().isBlockedSet(),
                     "blocked tasks:",
                     Single.fromCallable(store::allOpenTasksWithOpenBlockers)),
                 Tuple.of(
-                    arguments.isCompletedSet(),
+                    arguments.specificArguments().isCompletedSet(),
                     "completed tasks:",
                     Single.fromCallable(store::allCompletedTasks))))
         .filter(Triple::first)

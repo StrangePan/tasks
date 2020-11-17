@@ -11,6 +11,7 @@ import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.tuple.Tuplet;
+import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.model.Task;
@@ -27,15 +28,15 @@ public final class ReopenHandler implements ArgumentHandler<ReopenArguments> {
   }
 
   @Override
-  public Single<Output> handle(ReopenArguments arguments) {
+  public Single<Output> handle(CommonArguments<? extends ReopenArguments> arguments) {
     // Validate arguments
-    if (!arguments.tasks().isPopulated()) {
+    if (!arguments.specificArguments().tasks().isPopulated()) {
       throw new HandlerException("no tasks specified");
     }
 
     ObservableTaskStore taskStore = this.taskStore.value();
 
-    return Observable.fromIterable(arguments.tasks())
+    return Observable.fromIterable(arguments.specificArguments().tasks())
         .flatMapSingle(task -> taskStore.mutateTask(task, TaskMutator::reopen))
         .reduce(
             Tuplet.of(

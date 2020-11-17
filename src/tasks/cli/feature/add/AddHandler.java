@@ -9,6 +9,7 @@ import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
 import omnia.data.structure.immutable.ImmutableSet;
 import omnia.data.structure.tuple.Triple;
+import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.model.Task;
@@ -24,16 +25,16 @@ public final class AddHandler implements ArgumentHandler<AddArguments> {
   }
 
   @Override
-  public Single<Output> handle(AddArguments arguments) {
+  public Single<Output> handle(CommonArguments<? extends AddArguments> arguments) {
     // Validate arguments
-    String description = arguments.description().trim();
+    String description = arguments.specificArguments().description().trim();
     if (description.isEmpty()) {
       throw new HandlerException("description cannot be empty or whitespace only");
     }
 
     // Collect the dependencies and dependents
-    Set<Task> blockingTasks = ImmutableSet.copyOf(arguments.blockingTasks());
-    Set<Task> blockedTasks = ImmutableSet.copyOf(arguments.blockedTasks());
+    Set<Task> blockingTasks = ImmutableSet.copyOf(arguments.specificArguments().blockingTasks());
+    Set<Task> blockedTasks = ImmutableSet.copyOf(arguments.specificArguments().blockedTasks());
 
     ObservableTaskStore taskStore = this.taskStore.value();
 
