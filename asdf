@@ -8,6 +8,7 @@
 3m3pf62roiyo;complete;Fix: listing unblocked vs blocked tasks;
 4ia0l52r2w74;open;Add tests for each command handler;
 6d0hzgifq9ds;complete;Cluster graph tasks by subgraph;
+7df5isx5njb4;open;Use ImmutableTreeSet in TaskStoreImpl;
 7ri8li86wfeo;complete;Output unblocked tasks when completing a task;
 9xpzogu0xreo;open;Add flag to list only started tasks;
 aiv2qznibj7k;complete;Remove amend command;
@@ -53,6 +54,7 @@ zog7380c1tkw;complete;Optimize 'shortest-unique-prefix' algorithm;
 1so5tz4jow35s;complete;Refactor commands to use same source of truth for registration as parsing;
 1u8yjlsmv79q8;complete;Add graph output;
 # dependencies
+7df5isx5njb4;n29r20yznj7k;
 aiv2qznibj7k;kz3kwaxll8n4,19ywwqj6ys1ds;
 ay81g8h14tmo;ro8c9pw9v3sw,vq9pe2u4tn28;
 b0adwfapj56o;ro8c9pw9v3sw,vq9pe2u4tn28;
