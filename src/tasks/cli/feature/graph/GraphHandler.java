@@ -27,6 +27,7 @@ import omnia.data.structure.mutable.HashSet;
 import omnia.data.structure.mutable.MutableMap;
 import omnia.data.structure.mutable.MutableSet;
 import omnia.data.structure.tuple.Tuple;
+import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.model.Task;
 import tasks.model.ObservableTaskStore;
@@ -42,7 +43,7 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
   }
 
   @Override
-  public Single<Output> handle(GraphArguments arguments) {
+  public Single<Output> handle(CommonArguments<? extends GraphArguments> arguments) {
     return taskStore.value()
         .observe()
         .firstOrError()
@@ -52,14 +53,18 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
                 Single.just(GraphAlgorithms.<Task>topologicallySort(graph))
                     .compose(
                         single ->
-                            arguments.isAllSet()
+                            arguments.specificArguments().isAllSet()
                                 ? single
                                 : single.flatMapObservable(Observable::fromIterable)
                                     .filter(task -> !task.status().isCompleted())
                                     .to(Observables.toImmutableList()))
                     .map(tasks -> Tuple.of(graph, tasks)))
-        .map(couple -> couple.append(assignColumns(couple.first(), couple.second(), arguments)))
-        .map(triple -> renderGraph(triple.first(), triple.second(), triple.third(), arguments));
+        .map(
+            couple -> couple.append(
+                assignColumns(couple.first(), couple.second(), arguments.specificArguments())))
+        .map(
+            triple -> renderGraph(
+                triple.first(), triple.second(), triple.third(), arguments.specificArguments()));
   }
 
   /**

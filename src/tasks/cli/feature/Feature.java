@@ -26,6 +26,7 @@ import tasks.cli.command.common.CommonArguments;
 import tasks.cli.command.common.CommonOptions;
 import tasks.cli.command.common.CommonParser;
 import tasks.cli.handler.ArgumentHandler;
+import tasks.cli.output.Printer;
 import tasks.cli.parser.ParserException;
 import tasks.cli.parser.CommandParser;
 import tasks.model.ObservableTaskStore;
@@ -67,8 +68,10 @@ public final class Feature<T> {
       Memoized<? extends ObservableTaskStore> taskStore) {
     return Single.just(args)
         .to(this::toArguments)
-        .flatMap(this::toOutput)
-        .ignoreElement()
+        .flatMapCompletable(
+            arguments -> toOutput(arguments)
+                .doOnSuccess(output -> new Printer.Factory().create(arguments).print(output))
+                .ignoreElement())
         .andThen(taskStore.value().shutdown())
         .to(Feature::maybeConsumeError);
   }
@@ -120,14 +123,7 @@ public final class Feature<T> {
   }
 
   private Single<Output> toOutput(CommonArguments<? extends T> arguments) {
-    return obtainHandler()
-        .handle(arguments.specificArguments())
-        .doOnSuccess(
-            output ->
-                System.out.print(
-                    arguments.enableOutputFormatting()
-                        ? output.render()
-                        : output.renderWithoutCodes()));
+    return obtainHandler().handle(arguments);
   }
 
   private static Completable maybeConsumeError(Completable completable) {

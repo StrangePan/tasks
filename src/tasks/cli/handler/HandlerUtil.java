@@ -47,13 +47,6 @@ public final class HandlerUtil {
         .blockingGet();
   }
 
-  public static void printIfPopulated(String prefix, Collection<? extends Task> tasks) {
-    Optional.of(stringifyIfPopulated(prefix, tasks))
-        .filter(Output::isPopulated)
-        .map(Output::render)
-        .ifPresent(System.out::print);
-  }
-
   public static Output stringifyIfPopulated(String prefix, Collection<? extends Task> tasks) {
     return tasks.isPopulated()
         ? Output.builder()

@@ -10,13 +10,11 @@ import java.util.Optional;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.immutable.ImmutableSet;
-import omnia.data.structure.tuple.Couplet;
-import omnia.data.structure.tuple.Triple;
 import omnia.data.structure.tuple.Tuplet;
+import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.model.ObservableTaskStore;
-import tasks.model.Task;
 import tasks.model.TaskId;
 import tasks.model.TaskMutator;
 
@@ -29,15 +27,15 @@ public final class StopHandler implements ArgumentHandler<StopArguments> {
   }
 
   @Override
-  public Single<Output> handle(StopArguments arguments) {
+  public Single<Output> handle(CommonArguments<? extends StopArguments> arguments) {
     // Validate arguments
-    if (!arguments.tasks().isPopulated()) {
+    if (!arguments.specificArguments().tasks().isPopulated()) {
       throw new HandlerException("no tasks specified");
     }
 
     ObservableTaskStore taskStore = this.taskStore.value();
 
-    return Observable.fromIterable(arguments.tasks())
+    return Observable.fromIterable(arguments.specificArguments().tasks())
         .flatMapSingle(task -> taskStore.mutateTask(task, TaskMutator::stop))
         .reduce(
             Tuplet.of(

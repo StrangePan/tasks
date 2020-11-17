@@ -14,6 +14,7 @@ import omnia.data.structure.tuple.Couple;
 import omnia.data.structure.tuple.Couplet;
 import omnia.data.structure.tuple.Triple;
 import omnia.data.structure.tuple.Tuplet;
+import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.model.Task;
@@ -29,27 +30,29 @@ public final class BlockersHandler implements ArgumentHandler<BlockersArguments>
   }
 
   @Override
-  public Single<Output> handle(BlockersArguments arguments) {
+  public Single<Output> handle(CommonArguments<? extends BlockersArguments> arguments) {
     /*
      * Ensure task isn't connected to itself.
      * This is a short-circuit, but is not strictly required because we still need to check if the
      * task graph is cyclical.
      */
-    if (arguments.blockingTasksToAdd().contains(arguments.targetTask())) {
+    if (arguments.specificArguments()
+        .blockingTasksToAdd()
+        .contains(arguments.specificArguments().targetTask())) {
       throw new HandlerException("target task cannot block or be blocked by itself");
     }
 
     verifyTasksAreMutuallyExclusive(
         "ambiguous operation: blockers both added and removed: ",
-        arguments.blockingTasksToAdd(),
-        arguments.blockingTasksToRemove());
+        arguments.specificArguments().blockingTasksToAdd(),
+        arguments.specificArguments().blockingTasksToRemove());
 
-    return mutateAndProduceBeforeAfterSnapshot(arguments)
+    return mutateAndProduceBeforeAfterSnapshot(arguments.specificArguments())
         .map(BlockersHandler::stringifyResults)
         .map(
             results ->
                 Output.builder()
-                    .appendLine(arguments.targetTask().render())
+                    .appendLine(arguments.specificArguments().targetTask().render())
                     .appendLine(results)
                     .build());
   }
