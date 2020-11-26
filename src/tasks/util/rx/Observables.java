@@ -36,26 +36,26 @@ public final class Observables {
         });
   }
 
+  public static <T> Function<Observable<? extends T>, Single<ImmutableList<T>>> toImmutableList() {
+    return observable ->
+        observable.collect(ImmutableList::<T>builder, ImmutableList.Builder::add)
+            .map(ImmutableList.Builder::build);
+  }
+
   public static <T, K, V> Function<Observable<T>, Single<ImmutableMap<K, V>>> toImmutableMap(
       Function<? super T, ? extends K> keyExtractor,
       Function<? super T, ? extends V> valueExtractor) {
     return observable ->
-        observable.collectInto(
-                ImmutableMap.<K, V>builder(),
-                (builder, item) ->
-                    builder.putMapping(keyExtractor.apply(item), valueExtractor.apply(item)))
+        observable.collect(
+            ImmutableMap::<K, V>builder,
+            (builder, item) ->
+                builder.putMapping(keyExtractor.apply(item), valueExtractor.apply(item)))
             .map(ImmutableMap.Builder::build);
-  }
-
-  public static <T> Function<Observable<? extends T>, Single<ImmutableList<T>>> toImmutableList() {
-    return observable ->
-        observable.collectInto(ImmutableList.<T>builder(), ImmutableList.Builder::add)
-            .map(ImmutableList.Builder::build);
   }
 
   public static <T> Function<Observable<T>, Single<ImmutableSet<T>>> toImmutableSet() {
     return observable ->
-        observable.collectInto(ImmutableSet.<T>builder(), ImmutableSet.Builder::add)
+        observable.collect(ImmutableSet::<T>builder, ImmutableSet.Builder::add)
             .map(ImmutableSet.Builder::build);
   }
 }
