@@ -43,6 +43,14 @@ public final class ListCommand {
               "List all unblocked tasks. Can be combined with other flags.",
               NOT_REPEATABLE));
 
+  static final Memoized<FlagOption> STARTED_OPTION =
+      memoize(
+          () -> new FlagOption(
+              "started",
+              "s",
+              "List all started tasks. Can be combined with other flags.",
+              NOT_REPEATABLE));
+
   public static final Memoized<FlagOption> ALL_OPTION =
       memoize(
           () -> new FlagOption(
@@ -57,6 +65,7 @@ public final class ListCommand {
               BLOCKED_OPTION.value(),
               COMPLETED_OPTION.value(),
               UNBLOCKED_OPTION.value(),
+              STARTED_OPTION.value(),
               ALL_OPTION.value()));
 
   private static final Memoized<Command> COMMAND =
