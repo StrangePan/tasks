@@ -10,7 +10,7 @@
 6d0hzgifq9ds;complete;Cluster graph tasks by subgraph;
 7df5isx5njb4;open;Use ImmutableTreeSet in TaskStoreImpl;
 7ri8li86wfeo;complete;Output unblocked tasks when completing a task;
-9xpzogu0xreo;open;Add flag to list only started tasks;
+9xpzogu0xreo;complete;Add flag to list only started tasks;
 aiv2qznibj7k;complete;Remove amend command;
 ay81g8h14tmo;open;Build iOS app;
 b0adwfapj56o;open;Build Android app;

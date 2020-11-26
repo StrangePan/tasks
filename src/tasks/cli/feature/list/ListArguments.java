@@ -5,11 +5,14 @@ public final class ListArguments {
   private final boolean isUnblockedSet;
   private final boolean isBlockedSet;
   private final boolean isCompletedSet;
+  private final boolean isStartedSet;
 
-  ListArguments(boolean isUnblockedSet, boolean isBlockedSet, boolean isCompletedSet) {
+  ListArguments(
+      boolean isUnblockedSet, boolean isBlockedSet, boolean isCompletedSet, boolean isStartedSet) {
     this.isUnblockedSet = isUnblockedSet;
     this.isBlockedSet = isBlockedSet;
     this.isCompletedSet = isCompletedSet;
+    this.isStartedSet = isStartedSet;
   }
 
   /**
@@ -34,5 +37,16 @@ public final class ListArguments {
    */
   public boolean isCompletedSet() {
     return isCompletedSet;
+  }
+
+  /**
+   * Whether or not to filter the result so that only started tasks are listed. If this flag is set,
+   * then only started tasks should be included in the output. Defaults to false.
+   *
+   * <p>Unlike other flags, this one is subtractive. Setting this flag can always reduce the
+   * output.</p>
+   */
+  public boolean isStartedSet() {
+    return isStartedSet;
   }
 }

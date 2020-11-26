@@ -24,11 +24,13 @@ public final class ListParser implements CommandParser<ListArguments> {
         isAllSet || ParserUtil.getFlagPresence(commandLine, ListCommand.BLOCKED_OPTION.value());
     boolean isCompletedSet =
         isAllSet || ParserUtil.getFlagPresence(commandLine, ListCommand.COMPLETED_OPTION.value());
+    boolean isStartedSet =
+        ParserUtil.getFlagPresence(commandLine, ListCommand.STARTED_OPTION.value());
     boolean isUnblockedSet =
         isAllSet
             || ParserUtil.getFlagPresence(commandLine, ListCommand.UNBLOCKED_OPTION.value())
             || (!isBlockedSet && !isCompletedSet);
 
-    return new ListArguments(isUnblockedSet, isBlockedSet, isCompletedSet);
+    return new ListArguments(isUnblockedSet, isBlockedSet, isCompletedSet, isStartedSet);
   }
 }
