@@ -31,7 +31,7 @@ import omnia.data.structure.tuple.Tuple;
 import tasks.io.File;
 import tasks.model.Task;
 
-final class TaskFileSource {
+public final class TaskFileStorage implements TaskStorage {
 
   private static final int VERSION = 2;
   private static final String END_OF_LINE = "\n";
@@ -60,11 +60,13 @@ final class TaskFileSource {
 
   private final File file;
 
-  TaskFileSource(File file) {
+  public TaskFileStorage(File file) {
     this.file = file;
   }
 
-  Single<Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>>> readFromFile() {
+  @Override
+  public Single<Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>>>
+      readFromStorage() {
     return Single.fromCallable(() -> {
       try (BufferedReader reader = new BufferedReader(file.openReader())) {
         return parseTaskData(reader);
@@ -72,8 +74,10 @@ final class TaskFileSource {
     });
   }
 
-  Completable writeToFile(
-      DirectedGraph<? extends TaskIdImpl> graph, Map<? extends TaskIdImpl, ? extends TaskData> data) {
+  @Override
+  public Completable writeToStorage(
+      DirectedGraph<? extends TaskIdImpl> graph,
+      Map<? extends TaskIdImpl, ? extends TaskData> data) {
     return Completable.fromAction(() -> {
       try (BufferedWriter writer = new BufferedWriter(file.openWriter())) {
         serializeTaskData(graph, data, writer);
@@ -159,7 +163,7 @@ final class TaskFileSource {
 
       try {
         Stream.of(fields[1].split(TASK_ID_DELIMITER))
-            .map(TaskFileSource::parseId)
+            .map(TaskFileStorage::parseId)
             .forEach(dependency -> graph.addEdge(dependency, id));
       } catch (ImmutableDirectedGraph.UnknownNodeException e) {
         throw new TaskParseError("missing task data for: " + id, e);
@@ -220,7 +224,7 @@ final class TaskFileSource {
         .flatMapObservable(Observable::fromIterable)
         .sorted(Comparator.comparing(entry -> entry.key().asLong()))
         .map(entry -> Tuple.of(entry.key(), entry.value()))
-        .map(TaskFileSource::serialize);
+        .map(TaskFileStorage::serialize);
   }
 
   private static String serialize(Couple<? extends TaskIdImpl, ? extends TaskData> task) {
@@ -314,7 +318,7 @@ final class TaskFileSource {
         .flatMapObservable(Observable::fromIterable)
         .filter(node -> node.predecessors().isPopulated())
         .sorted(Comparator.comparing(node -> node.item().asLong()))
-        .map(TaskFileSource::serialize);
+        .map(TaskFileStorage::serialize);
   }
 
   private static String serialize(DirectedGraph.DirectedNode<? extends TaskIdImpl> node) {
@@ -325,7 +329,7 @@ final class TaskFileSource {
             node.predecessors().stream()
                 .map(DirectedGraph.DirectedNode::item)
                 .sorted(Comparator.comparing(TaskIdImpl::asLong))
-                .map(TaskFileSource::serialize)
+                .map(TaskFileStorage::serialize)
                 .collect(joining(TASK_ID_DELIMITER)))
         .append(TASK_FIELD_DELIMITER)
         .toString();
