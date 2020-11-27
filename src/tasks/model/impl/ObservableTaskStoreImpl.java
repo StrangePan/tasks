@@ -281,7 +281,7 @@ public final class ObservableTaskStoreImpl implements ObservableTaskStore {
                     .map(DirectedNode::incomingEdges)
                     .map(ImmutableSet::copyOf)
                     .orElse(ImmutableSet.empty())
-                    .forEach(edge -> builder.removeEdge(edge.start(), edge.end()));
+                    .forEach(edge -> builder.removeEdge(edge.start().item(), edge.end().item()));
               }
               mutator.blockingTasksToAdd()
                   .forEach(blockingId -> builder.addEdge(blockingId, id));
@@ -293,7 +293,7 @@ public final class ObservableTaskStoreImpl implements ObservableTaskStore {
                     .map(DirectedNode::outgoingEdges)
                     .map(ImmutableSet::copyOf)
                     .orElse(ImmutableSet.empty())
-                    .forEach(edge -> builder.removeEdge(edge.start(), edge.end()));
+                    .forEach(edge -> builder.removeEdge(edge.start().item(), edge.end().item()));
               }
               mutator.blockedTasksToAdd()
                   .forEach(blockedId -> builder.addEdge(id, blockedId));
