@@ -35,7 +35,7 @@ lm3htv37dr7k;open;Add test for "remove" command handler;
 lxeye4wsb3sw;complete;Add feature: start / stop tasks;
 lzvv3qy4wa9s;complete;Move parsers out of arguments;
 m80heumm9pmo;open;Open default editor when rewording a task;
-mbbuipfaoo3k;open;Add test for "add" command handler;
+mbbuipfaoo3k;complete;Add test for "add" command handler;
 n29r20yznj7k;open;Add immutable TreeSet to Omnia;
 nkqqwjle0pog;complete;Add immutable task store states;
 o1p99g1iyfpc;complete;Fix task graph edge rendering;
