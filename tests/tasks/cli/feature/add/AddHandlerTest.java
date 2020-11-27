@@ -3,7 +3,6 @@ package tasks.cli.feature.add;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableSet;
@@ -170,7 +169,7 @@ public class AddHandlerTest {
         new AddArguments(label, ImmutableList.copyOf(blockers), ImmutableList.empty()));
   }
 
-  private static CommonArguments<AddArguments> commonArgs(AddArguments args) {
+  private static <T> CommonArguments<T> commonArgs(T args) {
     return new CommonArguments<>(args, /* enableColorOutput= */ true);
   }
 }

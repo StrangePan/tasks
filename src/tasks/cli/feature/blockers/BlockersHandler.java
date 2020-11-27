@@ -1,11 +1,11 @@
 package tasks.cli.feature.blockers;
 
 import static java.util.Objects.requireNonNull;
+import static omnia.data.stream.Collectors.toImmutableSet;
 import static tasks.cli.handler.HandlerUtil.stringifyIfPopulated;
 import static tasks.cli.handler.HandlerUtil.verifyTasksAreMutuallyExclusive;
 
 import io.reactivex.Single;
-import omnia.algorithm.SetAlgorithms;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;
@@ -19,6 +19,7 @@ import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.model.Task;
 import tasks.model.ObservableTaskStore;
+import tasks.model.TaskId;
 import tasks.model.TaskStore;
 
 /** Business logic for the Blockers command. */
@@ -47,6 +48,12 @@ public final class BlockersHandler implements ArgumentHandler<BlockersArguments>
         arguments.specificArguments().blockingTasksToAdd(),
         arguments.specificArguments().blockingTasksToRemove());
 
+    if (!arguments.specificArguments().blockingTasksToAdd().isPopulated()
+        && !arguments.specificArguments().blockingTasksToRemove().isPopulated()
+        && !arguments.specificArguments().clearAllBlockers()) {
+      return Single.just(Output.empty());
+    }
+
     return mutateAndProduceBeforeAfterSnapshot(arguments.specificArguments())
         .map(BlockersHandler::stringifyResults)
         .map(
@@ -67,8 +74,7 @@ public final class BlockersHandler implements ArgumentHandler<BlockersArguments>
                     .orElse(ImmutableSet.empty())));
   }
 
-  private Single<Couplet<TaskStore>> mutateTaskStore(
-      BlockersArguments arguments) {
+  private Single<Couplet<TaskStore>> mutateTaskStore(BlockersArguments arguments) {
     return taskStore.value().mutateTask(
         arguments.targetTask(),
         mutator -> {
@@ -84,10 +90,6 @@ public final class BlockersHandler implements ArgumentHandler<BlockersArguments>
         .map(Tuplet::copyOf);
   }
 
-  private static Set<? extends Task> getTasksBlocking(Task task) {
-    return task.blockingTasks();
-  }
-
   private static Output stringifyResults(
       Couple<? extends Set<? extends Task>, ? extends Set<? extends Task>> beforeAfterSnapshots) {
     return Output.builder()
@@ -99,7 +101,8 @@ public final class BlockersHandler implements ArgumentHandler<BlockersArguments>
         .build();
   }
 
-  private static Set<? extends Task> getRemovedBlockers(Set<? extends Task> before, Set<?> after) {
-    return SetAlgorithms.differenceBetween(before, after);
+  private static Set<? extends Task> getRemovedBlockers(Set<? extends Task> before, Set<? extends Task> after) {
+    ImmutableSet<TaskId> afterIds = after.stream().map(Task::id).collect(toImmutableSet());
+    return before.stream().filter(task -> !afterIds.contains(task.id())).collect(toImmutableSet());
   }
 }
