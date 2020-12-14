@@ -11,7 +11,7 @@
 6d0hzgifq9ds;complete;Cluster graph tasks by subgraph;
 7df5isx5njb4;open;Use ImmutableTreeSet in TaskStoreImpl;
 7ri8li86wfeo;complete;Output unblocked tasks when completing a task;
-8wruo368lk3k;open;Add test for "info" command handler;
+8wruo368lk3k;complete;Add test for "info" command handler;
 9gmv5q5r2fwg;complete;Add test for "blockers" command handler;
 9xpzogu0xreo;complete;Add flag to list only started tasks;
 abwb0ydc2gao;open;Add test for "reopen" command handler;
