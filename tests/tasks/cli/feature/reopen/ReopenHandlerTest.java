@@ -103,8 +103,8 @@ public final class ReopenHandlerTest {
   }
 
   @Test
-  public void handle_withStartedTask_outputsAlreadyOpenTask() {
-    Task task = createTask("example task", b -> b.setStatus(Task.Status.OPEN));
+  public void handle_withStartedTask_outputsAlreadyStartedTask() {
+    Task task = createTask("example task", b -> b.setStatus(Task.Status.STARTED));
 
     String output = underTest.handle(reopenArgs(task)).blockingGet().toString();
 
@@ -137,15 +137,6 @@ public final class ReopenHandlerTest {
     Task blockedTask = createTask("blocked task", b -> b.addBlockingTask(task));
 
     String output = underTest.handle(reopenArgs(task)).blockingGet().toString();
-
-    assertThat(
-        taskStore.observe()
-            .firstOrError()
-            .blockingGet()
-            .lookUpById(blockedTask.id())
-            .orElseThrow()
-            .isUnblocked())
-        .isFalse();
 
     assertThat(output)
         .containsMatch(Pattern.compile("task\\(s\\) reopened:.*" + task.label(), DOTALL));
