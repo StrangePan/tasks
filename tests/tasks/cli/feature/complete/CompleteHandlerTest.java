@@ -27,9 +27,7 @@ public final class CompleteHandlerTest {
 
   @Test
   public void handle_withNoSpecifiedTasks_throwsException() {
-    assertThrows(
-        HandlerException.class,
-        () -> underTest.handle(commonArgs(new CompleteArguments(ImmutableList.empty()))));
+    assertThrows(HandlerException.class, () -> underTest.handle(completeArgs()));
   }
 
   @Test
@@ -117,7 +115,7 @@ public final class CompleteHandlerTest {
   }
 
   @Test
-  public void handle_withOpenTask_withBlockee_unblocksBlockedTask() {
+  public void handle_withOpenTask_withBlockedTask_unblocksBlockedTask() {
     Task task = createTask("example task", b -> b.setStatus(Task.Status.OPEN));
     Task blockedTask = createTask("blocked task", b -> b.addBlockingTask(task));
 
@@ -134,7 +132,7 @@ public final class CompleteHandlerTest {
   }
 
   @Test
-  public void handle_withOpenTask_withBlockee_outputsUnblockedTask() {
+  public void handle_withOpenTask_withBlockedTask_outputsUnblockedTask() {
     Task task = createTask("example task", b -> b.setStatus(Task.Status.OPEN));
     Task blockedTask = createTask("blocked task", b -> b.addBlockingTask(task));
 
@@ -149,7 +147,7 @@ public final class CompleteHandlerTest {
   }
 
   @Test
-  public void handle_withOpenTask_withBlockee_andAlreadyCompleted_outputsInCorrectOrder() {
+  public void handle_withOpenTask_withBlockedTasks_andAlreadyCompleted_outputsInCorrectOrder() {
     Task task = createTask("example task", b -> b.setStatus(Task.Status.OPEN));
     Task blockedTask = createTask("blocked task", b -> b.addBlockingTask(task));
     Task completedTask = createTask("completed task", b -> b.setStatus(Task.Status.COMPLETED));
@@ -157,20 +155,11 @@ public final class CompleteHandlerTest {
     String output = underTest.handle(completeArgs(task, completedTask)).blockingGet().toString();
 
     assertThat(output)
-        .containsMatch(Pattern.compile("task\\(s\\) completed:.*" + task.label(), DOTALL));
-    assertThat(output)
-        .containsMatch(
-            Pattern.compile("task\\(s\\) unblocked as a result:.*" + blockedTask.label(), DOTALL));
-    assertThat(output)
-        .containsMatch(
-            Pattern.compile("task\\(s\\) already completed:.*" + completedTask.label(), DOTALL));
-    assertThat(output)
         .containsMatch(
             Pattern.compile(
-                "task\\(s\\) already completed:.*" +
-                    "task\\(s\\) completed:.*" +
-                    "task\\(s\\) unblocked as a result:.*",
-                DOTALL));
+                "task\\(s\\) already completed:.*" + completedTask.label()
+                    + ".*task\\(s\\) completed:.*" + task.label()
+                    + ".*task\\(s\\) unblocked as a result:.*" + blockedTask.label(), DOTALL));
   }
 
   private Task createTask(String label) {
