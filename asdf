@@ -14,7 +14,7 @@
 8wruo368lk3k;complete;Add test for "info" command handler;
 9gmv5q5r2fwg;complete;Add test for "blockers" command handler;
 9xpzogu0xreo;complete;Add flag to list only started tasks;
-abwb0ydc2gao;open;Add test for "reopen" command handler;
+abwb0ydc2gao;complete;Add test for "reopen" command handler;
 aiv2qznibj7k;complete;Remove amend command;
 ay81g8h14tmo;open;Build iOS app;
 b0adwfapj56o;open;Build Android app;
