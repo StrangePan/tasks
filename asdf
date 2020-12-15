@@ -19,7 +19,7 @@ aiv2qznibj7k;complete;Remove amend command;
 ay81g8h14tmo;open;Build iOS app;
 b0adwfapj56o;open;Build Android app;
 b4ahbuoudukg;complete;Add custom parsing exceptions to FileTaskStore;
-b4skwk75dtds;open;Add test for "stop" command handler;
+b4skwk75dtds;complete;Add test for "stop" command handler;
 booswtafq3nk;open;Add help topic: tutorial;
 c1haep5qd9mo;open;Update to RxJava 3;
 ckzwyq0nw4xs;complete;Fix remove confirmations not respecting --no-color flag;
