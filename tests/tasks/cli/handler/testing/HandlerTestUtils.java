@@ -105,4 +105,12 @@ public final class HandlerTestUtils {
             substrings.count())
         : "";
   }
+
+  /**
+   * Looks up the provided {@link Task} in the provided {@link ObservableTaskStore}, returning the
+   * latest immutable version of the task.
+   */
+  public static Task getUpdatedVersionOf(ObservableTaskStore taskStore, Task task) {
+    return taskStore.observe().blockingFirst().lookUpById(task.id()).orElseThrow();
+  }
 }

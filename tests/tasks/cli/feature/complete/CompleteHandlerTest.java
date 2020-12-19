@@ -3,6 +3,8 @@ package tasks.cli.feature.complete;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.regex.Pattern.DOTALL;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tasks.cli.handler.testing.HandlerTestUtils.assertOutputContainsGroupedTasks;
+import static tasks.cli.handler.testing.HandlerTestUtils.commonArgs;
 
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -13,6 +15,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handler.HandlerException;
+import tasks.cli.handler.testing.HandlerTestUtils;
 import tasks.model.ObservableTaskStore;
 import tasks.model.Task;
 import tasks.model.TaskBuilder;
@@ -20,6 +23,10 @@ import tasks.model.impl.ObservableTaskStoreImpl;
 
 @RunWith(JUnit4.class)
 public final class CompleteHandlerTest {
+
+  private static final String TASKS_COMPLETED_HEADER = "task(s) completed:";
+  private static final String TASKS_ALREADY_COMPLETED_HEADER = "task(s) already completed:";
+  private static final String TASKS_UNBLOCKED_HEADER = "task(s) unblocked as a result:";
 
   private final ObservableTaskStore taskStore = ObservableTaskStoreImpl.createInMemoryStorage();
 
@@ -52,10 +59,9 @@ public final class CompleteHandlerTest {
 
     String output = underTest.handle(completeArgs(task)).blockingGet().toString();
 
-    assertThat(output)
-        .containsMatch(Pattern.compile("task\\(s\\) completed:.*" + task.label(), DOTALL));
-    assertThat(output).doesNotContain("task(s) already completed");
-    assertThat(output).doesNotContain("task(s) unblocked as a result");
+    Task completedTask = HandlerTestUtils.getUpdatedVersionOf(taskStore, task);
+    assertOutputContainsGroupedTasks(
+        output, TASKS_COMPLETED_HEADER, ImmutableList.of(completedTask));
   }
 
   @Test
@@ -80,10 +86,11 @@ public final class CompleteHandlerTest {
 
     String output = underTest.handle(completeArgs(task)).blockingGet().toString();
 
-    assertThat(output)
-        .containsMatch(Pattern.compile("task\\(s\\) completed:.*" + task.label(), DOTALL));
-    assertThat(output).doesNotContain("task(s) already completed");
-    assertThat(output).doesNotContain("task(s) unblocked as a result");
+    Task completedTask = HandlerTestUtils.getUpdatedVersionOf(taskStore, task);
+    assertOutputContainsGroupedTasks(
+        output, TASKS_COMPLETED_HEADER, ImmutableList.of(completedTask));
+    assertThat(output).doesNotContain(TASKS_ALREADY_COMPLETED_HEADER);
+    assertThat(output).doesNotContain(TASKS_UNBLOCKED_HEADER);
   }
 
   @Test
@@ -108,10 +115,10 @@ public final class CompleteHandlerTest {
 
     String output = underTest.handle(completeArgs(task)).blockingGet().toString();
 
-    assertThat(output)
-        .containsMatch(Pattern.compile("task\\(s\\) already completed:.*" + task.label(), DOTALL));
-    assertThat(output).doesNotContain("task(s) completed");
-    assertThat(output).doesNotContain("task(s) unblocked as a result");
+    assertOutputContainsGroupedTasks(
+        output, TASKS_ALREADY_COMPLETED_HEADER, ImmutableList.of(task));
+    assertThat(output).doesNotContain(TASKS_COMPLETED_HEADER);
+    assertThat(output).doesNotContain(TASKS_UNBLOCKED_HEADER);
   }
 
   @Test
@@ -138,43 +145,48 @@ public final class CompleteHandlerTest {
 
     String output = underTest.handle(completeArgs(task)).blockingGet().toString();
 
-    assertThat(output)
-        .containsMatch(Pattern.compile("task\\(s\\) completed:.*" + task.label(), DOTALL));
-    assertThat(output)
-        .containsMatch(
-            Pattern.compile("task\\(s\\) unblocked as a result:.*" + blockedTask.label(), DOTALL));
-    assertThat(output).doesNotContain("task(s) already completed");
+    Task completedTask = HandlerTestUtils.getUpdatedVersionOf(taskStore, task);
+    assertOutputContainsGroupedTasks(
+        output, TASKS_COMPLETED_HEADER, ImmutableList.of(completedTask));
+    assertOutputContainsGroupedTasks(output, TASKS_UNBLOCKED_HEADER, ImmutableList.of(blockedTask));
+    assertThat(output).doesNotContain(TASKS_ALREADY_COMPLETED_HEADER);
   }
 
   @Test
   public void handle_withOpenTask_withBlockedTasks_andAlreadyCompleted_outputsInCorrectOrder() {
     Task task = createTask("example task", b -> b.setStatus(Task.Status.OPEN));
     Task blockedTask = createTask("blocked task", b -> b.addBlockingTask(task));
-    Task completedTask = createTask("completed task", b -> b.setStatus(Task.Status.COMPLETED));
+    Task alreadyCompletedTask = createTask("completed task", b -> b.setStatus(Task.Status.COMPLETED));
 
-    String output = underTest.handle(completeArgs(task, completedTask)).blockingGet().toString();
+    String output = underTest.handle(completeArgs(task, alreadyCompletedTask)).blockingGet().toString();
 
+    Task newlyCompletedTask = HandlerTestUtils.getUpdatedVersionOf(taskStore, task);
+    assertOutputContainsGroupedTasks(
+        output, TASKS_ALREADY_COMPLETED_HEADER, ImmutableList.of(alreadyCompletedTask));
+    assertOutputContainsGroupedTasks(
+        output, TASKS_COMPLETED_HEADER, ImmutableList.of(newlyCompletedTask));
+    assertOutputContainsGroupedTasks(
+        output, TASKS_UNBLOCKED_HEADER, ImmutableList.of(blockedTask));
     assertThat(output)
         .containsMatch(
             Pattern.compile(
-                "task\\(s\\) already completed:.*" + completedTask.label()
-                    + ".*task\\(s\\) completed:.*" + task.label()
-                    + ".*task\\(s\\) unblocked as a result:.*" + blockedTask.label(), DOTALL));
+                Pattern.quote(TASKS_ALREADY_COMPLETED_HEADER) +
+                    ".*" +
+                    Pattern.quote(TASKS_COMPLETED_HEADER) +
+                    ".*" +
+                    Pattern.quote(TASKS_UNBLOCKED_HEADER),
+                DOTALL));
   }
 
   private Task createTask(String label) {
-    return createTask(label, b -> b);
+    return HandlerTestUtils.createTask(taskStore, label);
   }
 
   private Task createTask(String label, Function<TaskBuilder, TaskBuilder> builderFunction) {
-    return taskStore.createTask(label, builderFunction).blockingGet().third();
+    return HandlerTestUtils.createTask(taskStore, label, builderFunction);
   }
 
   private static CommonArguments<CompleteArguments> completeArgs(Task... tasks) {
     return commonArgs(new CompleteArguments(ImmutableList.copyOf(tasks)));
-  }
-
-  private static <T> CommonArguments<T> commonArgs(T args) {
-    return new CommonArguments<>(args, /* enableColorOutput= */ true);
   }
 }
