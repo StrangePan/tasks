@@ -59,9 +59,8 @@ public final class CompleteHandlerTest {
 
     String output = underTest.handle(completeArgs(task)).blockingGet().toString();
 
-    Task completedTask = HandlerTestUtils.getUpdatedVersionOf(taskStore, task);
     assertOutputContainsGroupedTasks(
-        output, TASKS_COMPLETED_HEADER, ImmutableList.of(completedTask));
+        output, TASKS_COMPLETED_HEADER, ImmutableList.of(getUpdatedVersionOf(task)));
   }
 
   @Test
@@ -86,9 +85,8 @@ public final class CompleteHandlerTest {
 
     String output = underTest.handle(completeArgs(task)).blockingGet().toString();
 
-    Task completedTask = HandlerTestUtils.getUpdatedVersionOf(taskStore, task);
     assertOutputContainsGroupedTasks(
-        output, TASKS_COMPLETED_HEADER, ImmutableList.of(completedTask));
+        output, TASKS_COMPLETED_HEADER, ImmutableList.of(getUpdatedVersionOf(task)));
     assertThat(output).doesNotContain(TASKS_ALREADY_COMPLETED_HEADER);
     assertThat(output).doesNotContain(TASKS_UNBLOCKED_HEADER);
   }
@@ -145,9 +143,8 @@ public final class CompleteHandlerTest {
 
     String output = underTest.handle(completeArgs(task)).blockingGet().toString();
 
-    Task completedTask = HandlerTestUtils.getUpdatedVersionOf(taskStore, task);
     assertOutputContainsGroupedTasks(
-        output, TASKS_COMPLETED_HEADER, ImmutableList.of(completedTask));
+        output, TASKS_COMPLETED_HEADER, ImmutableList.of(getUpdatedVersionOf(task)));
     assertOutputContainsGroupedTasks(output, TASKS_UNBLOCKED_HEADER, ImmutableList.of(blockedTask));
     assertThat(output).doesNotContain(TASKS_ALREADY_COMPLETED_HEADER);
   }
@@ -160,11 +157,10 @@ public final class CompleteHandlerTest {
 
     String output = underTest.handle(completeArgs(task, alreadyCompletedTask)).blockingGet().toString();
 
-    Task newlyCompletedTask = HandlerTestUtils.getUpdatedVersionOf(taskStore, task);
     assertOutputContainsGroupedTasks(
         output, TASKS_ALREADY_COMPLETED_HEADER, ImmutableList.of(alreadyCompletedTask));
     assertOutputContainsGroupedTasks(
-        output, TASKS_COMPLETED_HEADER, ImmutableList.of(newlyCompletedTask));
+        output, TASKS_COMPLETED_HEADER, ImmutableList.of(getUpdatedVersionOf(task)));
     assertOutputContainsGroupedTasks(
         output, TASKS_UNBLOCKED_HEADER, ImmutableList.of(blockedTask));
     assertThat(output)
@@ -184,6 +180,10 @@ public final class CompleteHandlerTest {
 
   private Task createTask(String label, Function<TaskBuilder, TaskBuilder> builderFunction) {
     return HandlerTestUtils.createTask(taskStore, label, builderFunction);
+  }
+
+  private Task getUpdatedVersionOf(Task task) {
+    return HandlerTestUtils.getUpdatedVersionOf(taskStore, task);
   }
 
   private static CommonArguments<CompleteArguments> completeArgs(Task... tasks) {

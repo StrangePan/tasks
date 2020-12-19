@@ -5,7 +5,6 @@ import static java.util.regex.Pattern.DOTALL;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static tasks.cli.handler.testing.HandlerTestUtils.assertOutputContainsGroupedTasks;
 import static tasks.cli.handler.testing.HandlerTestUtils.commonArgs;
-import static tasks.cli.handler.testing.HandlerTestUtils.getUpdatedVersionOf;
 
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -60,8 +59,8 @@ public final class ReopenHandlerTest {
 
     String output = underTest.handle(reopenArgs(task)).blockingGet().toString();
 
-    Task reopenedTask = getUpdatedVersionOf(taskStore, task);
-    assertOutputContainsGroupedTasks(output, TASKS_REOPENED_HEADER, ImmutableList.of(reopenedTask));
+    assertOutputContainsGroupedTasks(
+        output, TASKS_REOPENED_HEADER, ImmutableList.of(getUpdatedVersionOf(task)));
     assertThat(output).doesNotContain(TASKS_ALREADY_OPEN_HEADER);
     assertThat(output).doesNotContain(TASKS_BLOCKED_AS_A_RESULT);
   }
@@ -144,8 +143,8 @@ public final class ReopenHandlerTest {
 
     String output = underTest.handle(reopenArgs(task)).blockingGet().toString();
 
-    Task reopenedTask = getUpdatedVersionOf(taskStore, task);
-    assertOutputContainsGroupedTasks(output, TASKS_REOPENED_HEADER, ImmutableList.of(reopenedTask));
+    assertOutputContainsGroupedTasks(
+        output, TASKS_REOPENED_HEADER, ImmutableList.of(getUpdatedVersionOf(task)));
     assertOutputContainsGroupedTasks(
         output, TASKS_BLOCKED_AS_A_RESULT, ImmutableList.of(blockedTask));
     assertThat(output).doesNotContain(TASKS_ALREADY_OPEN_HEADER);
@@ -159,9 +158,9 @@ public final class ReopenHandlerTest {
 
     String output = underTest.handle(reopenArgs(task, openTask)).blockingGet().toString();
 
-    Task reopenedTask = getUpdatedVersionOf(taskStore, task);
     assertOutputContainsGroupedTasks(output, TASKS_ALREADY_OPEN_HEADER, ImmutableList.of(openTask));
-    assertOutputContainsGroupedTasks(output, TASKS_REOPENED_HEADER, ImmutableList.of(reopenedTask));
+    assertOutputContainsGroupedTasks(
+        output, TASKS_REOPENED_HEADER, ImmutableList.of(getUpdatedVersionOf(task)));
     assertOutputContainsGroupedTasks(
         output, TASKS_BLOCKED_AS_A_RESULT, ImmutableList.of(blockedTask));
 
@@ -182,6 +181,10 @@ public final class ReopenHandlerTest {
 
   private Task createTask(String label, Function<TaskBuilder, TaskBuilder> builderFunction) {
     return HandlerTestUtils.createTask(taskStore, label, builderFunction);
+  }
+
+  private Task getUpdatedVersionOf(Task task) {
+    return HandlerTestUtils.getUpdatedVersionOf(taskStore, task);
   }
 
   private static CommonArguments<ReopenArguments> reopenArgs(Task... tasks) {
