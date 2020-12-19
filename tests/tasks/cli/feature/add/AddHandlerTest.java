@@ -2,6 +2,7 @@ package tasks.cli.feature.add;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tasks.cli.handler.testing.HandlerTestUtils.commonArgs;
 
 import omnia.data.cache.Memoized;
 import omnia.data.structure.immutable.ImmutableList;
@@ -25,20 +26,19 @@ public class AddHandlerTest {
 
   @Test
   public void handle_withEmptyDescription_throwsHandlerException() {
-    assertThrows(HandlerException.class, () -> underTest.handle(createArgs("")));
+    assertThrows(HandlerException.class, () -> underTest.handle(addArgs("")));
   }
 
   @Test
   public void handle_butNotSubscribed_doesNotCreateTask() {
-    underTest.handle(createArgs("example task"));
+    underTest.handle(addArgs("example task"));
 
-    ImmutableSet<? extends Task> allTasks = taskStore.observe().blockingFirst().allTasks();
-    assertThat(allTasks.count()).isEqualTo(0);
+    assertThat(taskStore.observe().blockingFirst().allTasks().isPopulated()).isFalse();
   }
 
   @Test
   public void handle_plainTask_addsTask() {
-    underTest.handle(createArgs("example task")).ignoreElement().blockingAwait();
+    underTest.handle(addArgs("example task")).ignoreElement().blockingAwait();
 
     ImmutableSet<? extends Task> allTasks = taskStore.observe().blockingFirst().allTasks();
     assertThat(allTasks.count()).isEqualTo(1);
@@ -52,7 +52,7 @@ public class AddHandlerTest {
 
   @Test
   public void handle_plainTask_outputsTask() {
-    String output = underTest.handle(createArgs("example task")).blockingGet().toString();
+    String output = underTest.handle(addArgs("example task")).blockingGet().toString();
 
     assertThat(output).contains("task created");
     assertThat(output).contains("example task");
@@ -62,7 +62,7 @@ public class AddHandlerTest {
   public void handle_taskWithBlocker_addsTask() {
     Task blockingTask = taskStore.createTask("blocking task", b -> b).blockingGet().third();
 
-    underTest.handle(createArgsWithBlockers("new task", blockingTask))
+    underTest.handle(argsWithBlockingTasks("new task", blockingTask))
         .ignoreElement()
         .blockingAwait();
 
@@ -85,7 +85,7 @@ public class AddHandlerTest {
   public void handle_taskWithBlockee_addsTask() {
     Task blockedTask = taskStore.createTask("blocked task", b -> b).blockingGet().third();
 
-    underTest.handle(createArgsWithBlockees("new task", blockedTask))
+    underTest.handle(argsWithBlockedTasks("new task", blockedTask))
         .ignoreElement()
         .blockingAwait();
 
@@ -111,9 +111,8 @@ public class AddHandlerTest {
     Task blockedTask = taskStore.createTask("blocked task", b -> b).blockingGet().third();
 
     underTest.handle(
-        commonArgs(
-            new AddArguments(
-                "new task", ImmutableList.of(blockingTask), ImmutableList.of(blockedTask))))
+        commonArgs(new AddArguments(
+            "new task", ImmutableList.of(blockingTask), ImmutableList.of(blockedTask))))
         .ignoreElement()
         .blockingAwait();
 
@@ -145,31 +144,27 @@ public class AddHandlerTest {
         .blockingGet().third();
 
     underTest.handle(
-        commonArgs(
-            new AddArguments(
-                "new task", ImmutableList.of(blockingTask), ImmutableList.of(blockedTask))))
+        commonArgs(new AddArguments(
+            "new task", ImmutableList.of(blockingTask), ImmutableList.of(blockedTask))))
         .ignoreElement()
         .test()
         .assertError(IllegalStateException.class);
   }
 
-  private static CommonArguments<AddArguments> createArgs(String label) {
+  private static CommonArguments<AddArguments> addArgs(String label) {
     return commonArgs(new AddArguments(label, ImmutableList.empty(), ImmutableList.empty()));
   }
 
-  private static CommonArguments<AddArguments> createArgsWithBlockees(
+  private static CommonArguments<AddArguments> argsWithBlockedTasks(
       String label, Task... blockees) {
     return commonArgs(
         new AddArguments(label, ImmutableList.empty(), ImmutableList.copyOf(blockees)));
   }
 
-  private static CommonArguments<AddArguments> createArgsWithBlockers(
+  private static CommonArguments<AddArguments> argsWithBlockingTasks(
       String label, Task... blockers) {
     return commonArgs(
         new AddArguments(label, ImmutableList.copyOf(blockers), ImmutableList.empty()));
   }
 
-  private static <T> CommonArguments<T> commonArgs(T args) {
-    return new CommonArguments<>(args, /* enableColorOutput= */ true);
-  }
 }
