@@ -3,6 +3,9 @@ package tasks.cli.feature.reopen;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.regex.Pattern.DOTALL;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tasks.cli.handler.testing.HandlerTestUtils.assertOutputContainsGroupedTasks;
+import static tasks.cli.handler.testing.HandlerTestUtils.commonArgs;
+import static tasks.cli.handler.testing.HandlerTestUtils.getUpdatedVersionOf;
 
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -13,6 +16,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handler.HandlerException;
+import tasks.cli.handler.testing.HandlerTestUtils;
 import tasks.model.ObservableTaskStore;
 import tasks.model.Task;
 import tasks.model.TaskBuilder;
@@ -20,6 +24,10 @@ import tasks.model.impl.ObservableTaskStoreImpl;
 
 @RunWith(JUnit4.class)
 public final class ReopenHandlerTest {
+
+  private static final String TASKS_REOPENED_HEADER = "task(s) reopened:";
+  private static final String TASKS_ALREADY_OPEN_HEADER = "task(s) already open:";
+  private static final String TASKS_BLOCKED_AS_A_RESULT = "task(s) blocked as a result:";
 
   private final ObservableTaskStore taskStore = ObservableTaskStoreImpl.createInMemoryStorage();
 
@@ -52,10 +60,10 @@ public final class ReopenHandlerTest {
 
     String output = underTest.handle(reopenArgs(task)).blockingGet().toString();
 
-    assertThat(output)
-        .containsMatch(Pattern.compile("task\\(s\\) reopened:.*" + task.label(), DOTALL));
-    assertThat(output).doesNotContain("task(s) already open");
-    assertThat(output).doesNotContain("task(s) blocked as a result");
+    Task reopenedTask = getUpdatedVersionOf(taskStore, task);
+    assertOutputContainsGroupedTasks(output, TASKS_REOPENED_HEADER, ImmutableList.of(reopenedTask));
+    assertThat(output).doesNotContain(TASKS_ALREADY_OPEN_HEADER);
+    assertThat(output).doesNotContain(TASKS_BLOCKED_AS_A_RESULT);
   }
 
   @Test
@@ -80,10 +88,9 @@ public final class ReopenHandlerTest {
 
     String output = underTest.handle(reopenArgs(task)).blockingGet().toString();
 
-    assertThat(output)
-        .containsMatch(Pattern.compile("task\\(s\\) already open:.*" + task.label(), DOTALL));
-    assertThat(output).doesNotContain("task(s) reopened");
-    assertThat(output).doesNotContain("task(s) blocked as a result");
+    assertOutputContainsGroupedTasks(output, TASKS_ALREADY_OPEN_HEADER, ImmutableList.of(task));
+    assertThat(output).doesNotContain(TASKS_REOPENED_HEADER);
+    assertThat(output).doesNotContain(TASKS_BLOCKED_AS_A_RESULT);
   }
 
   @Test
@@ -108,10 +115,9 @@ public final class ReopenHandlerTest {
 
     String output = underTest.handle(reopenArgs(task)).blockingGet().toString();
 
-    assertThat(output)
-        .containsMatch(Pattern.compile("task\\(s\\) already open:.*" + task.label(), DOTALL));
-    assertThat(output).doesNotContain("task(s) reopened");
-    assertThat(output).doesNotContain("task(s) blocked as a result");
+    assertOutputContainsGroupedTasks(output, TASKS_ALREADY_OPEN_HEADER, ImmutableList.of(task));
+    assertThat(output).doesNotContain(TASKS_REOPENED_HEADER);
+    assertThat(output).doesNotContain(TASKS_BLOCKED_AS_A_RESULT);
   }
 
   @Test
@@ -138,12 +144,11 @@ public final class ReopenHandlerTest {
 
     String output = underTest.handle(reopenArgs(task)).blockingGet().toString();
 
-    assertThat(output)
-        .containsMatch(Pattern.compile("task\\(s\\) reopened:.*" + task.label(), DOTALL));
-    assertThat(output)
-        .containsMatch(
-            Pattern.compile("task\\(s\\) blocked as a result:.*" + blockedTask.label(), DOTALL));
-    assertThat(output).doesNotContain("task(s) already open");
+    Task reopenedTask = getUpdatedVersionOf(taskStore, task);
+    assertOutputContainsGroupedTasks(output, TASKS_REOPENED_HEADER, ImmutableList.of(reopenedTask));
+    assertOutputContainsGroupedTasks(
+        output, TASKS_BLOCKED_AS_A_RESULT, ImmutableList.of(blockedTask));
+    assertThat(output).doesNotContain(TASKS_ALREADY_OPEN_HEADER);
   }
 
   @Test
@@ -154,27 +159,32 @@ public final class ReopenHandlerTest {
 
     String output = underTest.handle(reopenArgs(task, openTask)).blockingGet().toString();
 
+    Task reopenedTask = getUpdatedVersionOf(taskStore, task);
+    assertOutputContainsGroupedTasks(output, TASKS_ALREADY_OPEN_HEADER, ImmutableList.of(openTask));
+    assertOutputContainsGroupedTasks(output, TASKS_REOPENED_HEADER, ImmutableList.of(reopenedTask));
+    assertOutputContainsGroupedTasks(
+        output, TASKS_BLOCKED_AS_A_RESULT, ImmutableList.of(blockedTask));
+
     assertThat(output)
         .containsMatch(
             Pattern.compile(
-                "task\\(s\\) already open:.*" + openTask.label()
-                    + ".*task\\(s\\) reopened:.*" + task.label()
-                    + ".*task\\(s\\) blocked as a result:.*" + blockedTask.label(), DOTALL));
+                Pattern.quote(TASKS_ALREADY_OPEN_HEADER) +
+                    ".*" +
+                    Pattern.quote(TASKS_REOPENED_HEADER) +
+                    ".*" +
+                    Pattern.quote(TASKS_BLOCKED_AS_A_RESULT),
+                DOTALL));
   }
 
   private Task createTask(String label) {
-    return createTask(label, b -> b);
+    return HandlerTestUtils.createTask(taskStore, label);
   }
 
   private Task createTask(String label, Function<TaskBuilder, TaskBuilder> builderFunction) {
-    return taskStore.createTask(label, builderFunction).blockingGet().third();
+    return HandlerTestUtils.createTask(taskStore, label, builderFunction);
   }
 
   private static CommonArguments<ReopenArguments> reopenArgs(Task... tasks) {
     return commonArgs(new ReopenArguments(ImmutableList.copyOf(tasks)));
-  }
-
-  private static <T> CommonArguments<T> commonArgs(T args) {
-    return new CommonArguments<>(args, /* enableColorOutput= */ true);
   }
 }
