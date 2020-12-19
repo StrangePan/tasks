@@ -3,14 +3,19 @@ package tasks.cli.feature.reword;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.regex.Pattern.DOTALL;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tasks.cli.handler.testing.HandlerTestUtils.assertOutputContainsGroupedTasks;
+import static tasks.cli.handler.testing.HandlerTestUtils.commonArgs;
+import static tasks.cli.handler.testing.HandlerTestUtils.getUpdatedVersionOf;
 
 import java.util.regex.Pattern;
 import omnia.data.cache.Memoized;
+import omnia.data.structure.immutable.ImmutableList;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handler.HandlerException;
+import tasks.cli.handler.testing.HandlerTestUtils;
 import tasks.model.ObservableTaskStore;
 import tasks.model.Task;
 import tasks.model.impl.ObservableTaskStoreImpl;
@@ -28,14 +33,7 @@ public final class RewordHandlerTest {
 
     assertThrows(HandlerException.class, () -> underTest.handle(rewordArgs(task, "  ")));
 
-    assertThat(
-        taskStore.observe()
-            .firstOrError()
-            .blockingGet()
-            .lookUpById(task.id())
-            .orElseThrow()
-            .label())
-        .isEqualTo("example task");
+    assertThat(getUpdatedVersionOf(task).label()).isEqualTo("example task");
   }
 
   @Test
@@ -44,14 +42,7 @@ public final class RewordHandlerTest {
 
     underTest.handle(rewordArgs(task, "reworded task")).ignoreElement().blockingAwait();
 
-    assertThat(
-        taskStore.observe()
-            .firstOrError()
-            .blockingGet()
-            .lookUpById(task.id())
-            .orElseThrow()
-            .label())
-        .isEqualTo("reworded task");
+    assertThat(getUpdatedVersionOf(task).label()).isEqualTo("reworded task");
   }
 
   @Test
@@ -60,21 +51,20 @@ public final class RewordHandlerTest {
 
     String output = underTest.handle(rewordArgs(task, "reworded task")).blockingGet().toString();
 
-    assertThat(output).containsMatch(
-        Pattern.compile("Updated description:.*reworded task", DOTALL));
+    assertOutputContainsGroupedTasks(
+        output, "Updated description:", ImmutableList.of(getUpdatedVersionOf(task)));
     assertThat(output).doesNotContain("example task");
   }
 
   private Task createTask(String label) {
-    return taskStore.createTask(label, b -> b).blockingGet().third();
+    return HandlerTestUtils.createTask(taskStore, label);
+  }
+
+  private Task getUpdatedVersionOf(Task task) {
+    return HandlerTestUtils.getUpdatedVersionOf(taskStore, task);
   }
 
   private static CommonArguments<RewordArguments> rewordArgs(Task task, String label) {
     return commonArgs(new RewordArguments(task, label));
   }
-
-  private static <T> CommonArguments<T> commonArgs(T args) {
-    return new CommonArguments<>(args, /* enableColorOutput= */ true);
-  }
-
 }
