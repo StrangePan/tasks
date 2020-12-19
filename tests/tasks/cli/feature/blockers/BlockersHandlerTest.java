@@ -3,6 +3,8 @@ package tasks.cli.feature.blockers;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.regex.Pattern.DOTALL;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tasks.cli.handler.testing.HandlerTestUtils.assertOutputContainsGroupedTasks;
+import static tasks.cli.handler.testing.HandlerTestUtils.commonArgs;
 
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -12,8 +14,8 @@ import omnia.data.structure.immutable.ImmutableList;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handler.HandlerException;
+import tasks.cli.handler.testing.HandlerTestUtils;
 import tasks.model.ObservableTaskStore;
 import tasks.model.Task;
 import tasks.model.TaskBuilder;
@@ -33,12 +35,11 @@ public final class BlockersHandlerTest {
     assertThrows(
         HandlerException.class,
         () -> underTest.handle(
-            commonArgs(
-                new BlockersArguments(
-                    existingTask,
-                    ImmutableList.of(existingTask),
-                    ImmutableList.empty(),
-                    /* clearAllBlockers= */ false))));
+            commonArgs(new BlockersArguments(
+                existingTask,
+                ImmutableList.of(existingTask),
+                ImmutableList.empty(),
+                /* clearAllBlockers= */ false))));
   }
 
   @Test
@@ -49,25 +50,24 @@ public final class BlockersHandlerTest {
     assertThrows(
         HandlerException.class,
         () -> underTest.handle(
-            commonArgs(
-                new BlockersArguments(
-                    targetTask,
-                    ImmutableList.of(existingTask),
-                    ImmutableList.of(existingTask),
-                    /* clearAllBlockers= */ false))));
+            commonArgs(new BlockersArguments(
+                targetTask,
+                ImmutableList.of(existingTask),
+                ImmutableList.of(existingTask),
+                /* clearAllBlockers= */ false))));
   }
 
   @Test
   public void handle_noChanges_outputsNothing() {
     Task targetTask = createTask("target task");
 
+    /* clearAllBlockers= */
     underTest.handle(
-        commonArgs(
-            new BlockersArguments(
-                targetTask,
-                ImmutableList.empty(),
-                ImmutableList.empty(),
-                /* clearAllBlockers= */ false)))
+        commonArgs(new BlockersArguments(
+            targetTask,
+            ImmutableList.empty(),
+            ImmutableList.empty(),
+            /* clearAllBlockers= */ false)))
         .test()
         .assertValue(Output.empty());
   }
@@ -77,13 +77,13 @@ public final class BlockersHandlerTest {
     Task existingTask = createTask("existing task");
     Task targetTask = createTask("target task", b -> b.addBlockingTask(existingTask));
 
+    /* clearAllBlockers= */
     underTest.handle(
-        commonArgs(
-            new BlockersArguments(
-                targetTask,
-                ImmutableList.empty(),
-                ImmutableList.empty(),
-                /* clearAllBlockers= */ true)))
+        commonArgs(new BlockersArguments(
+            targetTask,
+            ImmutableList.empty(),
+            ImmutableList.empty(),
+            /* clearAllBlockers= */ true)))
         .ignoreElement()
         .blockingAwait();
 
@@ -106,22 +106,20 @@ public final class BlockersHandlerTest {
         createTask(
             "target task", b -> b.addBlockingTask(existingTask1).addBlockingTask(existingTask2));
 
+    /* clearAllBlockers= */
     String output =
         underTest.handle(
-            commonArgs(
-                new BlockersArguments(
-                    targetTask,
-                    ImmutableList.empty(),
-                    ImmutableList.empty(),
-                    /* clearAllBlockers= */ true)))
+            commonArgs(new BlockersArguments(
+                targetTask,
+                ImmutableList.empty(),
+                ImmutableList.empty(),
+                /* clearAllBlockers= */ true)))
             .blockingGet()
             .toString();
 
     assertThat(output).contains(targetTask.label());
-    assertThat(output).containsMatch(
-        Pattern.compile("removed blockers:.*" + existingTask1.label(), DOTALL));
-    assertThat(output).containsMatch(
-        Pattern.compile("removed blockers:.*" + existingTask2.label(), DOTALL));
+    assertOutputContainsGroupedTasks(
+        output, "removed blockers:", ImmutableList.of(existingTask1, existingTask2));
     assertThat(output).doesNotContain("current blockers");
   }
 
@@ -130,13 +128,13 @@ public final class BlockersHandlerTest {
     Task existingTask = createTask("existing task");
     Task targetTask = createTask("target task", b -> b.addBlockingTask(existingTask));
 
+    /* clearAllBlockers= */
     underTest.handle(
-        commonArgs(
-            new BlockersArguments(
-                targetTask,
-                ImmutableList.empty(),
-                ImmutableList.of(existingTask),
-                /* clearAllBlockers= */ false)))
+        commonArgs(new BlockersArguments(
+            targetTask,
+            ImmutableList.empty(),
+            ImmutableList.of(existingTask),
+            /* clearAllBlockers= */ false)))
         .ignoreElement()
         .blockingAwait();
 
@@ -156,20 +154,19 @@ public final class BlockersHandlerTest {
     Task existingTask = createTask("existing task");
     Task targetTask = createTask("target task", b -> b.addBlockingTask(existingTask));
 
+    /* clearAllBlockers= */
     String output =
         underTest.handle(
-            commonArgs(
-                new BlockersArguments(
-                    targetTask,
-                    ImmutableList.empty(),
-                    ImmutableList.of(existingTask),
-                    /* clearAllBlockers= */ false)))
+            commonArgs(new BlockersArguments(
+                targetTask,
+                ImmutableList.empty(),
+                ImmutableList.of(existingTask),
+                /* clearAllBlockers= */ false)))
             .blockingGet()
             .toString();
 
-    assertThat(output).contains(targetTask.label());
-    assertThat(output).containsMatch(
-        Pattern.compile("removed blockers:.*" + existingTask.label(), DOTALL));
+    assertThat(output).startsWith(targetTask.render().renderWithoutCodes());
+    assertOutputContainsGroupedTasks(output, "removed blockers:", ImmutableList.of(existingTask));
     assertThat(output).doesNotContain("current blockers");
   }
 
@@ -178,13 +175,13 @@ public final class BlockersHandlerTest {
     Task existingTask = createTask("existing task");
     Task targetTask = createTask("target task");
 
+    /* clearAllBlockers= */
     underTest.handle(
-        commonArgs(
-            new BlockersArguments(
-                targetTask,
-                ImmutableList.of(existingTask),
-                ImmutableList.empty(),
-                /* clearAllBlockers= */ false)))
+        commonArgs(new BlockersArguments(
+            targetTask,
+            ImmutableList.of(existingTask),
+            ImmutableList.empty(),
+            /* clearAllBlockers= */ false)))
         .ignoreElement()
         .blockingAwait();
 
@@ -203,20 +200,19 @@ public final class BlockersHandlerTest {
     Task existingTask = createTask("existing task");
     Task targetTask = createTask("target task");
 
+    /* clearAllBlockers= */
     String output =
         underTest.handle(
-            commonArgs(
-                new BlockersArguments(
-                    targetTask,
-                    ImmutableList.of(existingTask),
-                    ImmutableList.empty(),
-                    /* clearAllBlockers= */ false)))
+            commonArgs(new BlockersArguments(
+                targetTask,
+                ImmutableList.of(existingTask),
+                ImmutableList.empty(),
+                /* clearAllBlockers= */ false)))
             .blockingGet()
             .toString();
 
-    assertThat(output).contains(targetTask.label());
-    assertThat(output).containsMatch(
-        Pattern.compile("current blockers:.*" + existingTask.label(), DOTALL));
+    assertThat(output).startsWith(targetTask.render().renderWithoutCodes());
+    assertOutputContainsGroupedTasks(output, "current blockers:", ImmutableList.of(existingTask));
     assertThat(output).doesNotContain("removed blockers");
   }
 
@@ -226,13 +222,13 @@ public final class BlockersHandlerTest {
     Task blockerToAdd = createTask("blocker to add");
     Task targetTask = createTask("target task", b -> b.addBlockingTask(existingBlocker));
 
+    /* clearAllBlockers= */
     underTest.handle(
-        commonArgs(
-            new BlockersArguments(
-                targetTask,
-                ImmutableList.of(blockerToAdd),
-                ImmutableList.of(existingBlocker),
-                /* clearAllBlockers= */ false)))
+        commonArgs(new BlockersArguments(
+            targetTask,
+            ImmutableList.of(blockerToAdd),
+            ImmutableList.of(existingBlocker),
+            /* clearAllBlockers= */ false)))
         .ignoreElement()
         .blockingAwait();
 
@@ -252,22 +248,21 @@ public final class BlockersHandlerTest {
     Task blockerToAdd = createTask("blocker to add");
     Task targetTask = createTask("target task", b -> b.addBlockingTask(existingBlocker));
 
+    /* clearAllBlockers= */
     String output =
         underTest.handle(
-            commonArgs(
-                new BlockersArguments(
-                    targetTask,
-                    ImmutableList.of(blockerToAdd),
-                    ImmutableList.of(existingBlocker),
-                    /* clearAllBlockers= */ false)))
+            commonArgs(new BlockersArguments(
+                targetTask,
+                ImmutableList.of(blockerToAdd),
+                ImmutableList.of(existingBlocker),
+                /* clearAllBlockers= */ false)))
             .blockingGet()
             .toString();
 
-    assertThat(output).contains(targetTask.label());
-    assertThat(output).containsMatch(
-        Pattern.compile("removed blockers:.*" + existingBlocker.label(), DOTALL));
-    assertThat(output).containsMatch(
-        Pattern.compile("current blockers:.*" + blockerToAdd.label(), DOTALL));
+    assertThat(output).startsWith(targetTask.render().renderWithoutCodes());
+    assertOutputContainsGroupedTasks(
+        output, "removed blockers:", ImmutableList.of(existingBlocker));
+    assertOutputContainsGroupedTasks(output, "current blockers:", ImmutableList.of(blockerToAdd));
   }
 
   @Test
@@ -276,13 +271,13 @@ public final class BlockersHandlerTest {
     Task blockerToAdd = createTask("blocker to add");
     Task targetTask = createTask("target task", b -> b.addBlockingTask(existingBlocker));
 
+    /* clearAllBlockers= */
     underTest.handle(
-        commonArgs(
-            new BlockersArguments(
-                targetTask,
-                ImmutableList.of(blockerToAdd),
-                ImmutableList.of(existingBlocker),
-                /* clearAllBlockers= */ false)));
+        commonArgs(new BlockersArguments(
+            targetTask,
+            ImmutableList.of(blockerToAdd),
+            ImmutableList.of(existingBlocker),
+            /* clearAllBlockers= */ false)));
 
     Task unchangedTask =
         taskStore.observe()
@@ -301,26 +296,22 @@ public final class BlockersHandlerTest {
     Task blockee = createTask("existing blocker", b -> b.addBlockedTask(blockerToAdd));
     Task targetTask = createTask("target task", b -> b.addBlockedTask(blockee));
 
+    /* clearAllBlockers= */
     underTest.handle(
-        commonArgs(
-            new BlockersArguments(
-                targetTask,
-                ImmutableList.of(blockerToAdd),
-                ImmutableList.empty(),
-                /* clearAllBlockers= */ false)))
+        commonArgs(new BlockersArguments(
+            targetTask,
+            ImmutableList.of(blockerToAdd),
+            ImmutableList.empty(),
+            /* clearAllBlockers= */ false)))
         .test()
         .assertError(IllegalStateException.class);
   }
 
   private Task createTask(String label) {
-    return createTask(label, b -> b);
+    return HandlerTestUtils.createTask(taskStore, label);
   }
 
   private Task createTask(String label, Function<TaskBuilder, TaskBuilder> builderFunction) {
-    return taskStore.createTask(label, builderFunction).blockingGet().third();
-  }
-
-  private static <T> CommonArguments<T> commonArgs(T args) {
-    return new CommonArguments<>(args, /* enableColorOutput= */ true);
+    return HandlerTestUtils.createTask(taskStore, label, builderFunction);
   }
 }
