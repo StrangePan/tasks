@@ -2,16 +2,21 @@ package tasks.cli.feature.info;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.regex.Pattern.DOTALL;
+import static java.util.regex.Pattern.MULTILINE;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tasks.cli.handler.testing.HandlerTestUtils.assertOutputContainsGroupedTasks;
+import static tasks.cli.handler.testing.HandlerTestUtils.patternMatchingGroupedTasks;
 
 import java.util.function.Function;
 import java.util.regex.Pattern;
+import omnia.data.structure.Collection;
 import omnia.data.structure.immutable.ImmutableList;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handler.HandlerException;
+import tasks.cli.handler.testing.HandlerTestUtils;
 import tasks.model.ObservableTaskStore;
 import tasks.model.Task;
 import tasks.model.TaskBuilder;
@@ -37,10 +42,10 @@ public final class InfoHandlerTest {
     Task task = createTask("test task");
 
     String output = underTest.handle(infoArgs(task)).blockingGet().renderWithoutCodes();
-    assertThat(output).contains("test task");
-    assertThat(output).doesNotMatch("complete|completed");
-    assertThat(output).doesNotMatch("start|started");
-    assertThat(output).contains(task.id().toString());
+
+    assertThat(output).startsWith(task.render().renderWithoutCodes());
+    assertThat(output).doesNotContainMatch("complete|completed");
+    assertThat(output).doesNotContainMatch("start|started");
   }
 
   @Test
@@ -53,14 +58,10 @@ public final class InfoHandlerTest {
             builder -> builder.addBlockingTask(blocker0).addBlockingTask(blocker1));
 
     String output = underTest.handle(infoArgs(task)).blockingGet().renderWithoutCodes();
-    assertThat(output)
-        .containsMatch(
-            Pattern.compile("test task.*tasks blocking this(.*blocker [01]){2}", DOTALL));
-    assertThat(output).contains("blocker 0");
-    assertThat(output).contains("blocker 1");
-    assertThat(output).contains(task.id().toString());
-    assertThat(output).contains(blocker0.id().toString());
-    assertThat(output).contains(blocker1.id().toString());
+
+    assertThat(output).startsWith(task.render().renderWithoutCodes());
+    assertOutputContainsGroupedTasks(
+        output, "tasks blocking this:", ImmutableList.of(blocker0, blocker1));
   }
 
   @Test
@@ -72,14 +73,10 @@ public final class InfoHandlerTest {
             "test task", builder -> builder.addBlockedTask(blocked0).addBlockedTask(blocked1));
 
     String output = underTest.handle(infoArgs(task)).blockingGet().renderWithoutCodes();
-    assertThat(output)
-        .containsMatch(
-            Pattern.compile("test task.*tasks blocked by this(.*blocked [01]){2}", DOTALL));
-    assertThat(output).contains("blocked 0");
-    assertThat(output).contains("blocked 1");
-    assertThat(output).contains(task.id().toString());
-    assertThat(output).contains(blocked0.id().toString());
-    assertThat(output).contains(blocked1.id().toString());
+
+    assertThat(output).startsWith(task.render().renderWithoutCodes());
+    assertOutputContainsGroupedTasks(
+        output, "tasks blocked by this:", ImmutableList.of(blocked0, blocked1));
   }
 
   @Test
@@ -98,33 +95,23 @@ public final class InfoHandlerTest {
                 .addBlockedTask(blocked1));
 
     String output = underTest.handle(infoArgs(task)).blockingGet().renderWithoutCodes();
-    assertThat(output)
-        .containsMatch(
-            Pattern.compile(
-                "test task.*tasks blocking this(.*blocker [01]){2}" +
-                    ".*tasks blocked by this(.*blocked [01]){2}",
-                DOTALL));
-    assertThat(output).contains("blocker 0");
-    assertThat(output).contains("blocker 1");
-    assertThat(output).contains("blocked 0");
-    assertThat(output).contains("blocked 1");
-    assertThat(output).contains(task.id().toString());
-    assertThat(output).contains(blocker0.id().toString());
-    assertThat(output).contains(blocker1.id().toString());
-    assertThat(output).contains(blocked0.id().toString());
-    assertThat(output).contains(blocked1.id().toString());
+
+    assertThat(output).startsWith(task.render().renderWithoutCodes());
+    assertOutputContainsGroupedTasks(
+        output, "tasks blocking this:", ImmutableList.of(blocker0, blocker1));
+    assertOutputContainsGroupedTasks(
+        output, "tasks blocked by this:", ImmutableList.of(blocked0, blocked1));
   }
 
   private Task createTask(String label) {
-    return createTask(label, b -> b);
+    return HandlerTestUtils.createTask(taskStore, label);
   }
 
   private Task createTask(String label, Function<TaskBuilder, TaskBuilder> builderFunction) {
-    return taskStore.createTask(label, builderFunction).blockingGet().third();
+    return HandlerTestUtils.createTask(taskStore, label, builderFunction);
   }
 
   private static CommonArguments<InfoArguments> infoArgs(Task... tasks) {
-    return new CommonArguments<>(
-        new InfoArguments(ImmutableList.copyOf(tasks)), /* enableColorOutput= */ true);
+    return HandlerTestUtils.commonArgs(new InfoArguments(ImmutableList.copyOf(tasks)));
   }
 }
