@@ -3,6 +3,8 @@ package tasks.cli.feature.stop;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.regex.Pattern.DOTALL;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tasks.cli.handler.testing.HandlerTestUtils.assertOutputContainsGroupedTasks;
+import static tasks.cli.handler.testing.HandlerTestUtils.commonArgs;
 
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -13,6 +15,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handler.HandlerException;
+import tasks.cli.handler.testing.HandlerTestUtils;
 import tasks.model.ObservableTaskStore;
 import tasks.model.Task;
 import tasks.model.TaskBuilder;
@@ -20,6 +23,9 @@ import tasks.model.impl.ObservableTaskStoreImpl;
 
 @RunWith(JUnit4.class)
 public final class StopHandlerTest {
+
+  private static final String TASKS_STOPPED_HEADER = "task(s) stopped:";
+  public static final String TASKS_ALREADY_STOPPED_HEADER = "task(s) already stopped:";
 
   private final ObservableTaskStore taskStore = ObservableTaskStoreImpl.createInMemoryStorage();
 
@@ -36,14 +42,7 @@ public final class StopHandlerTest {
 
     underTest.handle(startArgs(task)).ignoreElement().blockingAwait();
 
-    assertThat(
-        taskStore.observe()
-            .firstOrError()
-            .blockingGet()
-            .lookUpById(task.id())
-            .orElseThrow()
-            .status())
-        .isEqualTo(Task.Status.OPEN);
+    assertThat(getUpdatedVersionOf(task).status()).isEqualTo(Task.Status.OPEN);
   }
 
   @Test
@@ -52,9 +51,9 @@ public final class StopHandlerTest {
 
     String output = underTest.handle(startArgs(task)).blockingGet().toString();
 
-    assertThat(output)
-        .containsMatch(Pattern.compile("task\\(s\\) stopped:.*" + task.label(), DOTALL));
-    assertThat(output).doesNotContain("task(s) already stopped");
+    assertOutputContainsGroupedTasks(
+        output, TASKS_STOPPED_HEADER, ImmutableList.of(getUpdatedVersionOf(task)));
+    assertThat(output).doesNotContain(TASKS_ALREADY_STOPPED_HEADER);
   }
 
   @Test
@@ -63,14 +62,7 @@ public final class StopHandlerTest {
 
     underTest.handle(startArgs(task)).ignoreElement().blockingAwait();
 
-    assertThat(
-        taskStore.observe()
-            .firstOrError()
-            .blockingGet()
-            .lookUpById(task.id())
-            .orElseThrow()
-            .status())
-        .isEqualTo(Task.Status.COMPLETED);
+    assertThat(getUpdatedVersionOf(task).status()).isEqualTo(Task.Status.COMPLETED);
   }
 
   @Test
@@ -79,9 +71,8 @@ public final class StopHandlerTest {
 
     String output = underTest.handle(startArgs(task)).blockingGet().toString();
 
-    assertThat(output)
-        .containsMatch(Pattern.compile("task\\(s\\) already stopped:.*" + task.label(), DOTALL));
-    assertThat(output).doesNotContain("task(s) stopped");
+    assertOutputContainsGroupedTasks(output, TASKS_ALREADY_STOPPED_HEADER, ImmutableList.of(task));
+    assertThat(output).doesNotContain(TASKS_STOPPED_HEADER);
   }
 
   @Test
@@ -90,14 +81,7 @@ public final class StopHandlerTest {
 
     underTest.handle(startArgs(task)).ignoreElement().blockingAwait();
 
-    assertThat(
-        taskStore.observe()
-            .firstOrError()
-            .blockingGet()
-            .lookUpById(task.id())
-            .orElseThrow()
-            .status())
-        .isEqualTo(Task.Status.OPEN);
+    assertThat(getUpdatedVersionOf(task).status()).isEqualTo(Task.Status.OPEN);
   }
 
   @Test
@@ -106,9 +90,8 @@ public final class StopHandlerTest {
 
     String output = underTest.handle(startArgs(task)).blockingGet().toString();
 
-    assertThat(output)
-        .containsMatch(Pattern.compile("task\\(s\\) already stopped:.*" + task.label(), DOTALL));
-    assertThat(output).doesNotContain("task(s) stopped");
+    assertOutputContainsGroupedTasks(output, TASKS_ALREADY_STOPPED_HEADER, ImmutableList.of(task));
+    assertThat(output).doesNotContain(TASKS_STOPPED_HEADER);
   }
 
   @Test
@@ -120,26 +103,33 @@ public final class StopHandlerTest {
     String output =
         underTest.handle(startArgs(startedTask, openTask, completedTask)).blockingGet().toString();
 
+    assertOutputContainsGroupedTasks(
+        output, TASKS_ALREADY_STOPPED_HEADER, ImmutableList.of(openTask, completedTask));
+    assertOutputContainsGroupedTasks(
+        output, TASKS_STOPPED_HEADER, ImmutableList.of(getUpdatedVersionOf(startedTask)));
+
     assertThat(output)
         .containsMatch(
             Pattern.compile(
-                "task\\(s\\) already stopped:(.*(open|completed) task){2}"
-                    + ".*task\\(s\\) stopped:.*started task", DOTALL));
+                Pattern.quote(TASKS_ALREADY_STOPPED_HEADER) +
+                    ".*" +
+                    Pattern.quote(TASKS_STOPPED_HEADER),
+                DOTALL));
   }
 
   private Task createTask(String label) {
-    return createTask(label, b -> b);
+    return HandlerTestUtils.createTask(taskStore, label);
   }
 
   private Task createTask(String label, Function<TaskBuilder, TaskBuilder> builderFunction) {
-    return taskStore.createTask(label, builderFunction).blockingGet().third();
+    return HandlerTestUtils.createTask(taskStore, label, builderFunction);
+  }
+
+  private Task getUpdatedVersionOf(Task task) {
+    return HandlerTestUtils.getUpdatedVersionOf(taskStore, task);
   }
 
   private static CommonArguments<StopArguments> startArgs(Task... tasks) {
     return commonArgs(new StopArguments(ImmutableList.copyOf(tasks)));
-  }
-
-  private static <T> CommonArguments<T> commonArgs(T args) {
-    return new CommonArguments<>(args, /* enableColorOutput= */ true);
   }
 }
