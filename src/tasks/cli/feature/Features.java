@@ -54,6 +54,7 @@ import tasks.cli.feature.start.StartParser;
 import tasks.cli.feature.stop.StopCommand;
 import tasks.cli.feature.stop.StopHandler;
 import tasks.cli.feature.stop.StopParser;
+import tasks.cli.input.Reader;
 import tasks.cli.output.Printer;
 import tasks.cli.parser.Parser;
 import tasks.cli.parser.ParserUtil;
@@ -67,6 +68,7 @@ public final class Features implements Commands {
   private final Map<String, Feature<?>> featuresByNameAndAliases;
   private final ImmutableSet<Command> commands;
   private final Memoized<Printer.Factory> printerFactory = memoize(Printer.Factory::new);
+  private final Memoized<Reader> reader = memoize(() -> Reader.forInputStream(System.in));
 
   public Features(Memoized<? extends ObservableTaskStore> taskStore) {
     Memoized<Parser<List<ParseResult<? extends Task>>>> taskListParser =
@@ -108,7 +110,7 @@ public final class Features implements Commands {
             new Feature<>(
                 RemoveCommand.registration(),
                 () -> new RemoveParser(taskListParser),
-                () -> new RemoveHandler(taskStore, printerFactory.value())),
+                () -> new RemoveHandler(taskStore, printerFactory.value(), reader)),
             new Feature<>(
                 ReopenCommand.registration(),
                 () -> new ReopenParser(taskListParser),
