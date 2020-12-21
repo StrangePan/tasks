@@ -6,6 +6,7 @@ import static omnia.data.stream.Collectors.toImmutableSet;
 import io.reactivex.Observable;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.Locale;
 import java.util.Optional;
 import omnia.algorithm.SetAlgorithms;
 import omnia.cli.out.Output;
@@ -62,6 +63,7 @@ public final class HandlerUtil {
     return Observable.fromIterable(tasks)
         .sorted(
             Comparator.<Task>comparingInt(task -> task.status().isStarted() ? 0 : 1)
+                .thenComparing(task -> task.label().toLowerCase(Locale.ROOT))
                 .thenComparing(task -> task.id().toString()))
         .map(Task::render)
         .collectInto(Output.builder(), Output.Builder::appendLine)
