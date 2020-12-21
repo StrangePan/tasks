@@ -34,15 +34,38 @@ public final class ObservableTaskStoreImpl implements ObservableTaskStore {
   private final CompletableSubject isShutdown = CompletableSubject.create();
   private final Completable isShutdownComplete;
 
-  private final TaskFileSource fileSource;
+  private final TaskStorage taskStorage;
 
   private final ObservableState<TaskStoreImpl> store;
   private final Observable<Observable<TaskStoreImpl>> currentStoreSource;
 
-  public ObservableTaskStoreImpl(String filePath) {
-    this.fileSource = new TaskFileSource(File.fromPath(filePath));
+  public static ObservableTaskStoreImpl createFromFile(String filePath) {
+    return new ObservableTaskStoreImpl(new TaskFileStorage(File.fromPath(filePath)));
+  }
+
+  public static ObservableTaskStoreImpl createInMemoryStorage() {
+    return new ObservableTaskStoreImpl(
+        new TaskStorage() {
+          @Override
+          public Single<
+              Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>>>
+              readFromStorage() {
+            return Single.just(Tuple.of(ImmutableDirectedGraph.empty(), ImmutableMap.empty()));
+          }
+
+          @Override
+          public Completable writeToStorage(
+              DirectedGraph<? extends TaskIdImpl> graph,
+              Map<? extends TaskIdImpl, ? extends TaskData> data) {
+            return Completable.complete();
+          }
+        });
+  }
+
+  private ObservableTaskStoreImpl(TaskStorage taskStorage) {
+    this.taskStorage = requireNonNull(taskStorage);
     Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>> loadedData =
-        fileSource.readFromFile().blockingGet();
+        this.taskStorage.readFromStorage().blockingGet();
 
     store =
         ObservableState.create(
@@ -258,7 +281,7 @@ public final class ObservableTaskStoreImpl implements ObservableTaskStore {
                     .map(DirectedNode::incomingEdges)
                     .map(ImmutableSet::copyOf)
                     .orElse(ImmutableSet.empty())
-                    .forEach(edge -> builder.removeEdge(edge.start(), edge.end()));
+                    .forEach(edge -> builder.removeEdge(edge.start().item(), edge.end().item()));
               }
               mutator.blockingTasksToAdd()
                   .forEach(blockingId -> builder.addEdge(blockingId, id));
@@ -270,7 +293,7 @@ public final class ObservableTaskStoreImpl implements ObservableTaskStore {
                     .map(DirectedNode::outgoingEdges)
                     .map(ImmutableSet::copyOf)
                     .orElse(ImmutableSet.empty())
-                    .forEach(edge -> builder.removeEdge(edge.start(), edge.end()));
+                    .forEach(edge -> builder.removeEdge(edge.start().item(), edge.end().item()));
               }
               mutator.blockedTasksToAdd()
                   .forEach(blockedId -> builder.addEdge(id, blockedId));
@@ -308,7 +331,7 @@ public final class ObservableTaskStoreImpl implements ObservableTaskStore {
   public Completable writeToDisk() {
     return store.observe()
         .firstOrError()
-        .flatMapCompletable(store -> fileSource.writeToFile(store.graph, store.data))
+        .flatMapCompletable(store -> taskStorage.writeToStorage(store.graph, store.data))
         .cache();
   }
 

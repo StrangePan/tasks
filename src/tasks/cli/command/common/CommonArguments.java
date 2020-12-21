@@ -12,7 +12,7 @@ public final class CommonArguments<T> {
   private final T specificArguments;
   private final boolean enableColorOutput;
 
-  CommonArguments(T specificArguments, boolean enableColorOutput) {
+  public CommonArguments(T specificArguments, boolean enableColorOutput) {
     this.specificArguments = requireNonNull(specificArguments);
     this.enableColorOutput = enableColorOutput;
   }

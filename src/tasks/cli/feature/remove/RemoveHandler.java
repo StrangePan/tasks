@@ -14,6 +14,7 @@ import tasks.cli.command.common.CommonArguments;
 import tasks.cli.handler.ArgumentHandler;
 import tasks.cli.handler.HandlerException;
 import tasks.cli.handler.HandlerUtil;
+import tasks.cli.input.Reader;
 import tasks.cli.output.Printer;
 import tasks.model.Task;
 import tasks.model.ObservableTaskStore;
@@ -23,11 +24,15 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
 
   private final Memoized<? extends ObservableTaskStore> taskStore;
   private final Printer.Factory printerFactory;
+  private final Memoized<? extends Reader> reader;
 
   public RemoveHandler(
-      Memoized<? extends ObservableTaskStore> taskStore, Printer.Factory printerFactory) {
+      Memoized<? extends ObservableTaskStore> taskStore,
+      Printer.Factory printerFactory,
+      Memoized<? extends Reader> reader) {
     this.taskStore = requireNonNull(taskStore);
     this.printerFactory = requireNonNull(printerFactory);
+    this.reader = requireNonNull(reader);
   }
 
   @Override
@@ -48,22 +53,24 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
                     ? observable
                     : observable.concatMapMaybe(
                         task ->
-                            getYesNoConfirmationFor(task, printer)
+                            getYesNoConfirmationFor(task, printer, reader)
                                 .filter(confirm -> confirm).map(u -> task)))
         .flatMapMaybe(task -> taskStore.value().deleteTask(task))
         .to(toImmutableSet())
         .map(deletedTasks -> HandlerUtil.stringifyIfPopulated("tasks deleted:", deletedTasks));
   }
 
-  private static Single<Boolean> getYesNoConfirmationFor(Task task, Memoized<? extends Printer> printer) {
+  private static Single<Boolean> getYesNoConfirmationFor(
+      Task task, Memoized<? extends Printer> printer, Memoized<? extends Reader> reader) {
     return Single.just(task)
         .map(Task::render)
         .doOnSuccess(output -> printer.value().printLine(output))
         .ignoreElement()
-        .andThen(getYesNoConfirmation(printer));
+        .andThen(getYesNoConfirmation(printer, reader));
   }
 
-  private static Single<Boolean> getYesNoConfirmation(Memoized<? extends Printer> printer) {
+  private static Single<Boolean> getYesNoConfirmation(
+      Memoized<? extends Printer> printer, Memoized<? extends Reader> reader) {
     Memoized<RuntimeException> unparsedInput = memoize(RuntimeException::new);
     return Single.just(
         Output.builder()
@@ -73,7 +80,7 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
             .build())
         .doOnSuccess(output -> printer.value().print(output))
         .ignoreElement()
-        .andThen(readUserInput())
+        .andThen(Single.defer(() -> reader.value().readNextLine()))
         .map(
             input -> {
               if (input.matches("\\s*[Yy]([Ee][Ss])?\\s*")) {
@@ -105,9 +112,5 @@ public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
               throw new RuntimeException(throwable);
             })
         .cache();
-  }
-
-  private static Single<String> readUserInput() {
-    return Single.fromCallable(() -> new Scanner(System.in).nextLine());
   }
 }
