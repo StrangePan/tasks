@@ -3,6 +3,7 @@ package tasks.cli.feature.list;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.regex.Pattern.DOTALL;
 import static tasks.cli.handler.testing.HandlerTestUtils.assertOutputContainsGroupedTasks;
+import static tasks.cli.handler.testing.HandlerTestUtils.commonArgs;
 import static tasks.model.Task.Status.COMPLETED;
 import static tasks.model.Task.Status.STARTED;
 
@@ -229,9 +230,5 @@ public final class ListHandlerTest {
 
   private Task createTask(String label, Function<TaskBuilder, TaskBuilder> builderFunction) {
     return HandlerTestUtils.createTask(taskStore, label, builderFunction);
-  }
-
-  private static <T> CommonArguments<T> commonArgs(T specificArgs) {
-    return new CommonArguments<>(specificArgs, /* enableColorOutput= */ false);
   }
 }
