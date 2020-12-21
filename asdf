@@ -32,7 +32,7 @@ ja10m7rgw9hc;complete;Add test for "complete" command handler;
 k1ie6y9yqxhc;complete;Add test for "list" command handler;
 ktcatxhrlfr4;open;Update Omnia to RxJava 3;
 kz3kwaxll8n4;complete;Add reword command;
-lm3htv37dr7k;open;Add test for "remove" command handler;
+lm3htv37dr7k;complete;Add test for "remove" command handler;
 lxeye4wsb3sw;complete;Add feature: start / stop tasks;
 lzvv3qy4wa9s;complete;Move parsers out of arguments;
 m80heumm9pmo;open;Open default editor when rewording a task;
