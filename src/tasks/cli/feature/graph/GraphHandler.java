@@ -36,6 +36,24 @@ import tasks.util.rx.Observables;
 
 /** Business logic for the Graph command. */
 public final class GraphHandler implements ArgumentHandler<GraphArguments> {
+
+  // each of these are package-private so that the unit tests can use them for parsing
+  static final String CONTINUATION_UP_DOWN = "╎";
+  static final String EDGE_UP_DOWN_RIGHT = "├";
+  static final String EDGE_UP_DOWN_LEFT = "┤";
+  static final String EDGE_UP_DOWN = "│";
+  static final String EDGE_UP_DOWN_LEFT_RIGHT = "┼";
+  static final String EDGE_UP_RIGHT = "└";
+  static final String EDGE_UP_LEFT = "┘";
+  static final String EDGE_UP_LEFT_RIGHT = "┴";
+  static final String EDGE_DOWN_RIGHT = "┌";
+  static final String EDGE_DOWN_LEFT = "┐";
+  static final String EDGE_DOWN_LEFT_RIGHT = "┬";
+  static final String EDGE_LEFT_RIGHT = "─";
+  static final String GAP = " ";
+  static final String NODE_COMPLETED = "☑";
+  static final String NODE_OPEN = "☐";
+
   private final Memoized<? extends ObservableTaskStore> taskStore;
   private final TopologicalSorter sorter;
 
@@ -56,7 +74,7 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
         .map(TaskStore::taskGraph)
         .flatMap(
             graph ->
-                Single.just(sorter.<Task>sort(graph))
+                Single.just(sorter.sort(graph))
                     .compose(
                         single ->
                             arguments.specificArguments().isAllSet()
@@ -177,10 +195,10 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
         .takeUntil(i -> i == maxColumnsWithEdges)
         .map(
             column -> (column == taskColumn
-                ? (task.status().isCompleted() ? "☑" : "☐")
-                : (columnsWithEdges.contains(column) ? "╎" : " ")))
+                ? (task.status().isCompleted() ? NODE_COMPLETED : NODE_OPEN)
+                : (columnsWithEdges.contains(column) ? CONTINUATION_UP_DOWN : GAP)))
         .collectInto(Output.builder(),  Output.Builder::append)
-        .map(builder -> builder.append(" ").append(task.render()))
+        .map(builder -> builder.append(GAP).append(task.render()))
         .map(Output.Builder::build)
         .blockingGet();
   }
@@ -240,50 +258,50 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
                 if (column == taskColumn) {
                   if (successorColumns.contains(column)) {
                     if (column == lateralEdgeMin && column != lateralEdgeMax) {
-                      return "├";
+                      return EDGE_UP_DOWN_RIGHT;
                     } else if (column != lateralEdgeMin && column == lateralEdgeMax) {
-                      return "┤";
+                      return EDGE_UP_DOWN_LEFT;
                     } else if (column == lateralEdgeMin) {
-                      return "│";
+                      return EDGE_UP_DOWN;
                     } else {
-                      return "┼";
+                      return EDGE_UP_DOWN_LEFT_RIGHT;
                     }
                   } else {
                     if (column == lateralEdgeMin && column != lateralEdgeMax) {
-                      return "└";
+                      return EDGE_UP_RIGHT;
                     } else if (column != lateralEdgeMin && column == lateralEdgeMax) {
-                      return "┘";
+                      return EDGE_UP_LEFT;
                     } else {
-                      return "┴";
+                      return EDGE_UP_LEFT_RIGHT;
                     }
                   }
                 } else if (previousColumnsWithEdges.contains(column)) {
                   if (successorColumns.contains(column)) {
                     if (column == lateralEdgeMin) {
-                      return "┌";
+                      return EDGE_DOWN_RIGHT;
                     } else if (column == lateralEdgeMax) {
-                      return "┐";
+                      return EDGE_DOWN_LEFT;
                     } else {
-                      return "┬";
+                      return EDGE_DOWN_LEFT_RIGHT;
                     }
                   } else {
-                    return "─";
+                    return EDGE_LEFT_RIGHT;
                   }
                 } else if (successorColumns.contains(column)) {
                   if (column == lateralEdgeMin) {
-                    return "┌";
+                    return EDGE_DOWN_RIGHT;
                   } else if (column == lateralEdgeMax) {
-                    return "┐";
+                    return EDGE_DOWN_LEFT;
                   } else {
-                    return "┬";
+                    return EDGE_DOWN_LEFT_RIGHT;
                   }
                 } else {
-                  return "─";
+                  return EDGE_LEFT_RIGHT;
                 }
               } else if (previousColumnsWithEdges.contains(column)) {
-                return "╎";
+                return CONTINUATION_UP_DOWN;
               } else {
-                return " ";
+                return GAP;
               }
             })
         .collectInto(Output.builder(),  Output.Builder::append)
@@ -297,6 +315,6 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
   }
 
   interface TopologicalSorter {
-    <T> ImmutableList<T> sort(DirectedGraph<? extends T> graph);
+    ImmutableList<Task> sort(DirectedGraph<? extends Task> graph);
   }
 }
