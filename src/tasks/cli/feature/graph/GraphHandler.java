@@ -37,9 +37,15 @@ import tasks.util.rx.Observables;
 /** Business logic for the Graph command. */
 public final class GraphHandler implements ArgumentHandler<GraphArguments> {
   private final Memoized<? extends ObservableTaskStore> taskStore;
+  private final TopologicalSorter sorter;
 
   public GraphHandler(Memoized<? extends ObservableTaskStore> taskStore) {
+    this(taskStore, GraphAlgorithms::topologicallySort);
+  }
+
+  GraphHandler(Memoized<? extends ObservableTaskStore> taskStore, TopologicalSorter sorter) {
     this.taskStore = requireNonNull(taskStore);
+    this.sorter = requireNonNull(sorter);
   }
 
   @Override
@@ -50,7 +56,7 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
         .map(TaskStore::taskGraph)
         .flatMap(
             graph ->
-                Single.just(GraphAlgorithms.<Task>topologicallySort(graph))
+                Single.just(sorter.<Task>sort(graph))
                     .compose(
                         single ->
                             arguments.specificArguments().isAllSet()
@@ -288,5 +294,9 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
 
   private static boolean isInRange(int min, int mid, int max) {
     return min <= mid && mid <= max;
+  }
+
+  interface TopologicalSorter {
+    <T> ImmutableList<T> sort(DirectedGraph<? extends T> graph);
   }
 }
