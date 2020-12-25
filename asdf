@@ -51,7 +51,7 @@ tw621f1euolc;open;Add tests for topological sort clustering;
 ufklb65rjm68;complete;Validate registered commands;
 vc0gqs1jstmo;complete;Validate graph when parsing;
 vl4yk3lf7jls;complete;Add test for "graph" command handler;
-vloele7yvabk;open;Add distinction between TreeSet and MutableTreeSet;
+vloele7yvabk;started;Add distinction between TreeSet and MutableTreeSet;
 vq9pe2u4tn28;open;Add syncing with a remote task store;
 vsyn83a6ozk0;open;Add help topic: blocking tasks;
 vxi4873454w0;open;Add more sophisticated id hashing algorithm;
