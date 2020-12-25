@@ -19,6 +19,7 @@ import omnia.data.structure.DirectedGraph.DirectedNode;
 import omnia.data.structure.List;
 import omnia.data.structure.Map;
 import omnia.data.structure.Set;
+import omnia.data.structure.immutable.ImmutableDirectedGraph;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableMap;
 import omnia.data.structure.immutable.ImmutableSet;
@@ -38,21 +39,21 @@ import tasks.util.rx.Observables;
 public final class GraphHandler implements ArgumentHandler<GraphArguments> {
 
   // each of these are package-private so that the unit tests can use them for parsing
-  static final String CONTINUATION_UP_DOWN = "╎";
-  static final String EDGE_UP_DOWN_RIGHT = "├";
-  static final String EDGE_UP_DOWN_LEFT = "┤";
-  static final String EDGE_UP_DOWN = "│";
-  static final String EDGE_UP_DOWN_LEFT_RIGHT = "┼";
-  static final String EDGE_UP_RIGHT = "└";
-  static final String EDGE_UP_LEFT = "┘";
-  static final String EDGE_UP_LEFT_RIGHT = "┴";
-  static final String EDGE_DOWN_RIGHT = "┌";
-  static final String EDGE_DOWN_LEFT = "┐";
-  static final String EDGE_DOWN_LEFT_RIGHT = "┬";
-  static final String EDGE_LEFT_RIGHT = "─";
-  static final String GAP = " ";
-  static final String NODE_COMPLETED = "☑";
-  static final String NODE_OPEN = "☐";
+  static final int CONTINUATION_UP_DOWN = '╎';
+  static final int EDGE_UP_DOWN_RIGHT = '├';
+  static final int EDGE_UP_DOWN_LEFT = '┤';
+  static final int EDGE_UP_DOWN = '│';
+  static final int EDGE_UP_DOWN_LEFT_RIGHT = '┼';
+  static final int EDGE_UP_RIGHT = '└';
+  static final int EDGE_UP_LEFT = '┘';
+  static final int EDGE_UP_LEFT_RIGHT = '┴';
+  static final int EDGE_DOWN_RIGHT = '┌';
+  static final int EDGE_DOWN_LEFT = '┐';
+  static final int EDGE_DOWN_LEFT_RIGHT = '┬';
+  static final int EDGE_LEFT_RIGHT = '─';
+  static final int GAP = ' ';
+  static final int NODE_COMPLETED = '☑';
+  static final int NODE_OPEN = '☐';
 
   private final Memoized<? extends ObservableTaskStore> taskStore;
   private final TopologicalSorter sorter;
@@ -72,6 +73,13 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
         .observe()
         .firstOrError()
         .map(TaskStore::taskGraph)
+        .flatMap(s -> this.doHandle(arguments, s));
+  }
+
+  private <T extends Task> Single<Output> doHandle(
+      CommonArguments<? extends GraphArguments> arguments,
+      ImmutableDirectedGraph<T> taskStoreSingle) {
+    return Single.just(taskStoreSingle)
         .flatMap(
             graph ->
                 Single.just(sorter.sort(graph))
@@ -82,13 +90,13 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
                                 : single.flatMapObservable(Observable::fromIterable)
                                     .filter(task -> !task.status().isCompleted())
                                     .to(Observables.toImmutableList()))
-                    .map(tasks -> Tuple.of(graph, tasks)))
-        .map(
-            couple -> couple.append(
-                assignColumns(couple.first(), couple.second(), arguments.specificArguments())))
-        .map(
-            triple -> renderGraph(
-                triple.first(), triple.second(), triple.third(), arguments.specificArguments()));
+                    .map(tasks -> Tuple.<DirectedGraph<T>, List<T>>of(graph, tasks)))
+    .map(
+        couple -> couple.append(
+            assignColumns(couple.first(), couple.second(), arguments.specificArguments())))
+    .map(
+        triple -> renderGraph(
+            triple.first(), triple.second(), triple.third(), arguments.specificArguments()));
   }
 
   /**
@@ -105,17 +113,17 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
    * @return A mapping of column assignments for each node, where 0 is the first column. Every node
    *     passed into {@code taskList} will have an entry in the result.
    */
-  private static Map<Task, Integer> assignColumns(
-      DirectedGraph<? extends Task> taskGraph, List<Task> taskList, GraphArguments arguments) {
-    MutableMap<Task, Integer> assignedColumns = HashMap.create();
-    MutableSet<Task> unresolvedSuccessors = HashSet.create();
-    ImmutableMap<Task, Integer> topologicalIndexes =
+  private static <T extends Task> Map<T, Integer> assignColumns(
+      DirectedGraph<T> taskGraph, List<T> taskList, GraphArguments arguments) {
+    MutableMap<T, Integer> assignedColumns = HashMap.create();
+    MutableSet<T> unresolvedSuccessors = HashSet.create();
+    ImmutableMap<T, Integer> topologicalIndexes =
         Observable.fromIterable(taskList)
             .zipWith(incrementingInteger(), Tuple::of)
             .to(toImmutableMap(couple -> couple.first(), couple -> couple.second()))
             .blockingGet();
 
-    for (Task taskToAssign : taskList) {
+    for (T taskToAssign : taskList) {
       int assignedColumn =
           assignedColumns.putMappingIfAbsent(
               taskToAssign,
@@ -126,7 +134,7 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
 
       unresolvedSuccessors.remove(taskToAssign);
 
-      ImmutableList<Task> successorsToAssign =
+      ImmutableList<T> successorsToAssign =
           taskGraph.nodeOf(taskToAssign)
               .map(DirectedNode::successors)
               .orElse(ImmutableSet.empty())
@@ -135,13 +143,13 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
               .filter(successor -> assignedColumns.valueOf(successor).isEmpty())
               .filter(successor -> arguments.isAllSet() || !successor.status().isCompleted())
               .sorted(
-                  Comparator.<Task, Integer>comparing(
+                  Comparator.<T, Integer>comparing(
                           item -> topologicalIndexes.valueOf(item).orElse(0))
                       .reversed())
               .collect(toImmutableList());
 
       int successorColumn = assignedColumn;
-      for (Task successor : successorsToAssign) {
+      for (T successor : successorsToAssign) {
         assignedColumns.putMapping(successor, successorColumn);
         unresolvedSuccessors.add(successor);
         successorColumn++;
@@ -151,20 +159,20 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
     return ImmutableMap.copyOf(assignedColumns);
   }
 
-  private static Output renderGraph(
-      DirectedGraph<? extends Task> taskGraph,
-      List<Task> taskList,
-      Map<Task, Integer> taskColumns,
+  private static <T extends Task> Output renderGraph(
+      DirectedGraph<T> taskGraph,
+      List<T> taskList,
+      Map<T, Integer> taskColumns,
       GraphArguments arguments) {
     Output.Builder output = Output.builder();
     MutableSet<Integer> columnsWithEdges = HashSet.create();
-    ImmutableMap<Task, Integer> topologicalIndexes =
+    ImmutableMap<T, Integer> topologicalIndexes =
         Observable.fromIterable(taskList)
             .zipWith(incrementingInteger(), Tuple::of)
             .to(toImmutableMap(couple -> couple.first(), couple -> couple.second()))
             .blockingGet();
 
-    for (Task task : taskList) {
+    for (T task : taskList) {
       taskColumns.valueOf(task).ifPresent(columnsWithEdges::remove);
 
       output.appendLine(renderTaskLine(taskColumns, columnsWithEdges, task));
@@ -197,14 +205,15 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
             column -> (column == taskColumn
                 ? (task.status().isCompleted() ? NODE_COMPLETED : NODE_OPEN)
                 : (columnsWithEdges.contains(column) ? CONTINUATION_UP_DOWN : GAP)))
+        .map(Character::toString)
         .collectInto(Output.builder(),  Output.Builder::append)
-        .map(builder -> builder.append(GAP).append(task.render()))
+        .map(builder -> builder.append(Character.toString(GAP)).append(task.render()))
         .map(Output.Builder::build)
         .blockingGet();
   }
 
   private static <T extends Task> Optional<Output> renderEdgeLine(
-      DirectedGraph<? extends T> taskGraph,
+      DirectedGraph<T> taskGraph,
       Map<T, Integer> topologicalIndexes,
       Map<T, Integer> taskColumns,
       Set<Integer> previousColumnsWithEdges,
@@ -304,6 +313,7 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
                 return GAP;
               }
             })
+        .map(Character::toString)
         .collectInto(Output.builder(),  Output.Builder::append)
         .map(Output.Builder::build)
         .map(Optional::of)
@@ -315,6 +325,6 @@ public final class GraphHandler implements ArgumentHandler<GraphArguments> {
   }
 
   interface TopologicalSorter {
-    ImmutableList<Task> sort(DirectedGraph<? extends Task> graph);
+    <T extends Task> ImmutableList<T> sort(DirectedGraph<T> graph);
   }
 }
