@@ -3,7 +3,7 @@ package tasks.cli.handler;
 import static java.util.stream.Collectors.joining;
 import static omnia.data.stream.Collectors.toImmutableSet;
 
-import io.reactivex.Observable;
+import io.reactivex.rxjava3.core.Observable;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.Locale;

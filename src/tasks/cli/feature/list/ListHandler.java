@@ -4,8 +4,8 @@ import static java.util.Objects.requireNonNull;
 import static tasks.cli.handler.HandlerUtil.stringifyIfPopulated;
 import static tasks.util.rx.Observables.toImmutableSet;
 
-import io.reactivex.Observable;
-import io.reactivex.Single;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.immutable.ImmutableSet;

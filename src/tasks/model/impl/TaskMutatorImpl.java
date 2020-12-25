@@ -2,7 +2,7 @@ package tasks.model.impl;
 
 import static java.util.Objects.requireNonNull;
 
-import io.reactivex.Observable;
+import io.reactivex.rxjava3.core.Observable;
 import java.util.Optional;
 import java.util.function.Function;
 import omnia.data.structure.Set;

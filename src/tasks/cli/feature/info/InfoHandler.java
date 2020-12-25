@@ -1,7 +1,7 @@
 package tasks.cli.feature.info;
 
-import io.reactivex.Observable;
-import io.reactivex.Single;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
 import omnia.cli.out.Output;
 import omnia.data.structure.Set;
 import tasks.cli.command.common.CommonArguments;

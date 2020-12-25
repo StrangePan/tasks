@@ -8,7 +8,7 @@ import static tasks.cli.handler.testing.HandlerTestUtils.assertOutputContainsGro
 import static tasks.cli.handler.testing.HandlerTestUtils.commonArgs;
 
 import com.google.common.truth.OptionalSubject;
-import io.reactivex.observers.TestObserver;
+import io.reactivex.rxjava3.observers.TestObserver;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.function.Consumer;

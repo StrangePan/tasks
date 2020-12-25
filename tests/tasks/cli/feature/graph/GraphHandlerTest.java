@@ -8,8 +8,8 @@ import static java.util.Objects.checkIndex;
 import static tasks.cli.handler.testing.HandlerTestUtils.commonArgs;
 import static tasks.util.rx.Observables.toImmutableMap;
 
-import io.reactivex.Observable;
-import io.reactivex.Single;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
 import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.regex.Matcher;

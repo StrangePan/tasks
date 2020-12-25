@@ -1,10 +1,10 @@
 package tasks.util.rx;
 
-import io.reactivex.Observable;
-import io.reactivex.Single;
-import io.reactivex.observers.TestObserver;
-import io.reactivex.subjects.PublishSubject;
-import io.reactivex.subjects.Subject;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.observers.TestObserver;
+import io.reactivex.rxjava3.subjects.PublishSubject;
+import io.reactivex.rxjava3.subjects.Subject;
 import java.util.Arrays;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableMap;

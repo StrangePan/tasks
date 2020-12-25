@@ -2,13 +2,13 @@ package tasks.model.impl;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import io.reactivex.observers.TestObserver;
+import io.reactivex.rxjava3.observers.TestObserver;
+import java.util.concurrent.TimeUnit;
 import omnia.data.structure.tuple.Triple;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import tasks.model.Task;
-import tasks.model.TaskStore;
 
 @RunWith(JUnit4.class)
 public final class ObservableTaskStoreImplTest {
@@ -156,7 +156,7 @@ public final class ObservableTaskStoreImplTest {
     TestObserver<TaskStoreImpl> testObserver = underTest.observe().test();
 
     underTest.mutateTask(task2, m -> m.addBlockingTask(task1).addBlockedTask(task1)).test()
-        .awaitTerminalEvent();
+        .awaitDone(1, TimeUnit.SECONDS);
 
     testObserver.assertValueCount(1).assertNoErrors().assertNotComplete();
   }

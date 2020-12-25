@@ -6,8 +6,8 @@ import static omnia.data.stream.Collectors.toImmutableSet;
 import static tasks.util.rx.Observables.incrementingInteger;
 import static tasks.util.rx.Observables.toImmutableMap;
 
-import io.reactivex.Observable;
-import io.reactivex.Single;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;

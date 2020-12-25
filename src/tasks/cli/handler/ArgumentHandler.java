@@ -1,6 +1,6 @@
 package tasks.cli.handler;
 
-import io.reactivex.Single;
+import io.reactivex.rxjava3.core.Single;
 import omnia.cli.out.Output;
 import tasks.cli.command.common.CommonArguments;
 

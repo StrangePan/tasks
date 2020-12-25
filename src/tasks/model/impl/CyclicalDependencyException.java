@@ -4,6 +4,8 @@ import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;
 
 public class CyclicalDependencyException extends IllegalStateException {
+  private static final long serialVersionUID = -1193897049921304555L;
+
   private final List<Object> cycle;
 
   CyclicalDependencyException(String msg, List<?> cycle) {

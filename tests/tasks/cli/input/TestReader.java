@@ -2,8 +2,8 @@ package tasks.cli.input;
 
 import static java.util.Objects.requireNonNull;
 
-import io.reactivex.Single;
-import io.reactivex.subjects.SingleSubject;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.subjects.SingleSubject;
 import omnia.data.structure.mutable.ArrayQueue;
 import omnia.data.structure.mutable.Queue;
 
