@@ -4,11 +4,11 @@ import static java.util.Objects.requireNonNull;
 import static omnia.data.stream.Collectors.toImmutableList;
 import static tasks.util.rx.Unit.unit;
 
-import io.reactivex.Completable;
-import io.reactivex.Maybe;
-import io.reactivex.Observable;
-import io.reactivex.Single;
-import io.reactivex.subjects.CompletableSubject;
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Maybe;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.subjects.CompletableSubject;
 import java.util.Optional;
 import java.util.function.Function;
 import omnia.algorithm.GraphAlgorithms;

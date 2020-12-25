@@ -3,7 +3,7 @@ package tasks.cli;
 import static java.util.Objects.requireNonNull;
 import static omnia.data.cache.Memoized.memoize;
 
-import io.reactivex.Single;
+import io.reactivex.rxjava3.core.Single;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.List;
 import omnia.data.structure.immutable.ImmutableList;

@@ -1,6 +1,6 @@
 package tasks.util.rx;
 
-import io.reactivex.Maybe;
+import io.reactivex.rxjava3.core.Maybe;
 import java.util.Optional;
 
 public final class Maybes {

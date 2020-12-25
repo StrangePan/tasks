@@ -4,7 +4,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static omnia.data.stream.Collectors.toList;
 
-import io.reactivex.Observable;
+import io.reactivex.rxjava3.core.Observable;
 import java.util.Optional;
 import java.util.OptionalInt;
 import omnia.data.cache.Memoized;

@@ -1,11 +1,13 @@
 package tasks.util.rx;
 
-import io.reactivex.Observable;
-import io.reactivex.Single;
-import io.reactivex.functions.Function;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.ObservableConverter;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.functions.Function;
 import omnia.data.structure.immutable.ImmutableList;
 import omnia.data.structure.immutable.ImmutableMap;
 import omnia.data.structure.immutable.ImmutableSet;
+
 public final class Observables {
 
   private Observables() {}
@@ -36,26 +38,28 @@ public final class Observables {
         });
   }
 
-  public static <T> Function<Observable<? extends T>, Single<ImmutableList<T>>> toImmutableList() {
+  public static <T> ObservableConverter<T, Single<ImmutableList<T>>> toImmutableList() {
     return observable ->
-        observable.collect(ImmutableList::<T>builder, ImmutableList.Builder::add)
+        observable.<ImmutableList.Builder<T>>collect(
+                ImmutableList::builder, ImmutableList.Builder::add)
             .map(ImmutableList.Builder::build);
   }
 
-  public static <T, K, V> Function<Observable<T>, Single<ImmutableMap<K, V>>> toImmutableMap(
+  public static <T, K, V> ObservableConverter<T, Single<ImmutableMap<K, V>>> toImmutableMap(
       Function<? super T, ? extends K> keyExtractor,
       Function<? super T, ? extends V> valueExtractor) {
     return observable ->
-        observable.collect(
-            ImmutableMap::<K, V>builder,
+        observable.<ImmutableMap.Builder<K, V>>collect(
+            ImmutableMap::builder,
             (builder, item) ->
                 builder.putMapping(keyExtractor.apply(item), valueExtractor.apply(item)))
             .map(ImmutableMap.Builder::build);
   }
 
-  public static <T> Function<Observable<T>, Single<ImmutableSet<T>>> toImmutableSet() {
+  public static <T> ObservableConverter<T, Single<ImmutableSet<T>>> toImmutableSet() {
     return observable ->
-        observable.collect(ImmutableSet::<T>builder, ImmutableSet.Builder::add)
+        observable.<ImmutableSet.Builder<T>>collect(
+                ImmutableSet::builder, ImmutableSet.Builder::add)
             .map(ImmutableSet.Builder::build);
   }
 }

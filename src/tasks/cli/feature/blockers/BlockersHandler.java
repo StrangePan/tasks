@@ -5,7 +5,7 @@ import static omnia.data.stream.Collectors.toImmutableSet;
 import static tasks.cli.handler.HandlerUtil.stringifyIfPopulated;
 import static tasks.cli.handler.HandlerUtil.verifyTasksAreMutuallyExclusive;
 
-import io.reactivex.Single;
+import io.reactivex.rxjava3.core.Single;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
 import omnia.data.structure.Set;

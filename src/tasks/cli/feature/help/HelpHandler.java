@@ -4,8 +4,8 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static omnia.data.stream.Collectors.toImmutableSet;
 
-import io.reactivex.Observable;
-import io.reactivex.Single;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Stream;

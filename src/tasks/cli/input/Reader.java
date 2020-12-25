@@ -1,6 +1,6 @@
 package tasks.cli.input;
 
-import io.reactivex.Single;
+import io.reactivex.rxjava3.core.Single;
 import java.io.InputStream;
 import java.util.Scanner;
 

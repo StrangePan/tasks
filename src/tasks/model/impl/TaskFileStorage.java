@@ -4,9 +4,9 @@ import static java.util.stream.Collectors.joining;
 import static omnia.data.cache.Memoized.memoize;
 import static omnia.data.stream.Collectors.toImmutableMap;
 
-import io.reactivex.Completable;
-import io.reactivex.Observable;
-import io.reactivex.Single;
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.Writer;
@@ -336,6 +336,8 @@ public final class TaskFileStorage implements TaskStorage {
   }
 
   public static final class IncompatibleVersionError extends ParseError {
+    private static final long serialVersionUID = -5818555235686955880L;
+
     private IncompatibleVersionError(String message) {
       super(message);
     }
@@ -346,6 +348,8 @@ public final class TaskFileStorage implements TaskStorage {
   }
 
   public static final class TaskParseError extends ParseError {
+    private static final long serialVersionUID = 7208486740444049242L;
+
     private TaskParseError(String message) {
       super(message);
     }
@@ -356,6 +360,8 @@ public final class TaskFileStorage implements TaskStorage {
   }
 
   public static class ParseError extends RuntimeException {
+    private static final long serialVersionUID = -1135195505560715347L;
+
     private ParseError(String message) {
       super(message);
     }
