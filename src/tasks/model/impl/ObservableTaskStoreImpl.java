@@ -2,6 +2,7 @@ package tasks.model.impl;
 
 import static java.util.Objects.requireNonNull;
 import static omnia.data.stream.Collectors.toImmutableList;
+import static tasks.util.rx.Unit.unit;
 
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
@@ -37,7 +38,7 @@ public final class ObservableTaskStoreImpl implements ObservableTaskStore {
   private final TaskStorage taskStorage;
 
   private final ObservableState<TaskStoreImpl> store;
-  private final Observable<Observable<TaskStoreImpl>> currentStoreSource;
+  private final Observable<TaskStoreImpl> currentTaskStore;
 
   public static ObservableTaskStoreImpl createFromFile(String filePath) {
     return new ObservableTaskStoreImpl(new TaskFileStorage(File.fromPath(filePath)));
@@ -73,25 +74,15 @@ public final class ObservableTaskStoreImpl implements ObservableTaskStore {
                 loadedData.first(),
                 loadedData.second()));
 
-    currentStoreSource =
-        selectWhileRunning(
-            store.observe(),
-            new TaskStoreImpl(ImmutableDirectedGraph.empty(), ImmutableMap.empty()));
+    currentTaskStore =
+        store.observe().takeUntil(isShutdown.andThen(Observable.just(unit())));
 
     isShutdownComplete = isShutdown.hide().andThen(writeToDisk()).cache();
   }
 
-  private <T> Observable<Observable<T>> selectWhileRunning(
-      Observable<? extends T> starter, T finisher) {
-    return Observable.just(starter.map(i -> (T) i))
-        .concatWith(isShutdown.hide().andThen(Observable.just(Observable.just(finisher))))
-        .replay(1)
-        .autoConnect(0);
-  }
-
   @Override
   public Observable<TaskStoreImpl> observe() {
-    return currentStoreSource.switchMap(store1 -> store1);
+    return currentTaskStore;
   }
 
   @Override
