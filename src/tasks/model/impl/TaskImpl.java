@@ -3,14 +3,12 @@ package tasks.model.impl;
 import static java.util.Objects.requireNonNull;
 import static omnia.data.cache.Memoized.memoize;
 
-import io.reactivex.Observable;
 import java.util.Objects;
 import java.util.Optional;
 import omnia.cli.out.Output;
 import omnia.data.cache.Memoized;
+import omnia.data.structure.SortedSet;
 import omnia.data.structure.immutable.ImmutableSet;
-import omnia.data.structure.mutable.MutableSet;
-import omnia.data.structure.mutable.TreeSet;
 import tasks.model.Task;
 
 final class TaskImpl implements Task {
@@ -84,7 +82,7 @@ final class TaskImpl implements Task {
 
   @Override
   public Output render() {
-    TreeSet<TaskIdImpl> allIds = store.allTaskIds();
+    SortedSet<TaskIdImpl> allIds = store.allTaskIds();
     Optional<TaskIdImpl> precedingId = allIds.itemPreceding(id);
     Optional<TaskIdImpl> followingId = allIds.itemFollowing(id);
 

@@ -18,11 +18,11 @@ import omnia.data.structure.Map;
 import omnia.data.structure.immutable.ImmutableDirectedGraph;
 import omnia.data.structure.immutable.ImmutableMap;
 import omnia.data.structure.immutable.ImmutableSet;
-import omnia.data.structure.mutable.MutableSet;
-import omnia.data.structure.mutable.TreeSet;
+import omnia.data.structure.immutable.ImmutableSortedSet;
 import tasks.model.Task;
 import tasks.model.TaskId;
 import tasks.model.TaskStore;
+import tasks.util.rx.Observables;
 
 final class TaskStoreImpl implements TaskStore {
 
@@ -31,7 +31,7 @@ final class TaskStoreImpl implements TaskStore {
   final ImmutableDirectedGraph<TaskIdImpl> graph;
   final ImmutableMap<TaskIdImpl, TaskData> data;
 
-  private final Memoized<TreeSet<TaskIdImpl>> allTaskIds;
+  private final Memoized<ImmutableSortedSet<TaskIdImpl>> allTaskIds;
   private final Memoized<ImmutableSet<TaskImpl>> allTasks;
   private final Memoized<ImmutableSet<TaskImpl>> allUnblockedOpenTasks;
   private final Memoized<ImmutableSet<TaskImpl>> allBlockedOpenTasks;
@@ -54,8 +54,9 @@ final class TaskStoreImpl implements TaskStore {
 
     allTaskIds = memoize(
         () -> Observable.fromIterable(data.keys())
-            .collectInto(
-                TreeSet.create(Comparator.comparingLong(TaskIdImpl::asLong)), MutableSet::add)
+            .to(Observables.toImmutableSet())
+            .map(
+                set -> ImmutableSortedSet.copyOf(Comparator.comparingLong(TaskIdImpl::asLong), set))
             .blockingGet());
 
     allTasks = memoize(() -> data.keys().stream().map(this::toTask).collect(toImmutableSet()));
@@ -169,7 +170,7 @@ final class TaskStoreImpl implements TaskStore {
             && Objects.equals(data, ((TaskStoreImpl) obj).data));
   }
 
-  TreeSet<TaskIdImpl> allTaskIds() {
+  ImmutableSortedSet<TaskIdImpl> allTaskIds() {
     return allTaskIds.value();
   }
 
