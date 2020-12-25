@@ -46,7 +46,7 @@ ro8c9pw9v3sw;open;Convert to Kotlin;
 rohjzx9p4xkw;open;Fix: blockers command incorrectly outputting blocking tasks as removed;
 sm8xqx2kslxc;complete;Add test for "reword" command handler;
 spkxoe420feo;complete;Add test for "start" command handler;
-tu9hlci5nksg;open;Add tests for ObservableTaskStoreImpl;
+tu9hlci5nksg;complete;Add tests for ObservableTaskStoreImpl;
 tw621f1euolc;open;Add tests for topological sort clustering;
 ufklb65rjm68;complete;Validate registered commands;
 vc0gqs1jstmo;complete;Validate graph when parsing;
