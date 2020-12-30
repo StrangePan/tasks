@@ -4,11 +4,13 @@
     <root id="archive" name="cli.jar">
       <element id="module-output" name="tasks" />
       <element id="module-output" name="omnia" />
-      <element id="directory" name="lib">
-        <element id="library" level="project" name="KotlinJavaRuntime" />
-        <element id="library" level="application" name="io.reactivex.rxjava3:rxjava:3.0.8" />
-        <element id="library" level="application" name="commons-cli:commons-cli:1.4" />
-      </element>
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/kotlin/kotlin-reflect.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/kotlin/kotlin-stdlib-jdk7.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/kotlin/kotlin-stdlib-jdk8.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/kotlin/kotlin-stdlib.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/commons-cli/commons-cli/1.4/commons-cli-1.4.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/io/reactivex/rxjava3/rxjava/3.0.8/rxjava-3.0.8.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/reactivestreams/reactive-streams/1.0.3/reactive-streams-1.0.3.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>
