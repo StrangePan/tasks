@@ -1,4 +1,4 @@
-lib/*.jar
+lib/**/*.jar
 # custom files for workspace on your local machine
 workspace/**
 
