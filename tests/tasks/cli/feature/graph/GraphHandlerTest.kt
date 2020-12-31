@@ -209,10 +209,6 @@ class GraphHandlerTest {
     return builder.build()
   }
 
-  private fun getUpdatedVersionOf(task: Task): Task {
-    return HandlerTestUtils.getUpdatedVersionOf(taskStore, task)
-  }
-
   private fun assertThatOutputRepresentsCurrentTaskGraph(output: String) {
     assertThatOutputRepresentsGraph(output, taskStore.observe().blockingFirst().taskGraph())
   }
@@ -241,20 +237,8 @@ class GraphHandlerTest {
       return this
     }
 
-    fun up(): Cursor {
-      return row(row - 1)
-    }
-
     fun down(): Cursor {
       return row(row + 1)
-    }
-
-    fun left(): Cursor {
-      return col(col - 1)
-    }
-
-    fun right(): Cursor {
-      return col(col + 1)
     }
 
     fun splitLines(output: String): ImmutableList<String> {
@@ -400,6 +384,7 @@ class GraphHandlerTest {
                 || codePoint == GraphHandler.EDGE_UP_DOWN_LEFT
                 || codePoint == GraphHandler.EDGE_UP_DOWN_RIGHT
                 || codePoint == GraphHandler.EDGE_UP_DOWN
+                || codePoint == GraphHandler.EDGE_UP_LEFT_RIGHT
                 || codePoint == GraphHandler.EDGE_UP_LEFT
                 || codePoint == GraphHandler.EDGE_UP_RIGHT) {
               Truth8.assertThat(incomingColumn).isEmpty()

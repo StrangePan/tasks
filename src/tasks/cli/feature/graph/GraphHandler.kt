@@ -30,7 +30,6 @@ import tasks.cli.handler.ArgumentHandler
 import tasks.model.ObservableTaskStore
 import tasks.model.Task
 import tasks.model.TaskStore
-import tasks.util.rx.Observables
 import tasks.util.rx.Observables.incrementingInteger
 import tasks.util.rx.Observables.toImmutableMap
 
@@ -55,15 +54,8 @@ class GraphHandler internal constructor(private val taskStore: Memoized<out Obse
       arguments: CommonArguments<out GraphArguments>,
       taskStoreSingle: ImmutableDirectedGraph<T>): Single<Output> {
     return Single.just(taskStoreSingle)
-        .flatMap { graph: ImmutableDirectedGraph<T> ->
-          Single.just(sorter.sort(graph))
-              .compose { single: Single<ImmutableList<T>> ->
-                if (arguments.specificArguments().isAllSet) single else single.flatMapObservable { source -> Observable.fromIterable(source) }
-                    .filter { task: T -> !task.status().isCompleted }
-                    .to(Observables.toImmutableList())
-              }
-              .map { tasks -> Tuple.of(graph, tasks) }
-        }
+        .map { graph -> maybeStripCompletedTasks(graph, arguments.specificArguments()) }
+        .map { Tuple.of(it, sorter.sort(it)) }
         .map { couple ->
           couple.append(
               assignColumns(couple.first(), couple.second(), arguments.specificArguments()))
@@ -91,10 +83,20 @@ class GraphHandler internal constructor(private val taskStore: Memoized<out Obse
     const val EDGE_DOWN_RIGHT: Char = '┌'
     const val EDGE_DOWN_LEFT: Char = '┐'
     const val EDGE_DOWN_LEFT_RIGHT: Char = '┬'
-    const val EDGE_LEFT_RIGHT: Char = '─'
+    private const val EDGE_LEFT_RIGHT: Char = '─'
     const val GAP: Char = ' '
     const val NODE_COMPLETED: Char = '☑'
     const val NODE_OPEN: Char = '☐'
+
+    private fun <T : Task> maybeStripCompletedTasks(taskGraph: DirectedGraph<T>, arguments: GraphArguments): DirectedGraph<T> {
+      return if (arguments.isAllSet) taskGraph else {
+        Observable.fromIterable(taskGraph.contents())
+            .filter { it.status().isCompleted }
+            .collect({ ImmutableDirectedGraph.buildUpon(taskGraph) }, ImmutableDirectedGraph.Builder<T>::removeNode)
+            .map { it.build() }
+            .blockingGet()
+      }
+    }
 
     /**
      * Assigns columns to each graph node for CLI rendering.
