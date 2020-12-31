@@ -3,7 +3,7 @@
 0j6p63xvhl9s;open;Strip color codes when parsing;
 0y6dpuel9kg0;complete;Add option to strip color from output;
 14a00nhsddz4;complete;Output formatting;
-28jduog0m54w;started;Fix graph rendering edge case (see screenshot);
+28jduog0m54w;complete;Fix graph rendering edge case (see screenshot);
 3b6ayu83gqtc;complete;Create a parsing exception;
 3ga3kmzl44cg;complete;Put command definition into independent packages;
 3m3pf62roiyo;complete;Fix: listing unblocked vs blocked tasks;
