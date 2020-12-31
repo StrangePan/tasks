@@ -1,7 +1,7 @@
-package tasks.cli.parser;
+package tasks.cli.parser
 
-import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLine
 
-public interface CommandParser<T> {
-  T parse(CommandLine commandLine);
+interface CommandParser<T : Any> {
+  fun parse(commandLine: CommandLine): T
 }

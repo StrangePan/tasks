@@ -1,41 +1,31 @@
-package tasks.cli;
+package tasks.cli
 
-import static java.util.Objects.requireNonNull;
-import static omnia.data.cache.Memoized.memoize;
+import io.reactivex.rxjava3.core.Single
+import omnia.data.cache.Memoized
+import omnia.data.cache.Memoized.Companion.memoize
+import omnia.data.structure.List
+import omnia.data.structure.immutable.ImmutableList
+import tasks.cli.feature.Feature
+import tasks.cli.feature.Features
+import tasks.model.impl.ObservableTaskStoreImpl
 
-import io.reactivex.rxjava3.core.Single;
-import omnia.data.cache.Memoized;
-import omnia.data.structure.List;
-import omnia.data.structure.immutable.ImmutableList;
-import tasks.cli.feature.Feature;
-import tasks.cli.feature.Features;
-import tasks.io.File;
-import tasks.model.impl.ObservableTaskStoreImpl;
-import tasks.model.impl.TaskFileStorage;
+internal class Application(private val rawArgs: Array<String>) {
+  private val taskStore: Memoized<ObservableTaskStoreImpl> = memoize { ObservableTaskStoreImpl.createFromFile("asdf") }
+  private val features = memoize { Features(taskStore) }
 
-final class Application {
-  private final Memoized<ObservableTaskStoreImpl> taskStore =
-      memoize(() -> ObservableTaskStoreImpl.createFromFile("asdf"));
-  private final Memoized<Features> features = memoize(() -> new Features(taskStore));
-
-  private final String[] rawArgs;
-
-  Application(String[] rawArgs) {
-    this.rawArgs = requireNonNull(rawArgs);
-  }
-
-  void run() {
+  fun run() {
     Single.just(rawArgs)
-        .map(ImmutableList::copyOf)
-        .flatMapCompletable(args -> getHelpOrFallbackFeature(args).handle(args, taskStore))
+        .map { obj -> ImmutableList.copyOf(obj) }
+        .flatMapCompletable { args -> getHelpOrFallbackFeature(args).handle(args, taskStore) }
         .andThen(taskStore.value().shutdown())
-        .blockingAwait();
+        .blockingAwait()
   }
 
-  private Feature<?> getHelpOrFallbackFeature(List<? extends String> args) {
+  private fun getHelpOrFallbackFeature(args: List<out String>): Feature<*> {
     return args.stream()
         .findFirst()
-        .<Feature<?>>map(arg -> features.value().getMatchingOrFallbackFeature(arg))
-        .orElseGet(() -> features.value().getFallbackFeature());
+        .map { arg -> features.value().getMatchingOrFallbackFeature(arg) }
+        .orElseGet { features.value().fallbackFeature }
   }
+
 }

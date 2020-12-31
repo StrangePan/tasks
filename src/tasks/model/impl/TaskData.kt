@@ -1,37 +1,23 @@
-package tasks.model.impl;
+package tasks.model.impl
 
-import static java.util.Objects.requireNonNull;
+import java.util.Objects
+import tasks.model.Task
 
-import java.util.Objects;
-import tasks.model.Task;
-
-final class TaskData {
-
-  private final String label;
-  private final Task.Status status;
-
-  TaskData(String label, Task.Status status) {
-    this.label = requireNonNull(label);
-    this.status = requireNonNull(status);
+class TaskData(private val label: String, private val status: Task.Status) {
+  fun label(): String {
+    return label
   }
 
-  String label() {
-    return label;
+  fun status(): Task.Status {
+    return status
   }
 
-  Task.Status status() {
-    return status;
+  override fun equals(other: Any?): Boolean {
+    return other is TaskData && label == other.label && status == other.status
   }
 
-  @Override
-  public boolean equals(Object other) {
-    return other instanceof TaskData
-        && Objects.equals(this.label, ((TaskData) other).label)
-        && Objects.equals(this.status, ((TaskData) other).status);
+  override fun hashCode(): Int {
+    return Objects.hash(label, status)
   }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(label, status);
-  }
 }

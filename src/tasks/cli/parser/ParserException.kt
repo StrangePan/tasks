@@ -1,13 +1,10 @@
-package tasks.cli.parser;
+package tasks.cli.parser
 
-public final class ParserException extends RuntimeException {
-  private static final long serialVersionUID = -3922266917865193312L;
+class ParserException : RuntimeException {
+  constructor(reason: String) : super(reason)
+  constructor(reason: String, cause: Throwable) : super(reason, cause)
 
-  public ParserException(String reason) {
-    super(reason);
-  }
-
-  public ParserException(String reason, Throwable cause) {
-    super(reason, cause);
+  companion object {
+    private const val serialVersionUID = -3922266917865193312L
   }
 }

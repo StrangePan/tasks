@@ -1,34 +1,22 @@
-package tasks.cli.feature.blockers;
+package tasks.cli.feature.blockers
 
-import static java.util.Objects.requireNonNull;
-import static tasks.cli.parser.ParserUtil.extractSuccessfulResultOrThrow;
-import static tasks.cli.parser.ParserUtil.getFlagPresence;
-import static tasks.cli.parser.ParserUtil.getOptionValues;
-import static tasks.cli.parser.ParserUtil.extractSuccessfulResultsOrThrow;
+import java.util.Objects
+import omnia.data.cache.Memoized
+import omnia.data.structure.List
+import omnia.data.structure.immutable.ImmutableList
+import org.apache.commons.cli.CommandLine
+import tasks.cli.parser.CommandParser
+import tasks.cli.parser.ParseResult
+import tasks.cli.parser.Parser
+import tasks.cli.parser.ParserException
+import tasks.cli.parser.ParserUtil
+import tasks.model.Task
 
-import omnia.data.cache.Memoized;
-import omnia.data.structure.List;
-import omnia.data.structure.immutable.ImmutableList;
-import org.apache.commons.cli.CommandLine;
-import tasks.cli.parser.ParserException;
-import tasks.cli.parser.CommandParser;
-import tasks.cli.parser.Parser;
-import tasks.cli.parser.ParseResult;
-import tasks.model.Task;
-
-/** Command line argument parser for the Blockers command. */
-public final class BlockersParser implements CommandParser<BlockersArguments> {
-  private final Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
-      taskParser;
-
-  public BlockersParser(
-      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
-          taskParser) {
-    this.taskParser = requireNonNull(taskParser);
-  }
-
-  @Override
-  public BlockersArguments parse(CommandLine commandLine) {
+/** Command line argument parser for the Blockers command.  */
+class BlockersParser(
+    taskParser: Memoized<out Parser<out List<out ParseResult<out Task>>>>) : CommandParser<BlockersArguments> {
+  private val taskParser: Memoized<out Parser<out List<out ParseResult<out Task>>>>
+  override fun parse(commandLine: CommandLine): BlockersArguments {
     /*
      * 1st param assumed to be task ID
      * 2+ params are unsupported
@@ -36,37 +24,34 @@ public final class BlockersParser implements CommandParser<BlockersArguments> {
      * optional blockers to remove
      * optional clear flag
      */
-    List<String> argsList = ImmutableList.copyOf(commandLine.getArgList());
+    val argsList: List<String> = ImmutableList.copyOf(commandLine.argList)
     if (argsList.count() < 1) {
-      throw new ParserException("ObservableTask not specified");
+      throw ParserException("ObservableTask not specified")
     }
     if (argsList.count() > 1) {
-      throw new ParserException("Unexpected extra arguments");
+      throw ParserException("Unexpected extra arguments")
     }
-
-    ParseResult<? extends Task> targetTask =
-        taskParser.value().parse(
-            ImmutableList.of(argsList.itemAt(0))).itemAt(0);
-    List<? extends ParseResult<? extends Task>> tasksToAdd =
-        taskParser.value().parse(
-            getOptionValues(commandLine, BlockersCommand.ADD_OPTION.value()));
-    List<? extends ParseResult<? extends Task>> tasksToRemove =
-        taskParser.value().parse(
-            getOptionValues(commandLine, BlockersCommand.REMOVE_OPTION.value()));
-    boolean isClearSet =
-        getFlagPresence(commandLine, BlockersCommand.CLEAR_OPTION.value());
-
-    extractSuccessfulResultsOrThrow(
-        ImmutableList.<ParseResult<?>>builder()
+    val targetTask = taskParser.value().parse(
+        ImmutableList.of<String>(argsList.itemAt(0))).itemAt(0)
+    val tasksToAdd = taskParser.value().parse(
+        ParserUtil.getOptionValues(commandLine, BlockersCommand.ADD_OPTION.value()))
+    val tasksToRemove = taskParser.value().parse(
+        ParserUtil.getOptionValues(commandLine, BlockersCommand.REMOVE_OPTION.value()))
+    val isClearSet = ParserUtil.getFlagPresence(commandLine, BlockersCommand.CLEAR_OPTION.value())
+    ParserUtil.extractSuccessfulResultsOrThrow(
+        ImmutableList.builder<ParseResult<*>>()
             .add(targetTask)
             .addAll(tasksToAdd)
             .addAll(tasksToRemove)
-            .build());
+            .build())
+    return BlockersArguments(
+        ParserUtil.extractSuccessfulResultOrThrow(targetTask),
+        ParserUtil.extractSuccessfulResultsOrThrow(tasksToAdd),
+        ParserUtil.extractSuccessfulResultsOrThrow(tasksToRemove),
+        isClearSet)
+  }
 
-    return new BlockersArguments(
-        extractSuccessfulResultOrThrow(targetTask),
-        extractSuccessfulResultsOrThrow(tasksToAdd),
-        extractSuccessfulResultsOrThrow(tasksToRemove),
-        isClearSet);
+  init {
+    this.taskParser = Objects.requireNonNull(taskParser)
   }
 }

@@ -1,115 +1,105 @@
-package tasks.cli.feature.remove;
+package tasks.cli.feature.remove
 
-import static java.util.Objects.requireNonNull;
-import static omnia.data.cache.Memoized.memoize;
-import static tasks.util.rx.Observables.toImmutableSet;
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Single
+import omnia.cli.out.Output
+import omnia.cli.out.Output.Companion.builder
+import omnia.data.cache.Memoized
+import omnia.data.cache.Memoized.Companion.memoize
+import omnia.data.structure.Collection
+import tasks.cli.command.common.CommonArguments
+import tasks.cli.handler.ArgumentHandler
+import tasks.cli.handler.HandlerException
+import tasks.cli.handler.HandlerUtil
+import tasks.cli.input.Reader
+import tasks.cli.output.Printer
+import tasks.model.ObservableTaskStore
+import tasks.model.Task
+import tasks.util.rx.Observables
 
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.Single;
-import omnia.cli.out.Output;
-import omnia.data.cache.Memoized;
-import omnia.data.structure.Collection;
-import tasks.cli.command.common.CommonArguments;
-import tasks.cli.handler.ArgumentHandler;
-import tasks.cli.handler.HandlerException;
-import tasks.cli.handler.HandlerUtil;
-import tasks.cli.input.Reader;
-import tasks.cli.output.Printer;
-import tasks.model.Task;
-import tasks.model.ObservableTaskStore;
+/** Business logic for the Remove command.  */
+class RemoveHandler(
+    private val taskStore: Memoized<out ObservableTaskStore>,
+    private val printerFactory: Printer.Factory,
+    private val reader: Memoized<out Reader>) : ArgumentHandler<RemoveArguments> {
 
-/** Business logic for the Remove command. */
-public final class RemoveHandler implements ArgumentHandler<RemoveArguments> {
-
-  private final Memoized<? extends ObservableTaskStore> taskStore;
-  private final Printer.Factory printerFactory;
-  private final Memoized<? extends Reader> reader;
-
-  public RemoveHandler(
-      Memoized<? extends ObservableTaskStore> taskStore,
-      Printer.Factory printerFactory,
-      Memoized<? extends Reader> reader) {
-    this.taskStore = requireNonNull(taskStore);
-    this.printerFactory = requireNonNull(printerFactory);
-    this.reader = requireNonNull(reader);
-  }
-
-  @Override
-  public Single<Output> handle(CommonArguments<? extends RemoveArguments> arguments) {
-    Collection<Task> tasksToDelete = arguments.specificArguments().tasks();
+  override fun handle(arguments: CommonArguments<out RemoveArguments>): Single<Output> {
+    val tasksToDelete: Collection<Task> = arguments.specificArguments().tasks()
 
     // Validate arguments
-    if (!tasksToDelete.isPopulated()) {
-      throw new HandlerException("no tasks specified");
+    if (!tasksToDelete.isPopulated) {
+      throw HandlerException("no tasks specified")
+    }
+    val printer: Memoized<Printer> = memoize { printerFactory.create(arguments) }
+    return Observable.fromIterable(tasksToDelete)
+        .compose { observable ->
+          if (arguments.specificArguments().force()) observable else observable.concatMapMaybe { task ->
+            getYesNoConfirmationFor(task, printer, reader)
+                .filter { it }
+                .map { task }
+          }
+        }
+        .flatMapMaybe { taskStore.value().deleteTask(it) }
+        .to(Observables.toImmutableSet())
+        .map { HandlerUtil.stringifyIfPopulated("tasks deleted:", it) }
+  }
+
+  companion object {
+    private fun getYesNoConfirmationFor(
+        task: Task, printer: Memoized<out Printer>, reader: Memoized<out Reader>): Single<Boolean> {
+      return Single.just(task)
+          .map(Task::render)
+          .doOnSuccess { printer.value().printLine(it) }
+          .ignoreElement()
+          .andThen(getYesNoConfirmation(printer, reader))
     }
 
-    Memoized<Printer> printer = memoize(() -> printerFactory.create(arguments));
-
-    return Observable.fromIterable(tasksToDelete)
-        .compose(
-            observable ->
-                arguments.specificArguments().force()
-                    ? observable
-                    : observable.concatMapMaybe(
-                        task ->
-                            getYesNoConfirmationFor(task, printer, reader)
-                                .filter(confirm -> confirm).map(u -> task)))
-        .flatMapMaybe(task -> taskStore.value().deleteTask(task))
-        .to(toImmutableSet())
-        .map(deletedTasks -> HandlerUtil.stringifyIfPopulated("tasks deleted:", deletedTasks));
-  }
-
-  private static Single<Boolean> getYesNoConfirmationFor(
-      Task task, Memoized<? extends Printer> printer, Memoized<? extends Reader> reader) {
-    return Single.just(task)
-        .map(Task::render)
-        .doOnSuccess(output -> printer.value().printLine(output))
-        .ignoreElement()
-        .andThen(getYesNoConfirmation(printer, reader));
-  }
-
-  private static Single<Boolean> getYesNoConfirmation(
-      Memoized<? extends Printer> printer, Memoized<? extends Reader> reader) {
-    Memoized<RuntimeException> unparsedInput = memoize(RuntimeException::new);
-    return Single.just(
-        Output.builder()
-            .color(Output.Color16.YELLOW)
-            .append("Delete this task? [Y/n]: ")
-            .defaultColor()
-            .build())
-        .doOnSuccess(output -> printer.value().print(output))
-        .ignoreElement()
-        .andThen(Single.defer(() -> reader.value().readNextLine()))
-        .map(
-            input -> {
-              if (input.matches("\\s*[Yy]([Ee][Ss])?\\s*")) {
-                return true;
-              } else if (input.matches("\\s*[Nn]([Oo])?\\s*")) {
-                return false;
-              } else {
+    private fun getYesNoConfirmation(
+        printer: Memoized<out Printer>, reader: Memoized<out Reader>): Single<Boolean> {
+      val unparsedInput = memoize(::RuntimeException)
+      return Single.just(
+          builder()
+              .color(Output.Color16.YELLOW)
+              .append("Delete this task [Y/n]: ")
+              .defaultColor()
+              .build())
+          .doOnSuccess { printer.value().print(it) }
+          .ignoreElement()
+          .andThen(Single.defer { reader.value().readNextLine() })
+          .map { input ->
+            when {
+              input.matches("""\s*[Yy]([Ee][Ss])?\s*""".toRegex()) -> {
+                true
+              }
+              input.matches("""\s*[Nn]([Oo])?\s*""".toRegex()) -> {
+                false
+              }
+              else -> {
                 printer.value().print(
-                    Output.builder()
+                    builder()
                         .color(Output.Color16.YELLOW)
                         .append("Unrecognized answer. ")
                         .defaultColor()
-                        .build());
-                throw unparsedInput.value();
+                        .build())
+                throw unparsedInput.value()
               }
-            })
-        .retry(2, throwable -> throwable == unparsedInput.value())
-        .onErrorReturn(
-            throwable -> {
-              if (throwable == unparsedInput.value()) {
-                printer.value().print(
-                    Output.builder()
-                        .color(Output.Color16.YELLOW)
-                        .appendLine("Assuming \"No\".")
-                        .defaultColor()
-                        .build());
-                return false;
-              }
-              throw new RuntimeException(throwable);
-            })
-        .cache();
+            }
+          }
+          .retry(2) { throwable: Throwable -> throwable === unparsedInput.value() }
+          .onErrorReturn { throwable ->
+            if (throwable === unparsedInput.value()) {
+              printer.value().print(
+                  builder()
+                      .color(Output.Color16.YELLOW)
+                      .appendLine("Assuming \"No\".")
+                      .defaultColor()
+                      .build())
+              return@onErrorReturn false
+            }
+            throw RuntimeException(throwable)
+          }
+          .cache()
+    }
   }
+
 }

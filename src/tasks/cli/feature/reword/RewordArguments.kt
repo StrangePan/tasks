@@ -1,23 +1,15 @@
-package tasks.cli.feature.reword;
+package tasks.cli.feature.reword
 
-import tasks.model.Task;
+import tasks.model.Task
 
-public final class RewordArguments {
-  private final Task targetTask;
-  private final String description;
-
-  RewordArguments(Task targetTask, String description) {
-    this.targetTask = targetTask;
-    this.description = description;
+class RewordArguments internal constructor(private val targetTask: Task, private val description: String) {
+  /** The target to reword.  */
+  fun targetTask(): Task {
+    return targetTask
   }
 
-  /** The target to reword. */
-  public Task targetTask() {
-    return targetTask;
-  }
-
-  /** The new description for the task. */
-  public String description() {
-    return description;
+  /** The new description for the task.  */
+  fun description(): String {
+    return description
   }
 }

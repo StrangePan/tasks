@@ -1,25 +1,19 @@
-package tasks.cli.feature.graph;
+package tasks.cli.feature.graph
 
-import static tasks.cli.parser.ParserUtil.assertNoExtraArgs;
+import org.apache.commons.cli.CommandLine
+import tasks.cli.parser.CommandParser
+import tasks.cli.parser.ParserUtil
 
-import org.apache.commons.cli.CommandLine;
-import tasks.cli.parser.CommandParser;
-import tasks.cli.parser.ParserUtil;
-
-/** Parser for graph/xl command. */
-public final class GraphParser implements CommandParser<GraphArguments> {
-
-  @Override
-  public GraphArguments parse(CommandLine commandLine) {
+/** Parser for graph/xl command.  */
+class GraphParser : CommandParser<GraphArguments> {
+  override fun parse(commandLine: CommandLine): GraphArguments {
     /*
      * No non-flag parameters allowed
      * optional --completed flag
      * optional --all flag
      */
-    assertNoExtraArgs(commandLine);
-
-    boolean isAllSet = ParserUtil.getFlagPresence(commandLine, GraphCommand.ALL_OPTION.value());
-
-    return new GraphArguments(isAllSet);
+    ParserUtil.assertNoExtraArgs(commandLine)
+    val isAllSet = ParserUtil.getFlagPresence(commandLine, GraphCommand.ALL_OPTION.value())
+    return GraphArguments(isAllSet)
   }
 }

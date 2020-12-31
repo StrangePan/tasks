@@ -1,170 +1,149 @@
-package tasks.cli.feature;
+package tasks.cli.feature
 
-import static java.util.Objects.requireNonNull;
-import static omnia.data.cache.Memoized.memoize;
-import static omnia.data.stream.Collectors.toImmutableSet;
+import java.util.Objects
+import java.util.Optional
+import java.util.function.Function
+import omnia.data.cache.Memoized
+import omnia.data.cache.Memoized.Companion.just
+import omnia.data.cache.Memoized.Companion.memoize
+import omnia.data.stream.Collectors.toImmutableMap
+import omnia.data.stream.Collectors.toImmutableSet
+import omnia.data.structure.Collection
+import omnia.data.structure.List
+import omnia.data.structure.Map
+import omnia.data.structure.Set
+import omnia.data.structure.immutable.ImmutableMap
+import omnia.data.structure.immutable.ImmutableSet
+import omnia.data.structure.tuple.Tuple
+import tasks.cli.command.Command
+import tasks.cli.command.Commands
+import tasks.cli.feature.add.AddCommand
+import tasks.cli.feature.add.AddHandler
+import tasks.cli.feature.add.AddParser
+import tasks.cli.feature.blockers.BlockersCommand
+import tasks.cli.feature.blockers.BlockersHandler
+import tasks.cli.feature.blockers.BlockersParser
+import tasks.cli.feature.complete.CompleteCommand
+import tasks.cli.feature.complete.CompleteHandler
+import tasks.cli.feature.complete.CompleteParser
+import tasks.cli.feature.graph.GraphCommand
+import tasks.cli.feature.graph.GraphHandler
+import tasks.cli.feature.graph.GraphParser
+import tasks.cli.feature.help.HelpCommand
+import tasks.cli.feature.help.HelpHandler
+import tasks.cli.feature.help.HelpParser
+import tasks.cli.feature.info.InfoCommand
+import tasks.cli.feature.info.InfoHandler
+import tasks.cli.feature.info.InfoParser
+import tasks.cli.feature.list.ListCommand
+import tasks.cli.feature.list.ListHandler
+import tasks.cli.feature.list.ListParser
+import tasks.cli.feature.remove.RemoveCommand
+import tasks.cli.feature.remove.RemoveHandler
+import tasks.cli.feature.remove.RemoveParser
+import tasks.cli.feature.reopen.ReopenCommand
+import tasks.cli.feature.reopen.ReopenHandler
+import tasks.cli.feature.reopen.ReopenParser
+import tasks.cli.feature.reword.RewordCommand
+import tasks.cli.feature.reword.RewordHandler
+import tasks.cli.feature.reword.RewordParser
+import tasks.cli.feature.start.StartCommand
+import tasks.cli.feature.start.StartHandler
+import tasks.cli.feature.start.StartParser
+import tasks.cli.feature.stop.StopCommand
+import tasks.cli.feature.stop.StopHandler
+import tasks.cli.feature.stop.StopParser
+import tasks.cli.input.Reader
+import tasks.cli.output.Printer
+import tasks.cli.parser.ParseResult
+import tasks.cli.parser.Parser
+import tasks.cli.parser.ParserUtil
+import tasks.model.ObservableTaskStore
+import tasks.model.Task
 
-import java.util.Optional;
-import java.util.function.Function;
-import omnia.data.cache.Memoized;
-import omnia.data.stream.Collectors;
-import omnia.data.structure.Collection;
-import omnia.data.structure.List;
-import omnia.data.structure.Map;
-import omnia.data.structure.Set;
-import omnia.data.structure.immutable.ImmutableMap;
-import omnia.data.structure.immutable.ImmutableSet;
-import omnia.data.structure.tuple.Couple;
-import omnia.data.structure.tuple.Tuple;
-import tasks.cli.command.Command;
-import tasks.cli.command.Commands;
-import tasks.cli.feature.add.AddCommand;
-import tasks.cli.feature.add.AddHandler;
-import tasks.cli.feature.add.AddParser;
-import tasks.cli.feature.blockers.BlockersCommand;
-import tasks.cli.feature.blockers.BlockersHandler;
-import tasks.cli.feature.blockers.BlockersParser;
-import tasks.cli.feature.complete.CompleteCommand;
-import tasks.cli.feature.complete.CompleteHandler;
-import tasks.cli.feature.complete.CompleteParser;
-import tasks.cli.feature.graph.GraphCommand;
-import tasks.cli.feature.graph.GraphHandler;
-import tasks.cli.feature.graph.GraphParser;
-import tasks.cli.feature.help.HelpCommand;
-import tasks.cli.feature.help.HelpHandler;
-import tasks.cli.feature.help.HelpParser;
-import tasks.cli.feature.info.InfoCommand;
-import tasks.cli.feature.info.InfoHandler;
-import tasks.cli.feature.info.InfoParser;
-import tasks.cli.feature.list.ListCommand;
-import tasks.cli.feature.list.ListHandler;
-import tasks.cli.feature.list.ListParser;
-import tasks.cli.feature.remove.RemoveCommand;
-import tasks.cli.feature.remove.RemoveHandler;
-import tasks.cli.feature.remove.RemoveParser;
-import tasks.cli.feature.reopen.ReopenCommand;
-import tasks.cli.feature.reopen.ReopenHandler;
-import tasks.cli.feature.reopen.ReopenParser;
-import tasks.cli.feature.reword.RewordCommand;
-import tasks.cli.feature.reword.RewordHandler;
-import tasks.cli.feature.reword.RewordParser;
-import tasks.cli.feature.start.StartCommand;
-import tasks.cli.feature.start.StartHandler;
-import tasks.cli.feature.start.StartParser;
-import tasks.cli.feature.stop.StopCommand;
-import tasks.cli.feature.stop.StopHandler;
-import tasks.cli.feature.stop.StopParser;
-import tasks.cli.input.Reader;
-import tasks.cli.output.Printer;
-import tasks.cli.parser.Parser;
-import tasks.cli.parser.ParserUtil;
-import tasks.cli.parser.ParseResult;
-import tasks.model.Task;
-import tasks.model.ObservableTaskStore;
+class Features(taskStore: Memoized<out ObservableTaskStore>) : Commands {
+  val fallbackFeature: Feature<*>
+  private val featuresByNameAndAliases: Map<String, Feature<*>>
+  override val allCommands: ImmutableSet<Command>
+  private val printerFactory = memoize { Printer.Factory() }
+  private val reader: Memoized<Reader> = memoize { Reader.forInputStream(System.`in`) }
 
-public final class Features implements Commands {
-
-  private final Feature<?> helpFeature;
-  private final Map<String, Feature<?>> featuresByNameAndAliases;
-  private final ImmutableSet<Command> commands;
-  private final Memoized<Printer.Factory> printerFactory = memoize(Printer.Factory::new);
-  private final Memoized<Reader> reader = memoize(() -> Reader.forInputStream(System.in));
-
-  public Features(Memoized<? extends ObservableTaskStore> taskStore) {
-    Memoized<Parser<List<ParseResult<? extends Task>>>> taskListParser =
-        memoize(() -> ParserUtil.taskListParser(taskStore));
-
-    helpFeature =
-        new Feature<>(
-            HelpCommand.registration(),
-            HelpParser::new,
-            () -> new HelpHandler(Memoized.just(this)));
-
-    Set<Feature<?>> features =
-        ImmutableSet.of(
-            new Feature<>(
-                AddCommand.registration(),
-                () -> new AddParser(taskListParser),
-                () -> new AddHandler(taskStore)),
-            new Feature<>(
-                BlockersCommand.registration(),
-                () -> new BlockersParser(taskListParser),
-                () -> new BlockersHandler(taskStore)),
-            new Feature<>(
-                CompleteCommand.registration(),
-                () -> new CompleteParser(taskListParser),
-                () -> new CompleteHandler(taskStore)),
-            new Feature<>(
-                GraphCommand.registration(),
-                GraphParser::new,
-                () -> new GraphHandler(taskStore)),
-            helpFeature,
-            new Feature<>(
-                InfoCommand.registration(),
-                () -> new InfoParser(taskListParser),
-                InfoHandler::new),
-            new Feature<>(
-                ListCommand.registration(),
-                ListParser::new,
-                () -> new ListHandler(taskStore)),
-            new Feature<>(
-                RemoveCommand.registration(),
-                () -> new RemoveParser(taskListParser),
-                () -> new RemoveHandler(taskStore, printerFactory.value(), reader)),
-            new Feature<>(
-                ReopenCommand.registration(),
-                () -> new ReopenParser(taskListParser),
-                () -> new ReopenHandler(taskStore)),
-            new Feature<>(
-                RewordCommand.registration(),
-                () -> new RewordParser(taskListParser),
-                () -> new RewordHandler(taskStore)),
-            new Feature<>(
-                StartCommand.registration(),
-                () -> new StartParser(taskListParser),
-                () -> new StartHandler(taskStore)),
-            new Feature<>(
-                StopCommand.registration(),
-                () -> new StopParser(taskListParser),
-                () -> new StopHandler(taskStore)));
-
-    commands = features.stream().map(Feature::command).collect(toImmutableSet());
-
-    featuresByNameAndAliases = groupByCommandNameAndAlias(features, Feature::command);
+  override fun getMatchingCommand(userInput: String): Optional<Command> {
+    return getMatchingFeature(userInput).map { it.command }
   }
 
-  private static <V> ImmutableMap<String, V> groupByCommandNameAndAlias(
-      Collection<? extends V> collection, Function<? super V, ? extends Command> commandExtractor) {
-    return collection.stream()
-        .flatMap(
-            value ->
-                commandExtractor.apply(value)
-                    .canonicalNameAndAliases()
-                    .stream()
-                    .map(alias -> Tuple.of(alias, value)))
-        .collect(Collectors.toImmutableMap(Couple::first, Couple::second));
+  fun getMatchingOrFallbackFeature(userInput: String): Feature<*> {
+    return getMatchingFeature(userInput).orElseGet { fallbackFeature }
   }
 
-  @Override
-  public ImmutableSet<Command> getAllCommands() {
-    return commands;
+  private fun getMatchingFeature(userInput: String): Optional<Feature<*>> {
+    Objects.requireNonNull(userInput)
+    return featuresByNameAndAliases.valueOf(userInput)
   }
 
-  @Override
-  public Optional<Command> getMatchingCommand(String userInput) {
-    return getMatchingFeature(userInput).map(Feature::command);
+  companion object {
+    private fun <V> groupByCommandNameAndAlias(
+        collection: Collection<out V>, commandExtractor: Function<in V, out Command>): ImmutableMap<String, V> {
+      return collection.stream()
+          .flatMap { value ->
+            commandExtractor.apply(value)
+                .canonicalNameAndAliases()
+                .stream()
+                .map { alias -> Tuple.of(alias, value) }
+          }
+          .collect(toImmutableMap())
+    }
   }
 
-  public Feature<?> getMatchingOrFallbackFeature(String userInput) {
-    return getMatchingFeature(userInput).orElseGet(this::getFallbackFeature);
-  }
-
-  public Feature<?> getFallbackFeature() {
-    return helpFeature;
-  }
-
-  public Optional<Feature<?>> getMatchingFeature(String userInput) {
-    requireNonNull(userInput);
-    return featuresByNameAndAliases.valueOf(userInput);
+  init {
+    val taskListParser: Memoized<Parser<List<ParseResult<out Task>>>> = memoize { ParserUtil.taskListParser(taskStore) }
+    fallbackFeature = Feature(
+        HelpCommand.registration(),
+        { HelpParser() },
+        { HelpHandler(just(this)) })
+    val features: Set<Feature<*>> = ImmutableSet.of(
+        Feature(
+            AddCommand.registration(),
+            { AddParser(taskListParser) },
+            { AddHandler(taskStore) }),
+        Feature(
+            BlockersCommand.registration(),
+            { BlockersParser(taskListParser) },
+            { BlockersHandler(taskStore) }),
+        Feature(
+            CompleteCommand.registration(),
+            { CompleteParser(taskListParser) },
+            { CompleteHandler(taskStore) }),
+        Feature(
+            GraphCommand.registration(), { GraphParser() }, { GraphHandler(taskStore) }),
+        fallbackFeature,
+        Feature(
+            InfoCommand.registration(),
+            { InfoParser(taskListParser) },
+            { InfoHandler() }),
+        Feature(
+            ListCommand.registration(), { ListParser() }, { ListHandler(taskStore) }),
+        Feature(
+            RemoveCommand.registration(),
+            { RemoveParser(taskListParser) },
+            { RemoveHandler(taskStore, printerFactory.value(), reader) }),
+        Feature(
+            ReopenCommand.registration(),
+            { ReopenParser(taskListParser) },
+            { ReopenHandler(taskStore) }),
+        Feature(
+            RewordCommand.registration(),
+            { RewordParser(taskListParser) },
+            { RewordHandler(taskStore) }),
+        Feature(
+            StartCommand.registration(),
+            { StartParser(taskListParser) },
+            { StartHandler(taskStore) }),
+        Feature(
+            StopCommand.registration(),
+            { StopParser(taskListParser) },
+            { StopHandler(taskStore) }))
+    allCommands = features.stream().map(Feature<*>::command).collect(toImmutableSet())
+    featuresByNameAndAliases = groupByCommandNameAndAlias(features, Feature<*>::command)
   }
 }

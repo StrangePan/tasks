@@ -1,17 +1,13 @@
-package tasks.cli.feature.start;
+package tasks.cli.feature.start
 
-import omnia.data.cache.Memoized;
-import omnia.data.structure.List;
-import tasks.cli.command.common.simple.SimpleParser;
-import tasks.cli.parser.ParseResult;
-import tasks.cli.parser.Parser;
-import tasks.model.Task;
+import java.util.function.Function
+import omnia.data.cache.Memoized
+import omnia.data.structure.List
+import tasks.cli.command.common.simple.SimpleParser
+import tasks.cli.parser.ParseResult
+import tasks.cli.parser.Parser
+import tasks.model.Task
 
-/** Command line argument parser for the Start command. */
-public final class StartParser extends SimpleParser<StartArguments> {
-  public StartParser(
-      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
-          taskParser) {
-    super(StartArguments::new, taskParser);
-  }
-}
+/** Command line argument parser for the Start command.  */
+class StartParser(
+    taskParser: Memoized<out Parser<out List<out ParseResult<out Task>>>>) : SimpleParser<StartArguments>(Function { tasks: List<Task> -> StartArguments(tasks) }, taskParser)

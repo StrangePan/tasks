@@ -1,373 +1,323 @@
-package tasks.model.impl;
+package tasks.model.impl
 
-import static java.util.stream.Collectors.joining;
-import static omnia.data.cache.Memoized.memoize;
-import static omnia.data.stream.Collectors.toImmutableMap;
+import io.reactivex.rxjava3.core.Completable
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Single
+import java.io.BufferedReader
+import java.io.BufferedWriter
+import java.io.Writer
+import java.util.Comparator
+import java.util.Optional
+import java.util.function.Supplier
+import java.util.regex.Pattern
+import java.util.stream.Collectors
+import java.util.stream.Stream
+import omnia.data.cache.Memoized
+import omnia.data.cache.Memoized.Companion.memoize
+import omnia.data.stream.Collectors.toImmutableMap
+import omnia.data.structure.DirectedGraph
+import omnia.data.structure.Map
+import omnia.data.structure.immutable.ImmutableDirectedGraph
+import omnia.data.structure.immutable.ImmutableDirectedGraph.UnknownNodeException
+import omnia.data.structure.immutable.ImmutableList
+import omnia.data.structure.immutable.ImmutableMap
+import omnia.data.structure.immutable.ImmutableMap.Companion.copyOf
+import omnia.data.structure.immutable.ImmutableSet
+import omnia.data.structure.mutable.HashMap
+import omnia.data.structure.mutable.HashSet
+import omnia.data.structure.mutable.MutableMap
+import omnia.data.structure.mutable.MutableSet
+import omnia.data.structure.tuple.Couple
+import omnia.data.structure.tuple.Tuple
+import tasks.io.File
+import tasks.model.Task
 
-import io.reactivex.rxjava3.core.Completable;
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.Single;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.Writer;
-import java.util.Comparator;
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
-import omnia.data.cache.Memoized;
-import omnia.data.structure.DirectedGraph;
-import omnia.data.structure.Map;
-import omnia.data.structure.immutable.ImmutableDirectedGraph;
-import omnia.data.structure.immutable.ImmutableList;
-import omnia.data.structure.immutable.ImmutableMap;
-import omnia.data.structure.immutable.ImmutableSet;
-import omnia.data.structure.mutable.HashMap;
-import omnia.data.structure.mutable.HashSet;
-import omnia.data.structure.mutable.MutableMap;
-import omnia.data.structure.mutable.MutableSet;
-import omnia.data.structure.tuple.Couple;
-import omnia.data.structure.tuple.Tuple;
-import tasks.io.File;
-import tasks.model.Task;
-
-public final class TaskFileStorage implements TaskStorage {
-
-  private static final int VERSION = 2;
-  private static final String END_OF_LINE = "\n";
-  private static final String TASK_FIELD_DELIMITER = ";";
-  private static final String TASK_ID_DELIMITER = ",";
-  private static final Pattern VERSION_PATTERN = Pattern.compile("^# version (\\d+)$");
-
-  private static final Memoized<ImmutableSet<Couple<Task.Status, ImmutableList<String>>>> STATUS_STRINGS =
-      memoize(() ->
-          ImmutableSet.of(
-              // false = !isCompleted, legacy
-              Tuple.of(Task.Status.OPEN, ImmutableList.of("open", "false")),
-              // true = isCompleted, legacy
-              Tuple.of(Task.Status.COMPLETED, ImmutableList.of("complete", "true")),
-              Tuple.of(Task.Status.STARTED, ImmutableList.of("started"))));
-  private static final Memoized<ImmutableMap<Task.Status, String>> STATUS_TO_STRING =
-      memoize(() ->
-          STATUS_STRINGS.value().stream()
-              .map(couple -> couple.mapSecond(list -> list.itemAt(0)))
-              .collect(toImmutableMap()));
-  private static final Memoized<ImmutableMap<String, Task.Status>> STRING_TO_STATUS =
-      memoize(() ->
-          STATUS_STRINGS.value().stream()
-              .flatMap(couple -> couple.second().stream().map(s -> Tuple.of(s, couple.first())))
-              .collect(toImmutableMap()));
-
-  private final File file;
-
-  public TaskFileStorage(File file) {
-    this.file = file;
+class TaskFileStorage(private val file: File) : TaskStorage {
+  override fun readFromStorage(): Single<Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>>> {
+    return Single.fromCallable { BufferedReader(file.openReader()).use { reader -> return@fromCallable parseTaskData(reader) } }
   }
 
-  @Override
-  public Single<Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>>>
-      readFromStorage() {
-    return Single.fromCallable(() -> {
-      try (BufferedReader reader = new BufferedReader(file.openReader())) {
-        return parseTaskData(reader);
-      }
-    });
+  override fun writeToStorage(
+      graph: DirectedGraph<out TaskIdImpl>,
+      data: Map<out TaskIdImpl, out TaskData>): Completable {
+    return Completable.fromAction { BufferedWriter(file.openWriter()).use { writer -> serializeTaskData(graph, data, writer) } }
   }
 
-  @Override
-  public Completable writeToStorage(
-      DirectedGraph<? extends TaskIdImpl> graph,
-      Map<? extends TaskIdImpl, ? extends TaskData> data) {
-    return Completable.fromAction(() -> {
-      try (BufferedWriter writer = new BufferedWriter(file.openWriter())) {
-        serializeTaskData(graph, data, writer);
-      }
-    });
-  }
+  private class LineCollector {
+    private val graph: ImmutableDirectedGraph.Builder<TaskIdImpl> = ImmutableDirectedGraph.builder()
+    private val tasksWithParsedEdges: MutableSet<TaskIdImpl> = HashSet.create()
+    private val tasks: MutableMap<TaskIdImpl, TaskData> = HashMap.create()
+    private var state: State = State.PARSING_NOTHING
 
-  private static Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>>
-      parseTaskData(BufferedReader reader) {
-    return Single.just(reader)
-        .map(BufferedReader::lines)
-        .map(Stream::iterator)
-        .map(iterator -> (Iterable<String>) () -> iterator)
-        .flatMapObservable(Observable::fromIterable)
-        .filter(line -> !line.isBlank())
-        .collect(LineCollector::new, LineCollector::collect)
-        .map(LineCollector::build)
-        .blockingGet();
-  }
-
-  private static final class LineCollector {
-    private final ImmutableDirectedGraph.Builder<TaskIdImpl> graph = ImmutableDirectedGraph.builder();
-    private final MutableSet<TaskIdImpl> tasksWithParsedEdges = HashSet.create();
-    private final MutableMap<TaskIdImpl, TaskData> tasks = HashMap.create();
-    private State state = State.PARSING_NOTHING;
-
-    private enum State {
-      PARSING_NOTHING,
-      PARSING_GRAPH,
-      PARSING_TASKS,
+    private enum class State {
+      PARSING_NOTHING, PARSING_GRAPH, PARSING_TASKS
     }
 
-    void collect(String line) {
+    fun collect(line: String) {
       maybeParseStateChange(line).ifPresentOrElse(
-          newState -> this.state = newState,
-          () -> parseToCollection(line));
+          { newState: State -> state = newState }
+      ) { parseToCollection(line) }
     }
 
-    private Optional<State> maybeParseStateChange(String line) {
-      Matcher versionMatcher = VERSION_PATTERN.matcher(line);
+    private fun maybeParseStateChange(line: String): Optional<State> {
+      val versionMatcher = VERSION_PATTERN.matcher(line)
       if (versionMatcher.matches()) {
-        assertSupportedVersion(versionMatcher.group(1));
-        return Optional.of(State.PARSING_NOTHING);
-      } else if (line.equals("# tasks")) {
-        return Optional.of(State.PARSING_TASKS);
-      } else if (line.equals("# dependencies")) {
-        return Optional.of(State.PARSING_GRAPH);
+        assertSupportedVersion(versionMatcher.group(1))
+        return Optional.of(State.PARSING_NOTHING)
+      } else if (line == "# tasks") {
+        return Optional.of(State.PARSING_TASKS)
+      } else if (line == "# dependencies") {
+        return Optional.of(State.PARSING_GRAPH)
       }
-      return Optional.empty();
+      return Optional.empty()
     }
 
-    private static void assertSupportedVersion(String versionString) {
-      try {
-        int version = Integer.parseInt(versionString);
-        if (version > VERSION) {
-          throw new IncompatibleVersionError("unsupported file version: " + version + ". supported versions: " + VERSION);
-        }
-      } catch (NumberFormatException ex) {
-        throw new TaskParseError("unable to parse file version code: " + versionString, ex);
+    private fun parseToCollection(line: String) {
+      when (state) {
+        State.PARSING_GRAPH -> parseToGraph(line)
+        State.PARSING_TASKS -> parseToTasks(line)
+        else -> throw TaskParseError("unexpected line in file: $line")
       }
     }
 
-    private void parseToCollection(String line) {
-      switch (state) {
-        case PARSING_GRAPH:
-          parseToGraph(line);
-          break;
-        case PARSING_TASKS:
-          parseToTasks(line);
-          break;
-        default:
-          throw new TaskParseError("unexpected line in file: " + line);
-      }
-    }
-
-    private void parseToGraph(String line) {
-      String[] fields = line.split(TASK_FIELD_DELIMITER);
-      TaskIdImpl id = parseId(fields[0]);
-
+    private fun parseToGraph(line: String) {
+      val fields = line.split(TASK_FIELD_DELIMITER.toRegex()).toTypedArray()
+      val id = parseId(fields[0])
       if (tasksWithParsedEdges.contains(id)) {
-        throw new TaskParseError("edges for task defined twice: " + id);
+        throw TaskParseError("edges for task defined twice: $id")
       }
-
       try {
-        Stream.of(fields[1].split(TASK_ID_DELIMITER))
-            .map(TaskFileStorage::parseId)
-            .forEach(dependency -> graph.addEdge(dependency, id));
-      } catch (ImmutableDirectedGraph.UnknownNodeException e) {
-        throw new TaskParseError("missing task data for: " + id, e);
+        Stream.of(*fields[1].split(TASK_ID_DELIMITER.toRegex()).toTypedArray())
+            .map { string: String -> parseId(string) }
+            .forEach { dependency: TaskIdImpl -> graph.addEdge(dependency, id) }
+      } catch (e: UnknownNodeException) {
+        throw TaskParseError("missing task data for: $id", e)
       }
-
-      tasksWithParsedEdges.add(id);
+      tasksWithParsedEdges.add(id)
     }
 
-    private void parseToTasks(String line) {
-      String[] fields = line.split(TASK_FIELD_DELIMITER);
-      TaskIdImpl id = parseId(fields[0]);
-      Task.Status status = parseStatus(fields[1]);
-      String label = unescapeLabel(fields[2]);
-
+    private fun parseToTasks(line: String) {
+      val fields = line.split(TASK_FIELD_DELIMITER.toRegex()).toTypedArray()
+      val id = parseId(fields[0])
+      val status = parseStatus(fields[1])
+      val label = unescapeLabel(fields[2])
       if (tasks.keys().contains(id)) {
-        throw new TaskParseError("task ID defined twice: " + id);
+        throw TaskParseError("task ID defined twice: $id")
+      }
+      tasks.putMapping(id, TaskData(label, status))
+      graph.addNode(id)
+    }
+
+    fun build(): Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>> {
+      return Tuple.of(graph.build(), copyOf(tasks))
+    }
+
+    companion object {
+      private fun assertSupportedVersion(versionString: String) {
+        try {
+          val version = versionString.toInt()
+          if (version > VERSION) {
+            throw IncompatibleVersionError("unsupported file version: $version. supported versions: $VERSION")
+          }
+        } catch (ex: NumberFormatException) {
+          throw TaskParseError("unable to parse file version code: $versionString", ex)
+        }
       }
 
-      tasks.putMapping(id, new TaskData(label, status));
-      graph.addNode(id);
-    }
-
-    private static Task.Status parseStatus(String field) {
-      return STRING_TO_STATUS.value().valueOf(field.toLowerCase()).orElse(Task.Status.OPEN);
-    }
-
-    Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>> build() {
-      return Tuple.of(graph.build(), ImmutableMap.copyOf(tasks));
+      private fun parseStatus(field: String): Task.Status {
+        return STRING_TO_STATUS.value().valueOf(field.toLowerCase()).orElse(Task.Status.OPEN)
+      }
     }
   }
 
-  private static TaskIdImpl parseId(String string) {
-    try {
-      return TaskIdImpl.parse(string);
-    } catch (NumberFormatException ex) {
-      throw new TaskParseError("invalid id: " + string, ex);
-    }
-  }
-
-  private void serializeTaskData(
-      DirectedGraph<? extends TaskIdImpl> graph,
-      Map<? extends TaskIdImpl, ? extends TaskData> data,
-      Writer writer) {
+  private fun serializeTaskData(
+      graph: DirectedGraph<out TaskIdImpl>,
+      data: Map<out TaskIdImpl, out TaskData>,
+      writer: Writer) {
     Observable.just(
-            Observable.just("# version " + VERSION),
-            Observable.just("# tasks"),
-            serialize(data),
-            Observable.just("# dependencies"),
-            serialize(graph))
-        .concatMap(o -> o)
-        .concatMap(line -> Observable.just(line, END_OF_LINE))
-        .blockingForEach(writer::write);
+        Observable.just("# version $VERSION"),
+        Observable.just("# tasks"),
+        serialize(data),
+        Observable.just("# dependencies"),
+        serialize(graph))
+        .concatMap { o: Observable<String> -> o }
+        .concatMap { line: String -> Observable.just(line, END_OF_LINE) }
+        .blockingForEach { str: String -> writer.write(str) }
   }
 
-  private static Observable<String> serialize(Map<? extends TaskIdImpl, ? extends TaskData> tasks) {
-    return Single.just(tasks)
-        .map(Map::entries)
-        .flatMapObservable(Observable::fromIterable)
-        .sorted(Comparator.comparing(entry -> entry.key().asLong()))
-        .map(entry -> Tuple.of(entry.key(), entry.value()))
-        .map(TaskFileStorage::serialize);
-  }
+  class IncompatibleVersionError(message: String) : ParseError(message) {
 
-  private static String serialize(Couple<? extends TaskIdImpl, ? extends TaskData> task) {
-    return new StringBuilder()
-        .append(serialize(task.first()))
-        .append(TASK_FIELD_DELIMITER)
-        .append(STATUS_TO_STRING.value().valueOf(task.second().status()).orElseThrow())
-        .append(TASK_FIELD_DELIMITER)
-        .append(escapeLabel(task.second().label()))
-        .append(TASK_FIELD_DELIMITER)
-        .toString();
-  }
-
-  private static String serialize(TaskIdImpl id) {
-    return id.toString();
-  }
-
-  private static String escapeLabel(String label) {
-    StringBuilder escapedLabel = new StringBuilder();
-    int i = 0;
-    for (int j = 0; j <= label.length(); j++) {
-      boolean isEscapableCharacter = j < label.length() && isEscapableCharacter(label.charAt(j));
-      if (j == label.length() || isEscapableCharacter) {
-        escapedLabel.append(label, i, j);
-        i = j + 1;
-      }
-      if (j < label.length() && isEscapableCharacter) {
-        escapedLabel.append("\\").append(escapeCharacter(label.charAt(j)));
-      }
-    }
-    return escapedLabel.toString();
-  }
-
-  private static boolean isEscapableCharacter(char c) {
-    switch (c) {
-      case '\\':
-      case '\n':
-      case ';':
-        return true;
-      default:
-        return false;
+    companion object {
+      private const val serialVersionUID = -5818555235686955880L
     }
   }
 
-  private static char escapeCharacter(char c) {
-    switch (c) {
-      case '\\':
-        return '\\';
-      case '\n':
-        return 'n';
-      case ';':
-        return ':';
-      default:
-        return c;
+  class TaskParseError : ParseError {
+    constructor(message: String) : super(message)
+    constructor(message: String, cause: Throwable) : super(message, cause)
+
+    companion object {
+      private const val serialVersionUID = 7208486740444049242L
     }
   }
 
-  private static String unescapeLabel(String escapedLabel) {
-    StringBuilder label = new StringBuilder();
-    int i = 0;
-    for (int j = 0; j <= escapedLabel.length(); j++) {
-      boolean isEscapeCharacter = j < escapedLabel.length() && escapedLabel.charAt(j) == '\\';
-      if (j == escapedLabel.length() || isEscapeCharacter) {
-        label.append(escapedLabel, i, j);
-        i = j + 2;
-      }
-      if (j < escapedLabel.length() && isEscapeCharacter) {
-        j++;
-        label.append(unescapeCharacter(escapedLabel.charAt(j)));
+  open class ParseError : RuntimeException {
+    protected constructor(message: String) : super(message)
+    protected constructor(message: String, cause: Throwable) : super(message, cause)
+
+    companion object {
+      private const val serialVersionUID = -1135195505560715347L
+    }
+  }
+
+  companion object {
+    private const val VERSION = 2
+    private const val END_OF_LINE = "\n"
+    private const val TASK_FIELD_DELIMITER = ";"
+    private const val TASK_ID_DELIMITER = ","
+    private val VERSION_PATTERN = Pattern.compile("^# version (\\d+)$")
+    private val STATUS_STRINGS = memoize {
+      ImmutableSet.of( // false = !isCompleted, legacy
+          Tuple.of(Task.Status.OPEN, ImmutableList.of("open", "false")),  // true = isCompleted, legacy
+          Tuple.of(Task.Status.COMPLETED, ImmutableList.of("complete", "true")),
+          Tuple.of(Task.Status.STARTED, ImmutableList.of("started")))
+    }
+    private val STATUS_TO_STRING: Memoized<ImmutableMap<Task.Status, String>> = memoize(Supplier<ImmutableMap<Task.Status, String>> {
+      STATUS_STRINGS.value().stream()
+          .map { couple: Couple<Task.Status, ImmutableList<String>> -> couple.mapSecond { list: ImmutableList<String> -> list.itemAt(0) } }
+          .collect(toImmutableMap())
+    })
+    private val STRING_TO_STATUS = memoize {
+      STATUS_STRINGS.value().stream()
+          .flatMap { couple: Couple<Task.Status, ImmutableList<String>> -> couple.second().stream().map { s: String -> Tuple.of(s, couple.first()) } }
+          .collect(toImmutableMap())
+    }
+
+    private fun parseTaskData(reader: BufferedReader): Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>> {
+      return Single.just(reader)
+          .map { obj: BufferedReader -> obj.lines() }
+          .map { obj: Stream<String> -> obj.iterator() }
+          .map { iterator: Iterator<String> -> Iterable { iterator } }
+          .flatMapObservable { source: Iterable<String> -> Observable.fromIterable(source) }
+          .filter { line: String -> line.isNotBlank() }
+          .collect({ LineCollector() }) { obj: LineCollector, line: String -> obj.collect(line) }
+          .map { obj: LineCollector -> obj.build() }
+          .blockingGet()
+    }
+
+    private fun parseId(string: String): TaskIdImpl {
+      return try {
+        TaskIdImpl.parse(string)
+      } catch (ex: NumberFormatException) {
+        throw TaskParseError("invalid id: $string", ex)
       }
     }
-    return label.toString();
-  }
 
-  private static char unescapeCharacter(char c) {
-    switch (c) {
-      case '\\':
-        return '\\';
-      case 'n':
-        return '\n';
-      case ':':
-        return ';';
-      default:
-        return c;
-    }
-  }
-
-  private static Observable<String> serialize(DirectedGraph<? extends TaskIdImpl> graph) {
-    return Single.just(graph)
-        .map(DirectedGraph::nodes)
-        .flatMapObservable(Observable::fromIterable)
-        .filter(node -> node.predecessors().isPopulated())
-        .sorted(Comparator.comparing(node -> node.item().asLong()))
-        .map(TaskFileStorage::serialize);
-  }
-
-  private static String serialize(DirectedGraph.DirectedNode<? extends TaskIdImpl> node) {
-    return new StringBuilder()
-        .append(serialize(node.item()))
-        .append(TASK_FIELD_DELIMITER)
-        .append(
-            node.predecessors().stream()
-                .map(DirectedGraph.DirectedNode::item)
-                .sorted(Comparator.comparing(TaskIdImpl::asLong))
-                .map(TaskFileStorage::serialize)
-                .collect(joining(TASK_ID_DELIMITER)))
-        .append(TASK_FIELD_DELIMITER)
-        .toString();
-  }
-
-  public static final class IncompatibleVersionError extends ParseError {
-    private static final long serialVersionUID = -5818555235686955880L;
-
-    private IncompatibleVersionError(String message) {
-      super(message);
+    private fun serialize(tasks: Map<out TaskIdImpl, out TaskData>): Observable<String> {
+      return Single.just(tasks)
+          .map { obj -> obj.entries() }
+          .flatMapObservable { source -> Observable.fromIterable(source) }
+          .sorted(Comparator.comparing { entry -> entry.key().asLong() })
+          .map { entry -> Tuple.of(entry.key(), entry.value()) }
+          .map { task -> serialize(task) }
     }
 
-    private IncompatibleVersionError(String message, Throwable cause) {
-      super(message, cause);
-    }
-  }
-
-  public static final class TaskParseError extends ParseError {
-    private static final long serialVersionUID = 7208486740444049242L;
-
-    private TaskParseError(String message) {
-      super(message);
-    }
-
-    private TaskParseError(String message, Throwable cause) {
-      super(message, cause);
-    }
-  }
-
-  public static class ParseError extends RuntimeException {
-    private static final long serialVersionUID = -1135195505560715347L;
-
-    private ParseError(String message) {
-      super(message);
+    private fun serialize(task: Couple<out TaskIdImpl, out TaskData>): String {
+      return StringBuilder()
+          .append(serialize(task.first()))
+          .append(TASK_FIELD_DELIMITER)
+          .append(STATUS_TO_STRING.value().valueOf(task.second().status()).orElseThrow())
+          .append(TASK_FIELD_DELIMITER)
+          .append(escapeLabel(task.second().label()))
+          .append(TASK_FIELD_DELIMITER)
+          .toString()
     }
 
-    private ParseError(String message, Throwable cause) {
-      super(message, cause);
+    private fun serialize(id: TaskIdImpl): String {
+      return id.toString()
+    }
+
+    private fun escapeLabel(label: String): String {
+      val escapedLabel = StringBuilder()
+      var i = 0
+      for (j in 0..label.length) {
+        val isEscapableCharacter = j < label.length && isEscapableCharacter(label[j])
+        if (j == label.length || isEscapableCharacter) {
+          escapedLabel.append(label, i, j)
+          i = j + 1
+        }
+        if (j < label.length && isEscapableCharacter) {
+          escapedLabel.append("\\").append(escapeCharacter(label[j]))
+        }
+      }
+      return escapedLabel.toString()
+    }
+
+    private fun isEscapableCharacter(c: Char): Boolean {
+      return when (c) {
+        '\\', '\n', ';' -> true
+        else -> false
+      }
+    }
+
+    private fun escapeCharacter(c: Char): Char {
+      return when (c) {
+        '\\' -> '\\'
+        '\n' -> 'n'
+        ';' -> ':'
+        else -> c
+      }
+    }
+
+    private fun unescapeLabel(escapedLabel: String): String {
+      val label = StringBuilder()
+      var i = 0
+      var j = 0
+      while (j <= escapedLabel.length) {
+        val isEscapeCharacter = j < escapedLabel.length && escapedLabel[j] == '\\'
+        if (j == escapedLabel.length || isEscapeCharacter) {
+          label.append(escapedLabel, i, j)
+          i = j + 2
+        }
+        if (j < escapedLabel.length && isEscapeCharacter) {
+          j++
+          label.append(unescapeCharacter(escapedLabel[j]))
+        }
+        j++
+      }
+      return label.toString()
+    }
+
+    private fun unescapeCharacter(c: Char): Char {
+      return when (c) {
+        '\\' -> '\\'
+        'n' -> '\n'
+        ':' -> ';'
+        else -> c
+      }
+    }
+
+    private fun serialize(graph: DirectedGraph<out TaskIdImpl>): Observable<String> {
+      return Single.just(graph)
+          .map { obj -> obj.nodes() }
+          .flatMapObservable { source -> Observable.fromIterable(source) }
+          .filter { node -> node.predecessors().isPopulated }
+          .sorted(Comparator.comparing { node -> node.item().asLong() })
+          .map { node -> serialize(node) }
+    }
+
+    private fun serialize(node: DirectedGraph.DirectedNode<out TaskIdImpl>): String {
+      return StringBuilder()
+          .append(serialize(node.item()))
+          .append(TASK_FIELD_DELIMITER)
+          .append(
+              node.predecessors().stream()
+                  .map(DirectedGraph.DirectedNode<out TaskIdImpl>::item)
+                  .sorted(Comparator.comparing { obj -> obj.asLong() })
+                  .map { id -> serialize(id) }
+                  .collect(Collectors.joining(TASK_ID_DELIMITER)))
+          .append(TASK_FIELD_DELIMITER)
+          .toString()
     }
   }
 }

@@ -1,29 +1,20 @@
-package tasks.cli.command.common;
-
-import static java.util.Objects.requireNonNull;
+package tasks.cli.command.common
 
 /**
  * A model representing the command line parameters common to all commands. Instances of this model
  * contain the arguments model specific to the current command.
  *
  * @param <T> the arguments model specific to the current command
- */
-public final class CommonArguments<T> {
-  private final T specificArguments;
-  private final boolean enableColorOutput;
+</T> */
+class CommonArguments<T>(private val specificArguments: T, private val enableColorOutput: Boolean) {
 
-  public CommonArguments(T specificArguments, boolean enableColorOutput) {
-    this.specificArguments = requireNonNull(specificArguments);
-    this.enableColorOutput = enableColorOutput;
+  /** The argument model specific to the current command.  */
+  fun specificArguments(): T {
+    return specificArguments
   }
 
-  /** The argument model specific to the current command. */
-  public T specificArguments() {
-    return this.specificArguments;
-  }
-
-  /** True if the output should contain formatting control codes (e.g. color codes). */
-  public boolean enableOutputFormatting() {
-    return enableColorOutput;
+  /** True if the output should contain formatting control codes (e.g. color codes).  */
+  fun enableOutputFormatting(): Boolean {
+    return enableColorOutput
   }
 }

@@ -1,248 +1,209 @@
-package tasks.model.impl;
+package tasks.model.impl
 
-import static java.util.Objects.requireNonNull;
-import static omnia.data.cache.Memoized.memoize;
-import static omnia.data.stream.Collectors.toImmutableSet;
+import io.reactivex.rxjava3.core.Observable
+import java.util.Comparator
+import java.util.Objects
+import java.util.Optional
+import java.util.function.Supplier
+import omnia.algorithm.SetAlgorithms.differenceBetween
+import omnia.data.cache.Memoized
+import omnia.data.cache.Memoized.Companion.memoize
+import omnia.data.cache.MemoizedInt
+import omnia.data.cache.WeakCache
+import omnia.data.stream.Collectors.toImmutableSet
+import omnia.data.structure.immutable.ImmutableDirectedGraph
+import omnia.data.structure.immutable.ImmutableDirectedGraph.Companion.copyOf
+import omnia.data.structure.immutable.ImmutableMap
+import omnia.data.structure.immutable.ImmutableSet
+import omnia.data.structure.immutable.ImmutableSortedSet
+import omnia.data.structure.immutable.ImmutableSortedSet.Companion.copyOf
+import tasks.model.Task
+import tasks.model.TaskId
+import tasks.model.TaskStore
+import tasks.util.rx.Observables
 
-import io.reactivex.rxjava3.core.Observable;
-import java.util.Comparator;
-import java.util.Objects;
-import java.util.Optional;
-import omnia.algorithm.SetAlgorithms;
-import omnia.data.cache.Memoized;
-import omnia.data.cache.MemoizedInt;
-import omnia.data.cache.WeakCache;
-import omnia.data.structure.DirectedGraph;
-import omnia.data.structure.Graph;
-import omnia.data.structure.Map;
-import omnia.data.structure.immutable.ImmutableDirectedGraph;
-import omnia.data.structure.immutable.ImmutableMap;
-import omnia.data.structure.immutable.ImmutableSet;
-import omnia.data.structure.immutable.ImmutableSortedSet;
-import tasks.model.Task;
-import tasks.model.TaskId;
-import tasks.model.TaskStore;
-import tasks.util.rx.Observables;
+class TaskStoreImpl(val graph: ImmutableDirectedGraph<TaskIdImpl>, val data: ImmutableMap<TaskIdImpl, TaskData>) : TaskStore {
+  private val cache = WeakCache<TaskIdImpl, TaskImpl>()
+  private val allTaskIds: Memoized<ImmutableSortedSet<TaskIdImpl>>
+  private val allTasks: Memoized<ImmutableSet<TaskImpl>>
+  private val allUnblockedOpenTasks: Memoized<ImmutableSet<TaskImpl>>
+  private val allBlockedOpenTasks: Memoized<ImmutableSet<TaskImpl>>
+  private val allCompletedTasks: Memoized<ImmutableSet<TaskImpl>>
+  private val allOpenTasks: Memoized<ImmutableSet<TaskImpl>>
+  private val taskGraph: Memoized<ImmutableDirectedGraph<TaskImpl>>
+  private val hash: MemoizedInt
 
-final class TaskStoreImpl implements TaskStore {
-
-  private final WeakCache<TaskIdImpl, TaskImpl> cache = new WeakCache<>();
-
-  final ImmutableDirectedGraph<TaskIdImpl> graph;
-  final ImmutableMap<TaskIdImpl, TaskData> data;
-
-  private final Memoized<ImmutableSortedSet<TaskIdImpl>> allTaskIds;
-  private final Memoized<ImmutableSet<TaskImpl>> allTasks;
-  private final Memoized<ImmutableSet<TaskImpl>> allUnblockedOpenTasks;
-  private final Memoized<ImmutableSet<TaskImpl>> allBlockedOpenTasks;
-  private final Memoized<ImmutableSet<TaskImpl>> allCompletedTasks;
-  private final Memoized<ImmutableSet<TaskImpl>> allOpenTasks;
-  private final Memoized<ImmutableDirectedGraph<TaskImpl>> taskGraph;
-
-  private final MemoizedInt hash;
-
-  TaskStoreImpl(ImmutableDirectedGraph<TaskIdImpl> graph, ImmutableMap<TaskIdImpl, TaskData> data) {
-    this.graph = requireNonNull(graph);
-    this.data = requireNonNull(data);
-
-    if (graph.contents().count() != data.keys().count()) {
-      throw new IllegalArgumentException("task graph and task data sizes don't match. ");
-    }
-    if (SetAlgorithms.differenceBetween(graph.contents(), data.keys()).isPopulated()) {
-      throw new IllegalArgumentException("tasks in graph do not match tasks in data set");
-    }
-
-    allTaskIds = memoize(
-        () -> Observable.fromIterable(data.keys())
-            .to(Observables.toImmutableSet())
-            .map(
-                set -> ImmutableSortedSet.copyOf(Comparator.comparingLong(TaskIdImpl::asLong), set))
-            .blockingGet());
-
-    allTasks = memoize(() -> data.keys().stream().map(this::toTask).collect(toImmutableSet()));
-
-    allUnblockedOpenTasks =
-        memoize(
-            () -> graph.contents()
-                .stream()
-                .filter(this::isOpen)
-                .filter(this::isUnblocked)
-                .map(this::toTask)
-                .collect(toImmutableSet()));
-
-    allBlockedOpenTasks =
-        memoize(
-            () -> graph.contents()
-                .stream()
-                .filter(this::isOpen)
-                .filter(this::isBlocked)
-                .map(this::toTask)
-                .collect(toImmutableSet()));
-
-    allCompletedTasks =
-        memoize(
-            () -> data.entries()
-                .stream()
-                .filter(entry -> entry.value().status().isCompleted())
-                .map(Map.Entry::key)
-                .map(this::toTask)
-                .collect(toImmutableSet()));
-
-    allOpenTasks =
-        memoize(
-            () -> data.entries()
-                .stream()
-                .filter(entry -> !entry.value().status().isCompleted())
-                .map(Map.Entry::key)
-                .map(this::toTask)
-                .collect(toImmutableSet()));
-
-    taskGraph = memoize(() -> ImmutableDirectedGraph.copyOf(graph, this::toTask));
-
-    hash = MemoizedInt.memoize(() -> Objects.hash(graph, data));
+  override fun lookUpById(id: Long): Optional<TaskImpl> {
+    return lookUpById(TaskIdImpl(id))
   }
 
-  @Override
-  public Optional<TaskImpl> lookUpById(long id) {
-    return lookUpById(new TaskIdImpl(id));
+  override fun lookUpById(id: TaskId): Optional<TaskImpl> {
+    return if (id is TaskIdImpl) lookUpById(id) else Optional.empty()
   }
 
-  @Override
-  public Optional<TaskImpl> lookUpById(TaskId id) {
-    return id instanceof TaskIdImpl ? lookUpById((TaskIdImpl) id) : Optional.empty();
+  private fun lookUpById(id: TaskIdImpl): Optional<TaskImpl> {
+    return if (graph.contents().contains(id)) Optional.of(toTask(id)) else Optional.empty()
   }
 
-  private Optional<TaskImpl> lookUpById(TaskIdImpl id) {
-    return graph.contents().contains(id) ? Optional.of(toTask(id)) : Optional.empty();
+  override fun allTasks(): ImmutableSet<TaskImpl> {
+    return allTasks.value()
   }
 
-  @Override
-  public ImmutableSet<TaskImpl> allTasks() {
-    return allTasks.value();
+  override fun allOpenTasksWithoutOpenBlockers(): ImmutableSet<TaskImpl> {
+    return allUnblockedOpenTasks.value()
   }
 
-  @Override
-  public ImmutableSet<TaskImpl> allOpenTasksWithoutOpenBlockers() {
-    return allUnblockedOpenTasks.value();
+  override fun allOpenTasksWithOpenBlockers(): ImmutableSet<TaskImpl> {
+    return allBlockedOpenTasks.value()
   }
 
-  @Override
-  public ImmutableSet<TaskImpl> allOpenTasksWithOpenBlockers() {
-    return allBlockedOpenTasks.value();
+  override fun allCompletedTasks(): ImmutableSet<TaskImpl> {
+    return allCompletedTasks.value()
   }
 
-  @Override
-  public ImmutableSet<TaskImpl> allCompletedTasks() {
-    return allCompletedTasks.value();
+  override fun allOpenTasks(): ImmutableSet<TaskImpl> {
+    return allOpenTasks.value()
   }
 
-  @Override
-  public ImmutableSet<TaskImpl> allOpenTasks() {
-    return allOpenTasks.value();
-  }
-
-  @Override
-  public ImmutableSet<TaskImpl> allTasksMatchingCliPrefix(String prefix) {
-    requireNonNull(prefix);
+  override fun allTasksMatchingCliPrefix(prefix: String): ImmutableSet<TaskImpl> {
+    Objects.requireNonNull(prefix)
     return graph.contents()
         .stream()
-        .filter(id -> id.toString().regionMatches(0, prefix, 0, prefix.length()))
+        .filter { id -> id.toString().regionMatches(0, prefix, 0, prefix.length) }
         .map(this::toTask)
-        .collect(toImmutableSet());
+        .collect(toImmutableSet())
   }
 
-  @Override
-  public ImmutableDirectedGraph<TaskImpl> taskGraph() {
-    return taskGraph.value();
+  override fun taskGraph(): ImmutableDirectedGraph<TaskImpl> {
+    return taskGraph.value()
   }
 
-
-  @Override
-  public int hashCode() {
-    return hash.value();
+  override fun hashCode(): Int {
+    return hash.value()
   }
 
-  @Override
-  public boolean equals(Object obj) {
-    return obj == this
-        || (obj instanceof TaskStoreImpl
-            && Objects.equals(graph, ((TaskStoreImpl) obj).graph)
-            && Objects.equals(data, ((TaskStoreImpl) obj).data));
+  override fun equals(other: Any?): Boolean {
+    return (other === this
+        || (other is TaskStoreImpl
+        && graph == other.graph
+        && data == other.data))
   }
 
-  ImmutableSortedSet<TaskIdImpl> allTaskIds() {
-    return allTaskIds.value();
+  fun allTaskIds(): ImmutableSortedSet<TaskIdImpl> {
+    return allTaskIds.value()
   }
 
-  ImmutableSet<TaskImpl> allTasksBlocking(TaskIdImpl id) {
+  fun allTasksBlocking(id: TaskIdImpl): ImmutableSet<TaskImpl> {
     return graph.nodeOf(id)
-        .map(DirectedGraph.DirectedNode::predecessors)
+        .map { node -> node.predecessors() }
         .orElse(ImmutableSet.empty())
         .stream()
-        .map(Graph.Node::item)
+        .map { node -> node.item() }
         .map(this::toTask)
-        .collect(toImmutableSet());
+        .collect(toImmutableSet())
   }
 
-  ImmutableSet<TaskImpl> allTasksBlockedBy(TaskIdImpl id) {
+  fun allTasksBlockedBy(id: TaskIdImpl): ImmutableSet<TaskImpl> {
     return graph.nodeOf(id)
-        .map(DirectedGraph.DirectedNode::successors)
+        .map { node -> node.successors() }
         .orElse(ImmutableSet.empty())
         .stream()
-        .map(Graph.Node::item)
+        .map { node -> node.item() }
         .map(this::toTask)
-        .collect(toImmutableSet());
+        .collect(toImmutableSet())
   }
 
-  ImmutableSet<TaskImpl> allOpenTasksBlocking(TaskIdImpl id) {
+  fun allOpenTasksBlocking(id: TaskIdImpl): ImmutableSet<TaskImpl> {
     return graph.nodeOf(id)
-        .map(DirectedGraph.DirectedNode::predecessors)
+        .map { node -> node.predecessors() }
         .orElse(ImmutableSet.empty())
         .stream()
-        .map(Graph.Node::item)
+        .map(ImmutableDirectedGraph<TaskIdImpl>.DirectedNode::item)
         .map(this::toTask)
-        .filter(task -> !task.status().isCompleted())
-        .collect(toImmutableSet());
+        .filter { task -> !task.status().isCompleted }
+        .collect(toImmutableSet())
   }
 
-  TaskImpl toTask(TaskIdImpl id) {
+  fun toTask(id: TaskIdImpl): TaskImpl {
     return cache.getOrCache(
-        id,
-        () -> new TaskImpl(
-            this,
-            id,
-            data.valueOf(id)
-                .orElseThrow(() -> new IllegalArgumentException("unrecognized TaskIdImpl " + id))));
-  }
-
-  TaskImpl validateTask(Task task) {
-    if (!(task instanceof TaskImpl)) {
-      throw new IllegalArgumentException("unrecognized task type: " + task);
+        id
+    ) {
+      TaskImpl(
+          this,
+          id,
+          data.valueOf(id)
+              .orElseThrow { IllegalArgumentException("unrecognized TaskIdImpl $id") })
     }
-    TaskIdImpl id = ((TaskImpl) task).id();
-    if (!graph.contents().contains(id)) {
-      throw new IllegalArgumentException("unrecognized TaskIdImpl: " + id);
-    }
-    return (TaskImpl) task;
   }
 
-  private boolean isOpen(TaskIdImpl id) {
-    return data.valueOf(id).map(taskData -> !taskData.status().isCompleted()).orElse(false);
+  fun validateTask(task: Task): TaskImpl {
+    require(task is TaskImpl) { "unrecognized task type: $task" }
+    val id = task.id()
+    require(graph.contents().contains(id)) { "unrecognized TaskIdImpl: $id" }
+    return task
   }
 
-  private boolean isUnblocked(TaskIdImpl id) {
-    return !isBlocked(id);
+  private fun isOpen(id: TaskIdImpl): Boolean {
+    return data.valueOf(id).map { taskData -> !taskData.status().isCompleted }.orElse(false)
   }
 
-  private boolean isBlocked(TaskIdImpl id) {
+  private fun isUnblocked(id: TaskIdImpl): Boolean {
+    return !isBlocked(id)
+  }
+
+  private fun isBlocked(id: TaskIdImpl): Boolean {
     return graph.nodeOf(id)
-        .map(DirectedGraph.DirectedNode::predecessors)
+        .map { node -> node.predecessors() }
         .orElse(ImmutableSet.empty())
         .stream()
-        .map(Graph.Node::item)
-        .map(data::valueOf)
-        .anyMatch(
-            taskDataOptional ->
-                taskDataOptional.map(taskData -> !taskData.status().isCompleted()).orElse(false));
+        .map { node -> node.item() }
+        .map { key -> data.valueOf(key) }
+        .anyMatch { taskDataOptional -> taskDataOptional.map { taskData: TaskData -> !taskData.status().isCompleted }.orElse(false) }
+  }
+
+  init {
+    require(graph.contents().count() == data.keys().count()) { "task graph and task data sizes don't match. " }
+    require(!differenceBetween(graph.contents(), data.keys()).isPopulated) { "tasks in graph do not match tasks in data set" }
+    allTaskIds = memoize {
+      Observable.fromIterable(data.keys())
+          .to(Observables.toImmutableSet())
+          .map { set -> copyOf(Comparator.comparingLong { obj: TaskIdImpl -> obj.asLong() }, set) }
+          .blockingGet()
+    }
+    allTasks = memoize { data.keys().stream().map { id: TaskIdImpl -> toTask(id) }.collect(toImmutableSet()) }
+    allUnblockedOpenTasks = memoize {
+      graph.contents()
+          .stream()
+          .filter { id: TaskIdImpl -> isOpen(id) }
+          .filter { id: TaskIdImpl -> isUnblocked(id) }
+          .map { id: TaskIdImpl -> toTask(id) }
+          .collect(toImmutableSet())
+    }
+    allBlockedOpenTasks = memoize {
+      graph.contents()
+          .stream()
+          .filter { id: TaskIdImpl -> isOpen(id) }
+          .filter { id: TaskIdImpl -> isBlocked(id) }
+          .map { id: TaskIdImpl -> toTask(id) }
+          .collect(toImmutableSet())
+    }
+    allCompletedTasks = memoize {
+      data.entries()
+          .stream()
+          .filter { entry -> entry.value().status().isCompleted }
+          .map { entry -> entry.key() }
+          .map { id -> toTask(id) }
+          .collect(toImmutableSet())
+    }
+    allOpenTasks = memoize {
+      data.entries()
+          .stream()
+          .filter { entry -> !entry.value().status().isCompleted }
+          .map { entry -> entry.key() }
+          .map { id -> toTask(id) }
+          .collect(toImmutableSet())
+    }
+    taskGraph = memoize(Supplier { copyOf(graph) { id: TaskIdImpl -> toTask(id) } })
+    hash = MemoizedInt.memoize { Objects.hash(graph, data) }
   }
 }

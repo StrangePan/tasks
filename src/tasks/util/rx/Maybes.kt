@@ -1,13 +1,11 @@
-package tasks.util.rx;
+package tasks.util.rx
 
-import io.reactivex.rxjava3.core.Maybe;
-import java.util.Optional;
+import io.reactivex.rxjava3.core.Maybe
+import java.util.Optional
 
-public final class Maybes {
-
-  private Maybes() {}
-
-  public static <T> Maybe<T> fromOptional(Optional<T> optional) {
-    return optional.map(Maybe::just).orElse(Maybe.empty());
+object Maybes {
+  @JvmStatic
+  fun <T> fromOptional(optional: Optional<T>): Maybe<T> {
+    return optional.map { item: T -> Maybe.just(item) }.orElse(Maybe.empty())
   }
 }

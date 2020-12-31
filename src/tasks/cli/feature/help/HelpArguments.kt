@@ -1,27 +1,21 @@
-package tasks.cli.feature.help;
+package tasks.cli.feature.help
 
-import static java.util.Objects.requireNonNull;
+import java.util.Objects
+import java.util.Optional
 
-import java.util.Optional;
+/** Model for parsed Help command arguments.  */
+class HelpArguments private constructor(mode: Optional<String>) {
+  private val mode: Optional<String>
 
-/** Model for parsed Help command arguments. */
-public final class HelpArguments {
-  private final Optional<String> mode;
+  internal constructor() : this(Optional.empty<String>())
+  internal constructor(mode: String) : this(Optional.of<String>(mode))
 
-  HelpArguments() {
-    this(Optional.empty());
+  /** The optional command for which the user is requesting help.  */
+  fun mode(): Optional<String> {
+    return mode
   }
 
-  HelpArguments(String mode) {
-    this(Optional.of(mode));
-  }
-
-  private HelpArguments(Optional<String> mode) {
-    this.mode = requireNonNull(mode);
-  }
-
-  /** The optional command for which the user is requesting help. */
-  public Optional<String> mode() {
-    return mode;
+  init {
+    this.mode = Objects.requireNonNull(mode)
   }
 }

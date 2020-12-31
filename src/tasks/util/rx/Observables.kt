@@ -1,65 +1,62 @@
-package tasks.util.rx;
+package tasks.util.rx
 
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.ObservableConverter;
-import io.reactivex.rxjava3.core.Single;
-import io.reactivex.rxjava3.functions.Function;
-import omnia.data.structure.immutable.ImmutableList;
-import omnia.data.structure.immutable.ImmutableMap;
-import omnia.data.structure.immutable.ImmutableSet;
+import io.reactivex.rxjava3.core.Emitter
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.ObservableConverter
+import io.reactivex.rxjava3.core.Single
+import io.reactivex.rxjava3.functions.BiFunction
+import io.reactivex.rxjava3.functions.Function
+import io.reactivex.rxjava3.functions.Supplier
+import omnia.data.structure.immutable.ImmutableList
+import omnia.data.structure.immutable.ImmutableMap
+import omnia.data.structure.immutable.ImmutableSet
 
-public final class Observables {
-
-  private Observables() {}
-
-  public static Observable<Integer> incrementingInteger() {
-    return incrementingInteger(0, 1);
-  }
-
-  public static Observable<Integer> incrementingInteger(int start, int increment) {
+object Observables {
+  @JvmStatic
+  @JvmOverloads
+  fun incrementingInteger(start: Int = 0, increment: Int = 1): Observable<Int> {
     return Observable.generate(
-        () -> start,
-        (i, emitter) -> {
-          emitter.onNext(i);
-          return i + increment;
-        });
+        Supplier { start },
+        BiFunction { i: Int, emitter: Emitter<Int> ->
+          emitter.onNext(i)
+          i + increment
+        })
   }
 
-  public static Observable<Long> incrementingLong() {
-    return incrementingLong(0, 1);
-  }
-
-  public static Observable<Long> incrementingLong(long start, long increment) {
+  @JvmStatic
+  @JvmOverloads
+  fun incrementingLong(start: Long = 0, increment: Long = 1): Observable<Long> {
     return Observable.generate(
-        () -> start,
-        (i, emitter) -> {
-          emitter.onNext(i);
-          return i + increment;
-        });
+        Supplier { start },
+        BiFunction { i: Long, emitter: Emitter<Long> ->
+          emitter.onNext(i)
+          i + increment
+        })
   }
 
-  public static <T> ObservableConverter<T, Single<ImmutableList<T>>> toImmutableList() {
-    return observable ->
-        observable.<ImmutableList.Builder<T>>collect(
-                ImmutableList::builder, ImmutableList.Builder::add)
-            .map(ImmutableList.Builder::build);
+  @JvmStatic
+  fun <T> toImmutableList(): ObservableConverter<T, Single<ImmutableList<T>>> {
+    return ObservableConverter { observable: Observable<T> ->
+      observable.collect({ ImmutableList.builder<T>() }, { builder, item -> builder.add(item) })
+          .map { builder -> builder.build() }
+    }
   }
 
-  public static <T, K, V> ObservableConverter<T, Single<ImmutableMap<K, V>>> toImmutableMap(
-      Function<? super T, ? extends K> keyExtractor,
-      Function<? super T, ? extends V> valueExtractor) {
-    return observable ->
-        observable.<ImmutableMap.Builder<K, V>>collect(
-            ImmutableMap::builder,
-            (builder, item) ->
-                builder.putMapping(keyExtractor.apply(item), valueExtractor.apply(item)))
-            .map(ImmutableMap.Builder::build);
+  @JvmStatic
+  fun <T, K, V> toImmutableMap(
+      keyExtractor: Function<in T, out K>,
+      valueExtractor: Function<in T, out V>): ObservableConverter<T, Single<ImmutableMap<K, V>>> {
+    return ObservableConverter { observable: Observable<T> ->
+      observable.collect({ ImmutableMap.builder<K, V>() }, { builder, item -> builder.putMapping(keyExtractor.apply(item), valueExtractor.apply(item)) })
+          .map { builder -> builder.build() }
+    }
   }
 
-  public static <T> ObservableConverter<T, Single<ImmutableSet<T>>> toImmutableSet() {
-    return observable ->
-        observable.<ImmutableSet.Builder<T>>collect(
-                ImmutableSet::builder, ImmutableSet.Builder::add)
-            .map(ImmutableSet.Builder::build);
+  @JvmStatic
+  fun <T> toImmutableSet(): ObservableConverter<T, Single<ImmutableSet<T>>> {
+    return ObservableConverter { observable: Observable<T> ->
+      observable.collect({ ImmutableSet.builder<T>() }, { builder, item -> builder.add(item) })
+          .map { builder -> builder.build() }
+    }
   }
 }

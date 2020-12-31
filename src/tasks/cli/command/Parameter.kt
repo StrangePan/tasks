@@ -1,26 +1,16 @@
-package tasks.cli.command;
+package tasks.cli.command
 
-import static java.util.Objects.requireNonNull;
+abstract class Parameter internal constructor(private val description: String, private val repeatable: Repeatable) {
 
-public abstract class Parameter {
-  private final String description;
-  private final Repeatable repeatable;
-
-  Parameter(String description, Repeatable repeatable) {
-    this.description = requireNonNull(description);
-    this.repeatable = repeatable;
+  fun description(): String {
+    return description
   }
 
-  public String description() {
-    return description;
+  fun isRepeatable(): Boolean {
+    return repeatable == Repeatable.REPEATABLE
   }
 
-  public boolean isRepeatable() {
-    return repeatable == Repeatable.REPEATABLE;
-  }
-
-  public enum Repeatable {
-    REPEATABLE,
-    NOT_REPEATABLE,
+  enum class Repeatable {
+    REPEATABLE, NOT_REPEATABLE
   }
 }

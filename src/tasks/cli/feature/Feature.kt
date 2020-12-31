@@ -1,158 +1,145 @@
-package tasks.cli.feature;
+package tasks.cli.feature
 
-import static java.util.Objects.requireNonNull;
-import static omnia.data.stream.Collectors.toImmutableList;
+import io.reactivex.rxjava3.core.Completable
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Single
+import io.reactivex.rxjava3.core.SingleConverter
+import java.util.Objects
+import java.util.function.Supplier
+import omnia.algorithm.ListAlgorithms.toArray
+import omnia.cli.out.Output
+import omnia.data.cache.Memoized
+import omnia.data.stream.Collectors.toImmutableList
+import omnia.data.structure.List
+import omnia.data.structure.Set
+import omnia.data.structure.immutable.ImmutableList
+import omnia.data.structure.immutable.ImmutableSet
+import omnia.data.structure.tuple.Couple
+import omnia.data.structure.tuple.Tuple
+import org.apache.commons.cli.CommandLine
+import org.apache.commons.cli.DefaultParser
+import org.apache.commons.cli.Options
+import org.apache.commons.cli.ParseException
+import tasks.cli.command.Command
+import tasks.cli.command.Option
+import tasks.cli.command.common.CommonArguments
+import tasks.cli.command.common.CommonOptions
+import tasks.cli.command.common.CommonParser
+import tasks.cli.handler.ArgumentHandler
+import tasks.cli.output.Printer
+import tasks.cli.parser.CommandParser
+import tasks.cli.parser.ParserException
+import tasks.model.ObservableTaskStore
+import tasks.model.impl.CyclicalDependencyException
 
-import io.reactivex.rxjava3.core.Completable;
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.Single;
-import java.util.function.Supplier;
-import omnia.algorithm.ListAlgorithms;
-import omnia.cli.out.Output;
-import omnia.data.cache.Memoized;
-import omnia.data.structure.List;
-import omnia.data.structure.Set;
-import omnia.data.structure.immutable.ImmutableList;
-import omnia.data.structure.immutable.ImmutableSet;
-import omnia.data.structure.tuple.Couple;
-import omnia.data.structure.tuple.Tuple;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import tasks.cli.command.Command;
-import tasks.cli.command.Option;
-import tasks.cli.command.common.CommonArguments;
-import tasks.cli.command.common.CommonOptions;
-import tasks.cli.command.common.CommonParser;
-import tasks.cli.handler.ArgumentHandler;
-import tasks.cli.output.Printer;
-import tasks.cli.parser.ParserException;
-import tasks.cli.parser.CommandParser;
-import tasks.model.ObservableTaskStore;
-import tasks.model.impl.CyclicalDependencyException;
+class Feature<T : Any> internal constructor(
+    val command: Command,
+    private val parser: Supplier<out CommandParser<out T>>,
+    private val handler: Supplier<out ArgumentHandler<in T>>) {
 
-public final class Feature<T> {
-  private final Command command;
-  private final Supplier<? extends CommandParser<? extends T>> parser;
-  private final Supplier<? extends ArgumentHandler<? super T>> handler;
-
-  Feature(
-      Command command,
-      Supplier<? extends CommandParser<? extends T>> parser,
-      Supplier<? extends ArgumentHandler<? super T>> handler) {
-    this.command = requireNonNull(command);
-    this.parser = requireNonNull(parser);
-    this.handler = requireNonNull(handler);
+  private fun obtainParser(): CommandParser<out T> {
+    return parser.get()
   }
 
-  Command command() {
-    return command;
+  private fun obtainCommonParser(): CommonParser {
+    return CommonParser()
   }
 
-  CommandParser<? extends T> obtainParser() {
-    return requireNonNull(parser.get());
+  private fun obtainHandler(): ArgumentHandler<in T> {
+    return Objects.requireNonNull(handler.get())
   }
 
-  CommonParser obtainCommonParser() {
-    return new CommonParser();
-  }
-
-  ArgumentHandler<? super T> obtainHandler() {
-    return requireNonNull(handler.get());
-  }
-
-
-  public Completable handle(
-      List<? extends String> args,
-      Memoized<? extends ObservableTaskStore> taskStore) {
+  fun handle(
+      args: List<out String>,
+      taskStore: Memoized<out ObservableTaskStore>): Completable {
     return Single.just(args)
-        .to(this::toArguments)
-        .flatMapCompletable(
-            arguments -> toOutput(arguments)
-                .doOnSuccess(output -> new Printer.Factory().create(arguments).print(output))
-                .ignoreElement())
+        .to(SingleConverter(::toArguments))
+        .flatMapCompletable { arguments ->
+          toOutput(arguments)
+              .doOnSuccess { Printer.Factory().create(arguments).print(it) }
+              .ignoreElement()
+        }
         .andThen(taskStore.value().shutdown())
-        .to(Feature::maybeConsumeError);
+        .to(::maybeConsumeError)
   }
 
-  private Single<CommonArguments<? extends T>> toArguments(
-      Single<? extends List<? extends String>> args) {
+  private fun toArguments(args: Single<out List<out String>>): Single<CommonArguments<out T>> {
     return args
-        .map(Feature::dropFirstValue)
-        .map(this::toArgsAndCommand)
-        .flatMap(this::toCommandLine)
-        .map(
-            commandLine ->
-                obtainCommonParser().parse(commandLine, obtainParser().parse(commandLine)));
+        .map(::dropFirstValue)
+        .map(::toArgsAndCommand)
+        .flatMap(::toCommandLine)
+        .map { obtainCommonParser().parse(it, obtainParser().parse(it)) }
   }
 
-  private static <E> ImmutableList<E> dropFirstValue(List<? extends E> list) {
-    return list.stream().skip(1).collect(toImmutableList());
+  private fun toArgsAndCommand(args: List<out String>): Couple<List<out String>, Command> {
+    return Tuple.of(args, command)
   }
 
-  private Couple<List<? extends String>, Command> toArgsAndCommand(List<? extends String> args) {
-    return Tuple.of(args, command());
-  }
-
-  private Single<CommandLine> toCommandLine(
-      Couple<? extends List<? extends String>, Command> couple) {
+  private fun toCommandLine(
+      couple: Couple<out List<out String>, Command>): Single<CommandLine> {
     return Observable.concat(
-            Single.just(couple)
-                .map(Couple::second)
-                .map(Command::options)
-                .flatMapObservable(Observable::fromIterable),
-            Single.fromCallable(CommonOptions.OPTIONS::value)
-                .flatMapObservable(Observable::fromIterable))
-        .<Single<Options>>to(Feature::toOptions)
-        .map(options -> tryParse(couple.first(), options));
+        Single.just(couple)
+            .map { it.second().options() }
+            .flatMapObservable { Observable.fromIterable(it) },
+        Single.fromCallable { CommonOptions.OPTIONS.value() }
+            .flatMapObservable { Observable.fromIterable(it) })
+        .to(::toOptions)
+        .map { tryParse(couple.first(), it) }
   }
 
-  private static Single<Options> toOptions(Observable<? extends Option> options) {
-    return options.map(Option::toCliOption).collect(Options::new, Options::addOption);
+  private fun toOutput(arguments: CommonArguments<out T>): Single<Output> {
+    return obtainHandler().handle(arguments)
   }
 
-  private static CommandLine tryParse(List<? extends String> args, Options options) {
-    try {
-      return new DefaultParser()
-          .parse(
-              options, ListAlgorithms.toArray(args, new String[0]), /* stopAtNonOption= */ false);
-    } catch (ParseException e) {
-      throw new ParserException("Unable to parse arguments: " + e.getMessage(), e);
+  companion object {
+    private fun <E> dropFirstValue(list: List<out E>): ImmutableList<E> {
+      return list.stream().skip(1).collect(toImmutableList())
     }
-  }
 
-  private Single<Output> toOutput(CommonArguments<? extends T> arguments) {
-    return obtainHandler().handle(arguments);
-  }
-
-  private static Completable maybeConsumeError(Completable completable) {
-    return completable
-        .doOnError(Feature::maybeConsumeError)
-        .onErrorComplete(Feature::maybeSuppressError);
-  }
-
-  private static void maybeConsumeError(Throwable throwable) {
-    if (shouldSuppressError(throwable)) {
-      System.out.println(throwable.getMessage());
+    private fun toOptions(optionStream: Observable<out Option>): Single<Options> {
+      return optionStream.map(Option::toCliOption)
+          .collect(::Options) { options, option -> options.addOption(option) }
     }
-  }
 
-  private static boolean maybeSuppressError(Throwable throwable) {
-    return shouldSuppressError(throwable);
-  }
-
-  private static boolean shouldSuppressError(Throwable throwable) {
-    for (Class<? extends Throwable> suppressedClass : SUPPRESSED_HANDLER_THROWABLE_CLASSES) {
-      if (suppressedClass.isInstance(throwable)) {
-        return true;
+    private fun tryParse(args: List<out String>, options: Options): CommandLine {
+      return try {
+        DefaultParser()
+            .parse(
+                options, toArray(args, arrayOfNulls(0)),  /* stopAtNonOption= */false)
+      } catch (e: ParseException) {
+        throw ParserException("Unable to parse arguments: ${e.message}", e)
       }
     }
-    return false;
+
+    private fun maybeConsumeError(completable: Completable): Completable {
+      return completable
+          .doOnError(::maybeConsumeError)
+          .onErrorComplete(::maybeSuppressError)
+    }
+
+    private fun maybeConsumeError(throwable: Throwable) {
+      if (shouldSuppressError(throwable)) {
+        println(throwable.message)
+      }
+    }
+
+    private fun maybeSuppressError(throwable: Throwable): Boolean {
+      return shouldSuppressError(throwable)
+    }
+
+    private fun shouldSuppressError(throwable: Throwable): Boolean {
+      for (suppressedClass in SUPPRESSED_HANDLER_THROWABLE_CLASSES) {
+        if (suppressedClass.isInstance(throwable)) {
+          return true
+        }
+      }
+      return false
+    }
+
+    // TODO: don't hard-code throwable classes.
+    // We need a better way of converting an exception into a proper, human-readable output.
+    private val SUPPRESSED_HANDLER_THROWABLE_CLASSES: Set<Class<out Throwable>> =
+        ImmutableSet.of(ParserException::class.java, CyclicalDependencyException::class.java)
   }
 
-  // TODO: don't hard-code throwable classes.
-  // We need a better way of converting an exception into a proper, human-readable output.
-  private static final Set<Class<? extends Throwable>> SUPPRESSED_HANDLER_THROWABLE_CLASSES =
-      ImmutableSet.of(ParserException.class, CyclicalDependencyException.class);
 }

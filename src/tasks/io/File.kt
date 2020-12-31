@@ -1,40 +1,37 @@
-package tasks.io;
+package tasks.io
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.Writer;
+import java.io.FileNotFoundException
+import java.io.FileReader
+import java.io.FileWriter
+import java.io.IOException
+import java.io.Reader
+import java.io.StringReader
+import java.io.Writer
 
-/** An interface for interfacing with file system files. */
-public interface File {
+/** An interface for interfacing with file system files.  */
+interface File {
+  fun openWriter(): Writer
+  fun openReader(): Reader
 
-  Writer openWriter();
+  companion object {
+    fun fromPath(path: String): File {
+      return object : File {
+        override fun openReader(): Reader {
+          return try {
+            FileReader(path)
+          } catch (ex: FileNotFoundException) {
+            StringReader("")
+          }
+        }
 
-  Reader openReader();
-
-  static File fromPath(String path) {
-    return new File() {
-
-      @Override
-      public Reader openReader() {
-        try {
-          return new FileReader(path);
-        } catch (FileNotFoundException ex) {
-          return new StringReader("");
+        override fun openWriter(): Writer {
+          return try {
+            FileWriter(path)
+          } catch (ex: IOException) {
+            throw RuntimeException(ex)
+          }
         }
       }
-
-      @Override
-      public Writer openWriter() {
-        try {
-          return new FileWriter(path);
-        } catch (IOException ex) {
-          throw new RuntimeException(ex);
-        }
-      }
-    };
+    }
   }
 }

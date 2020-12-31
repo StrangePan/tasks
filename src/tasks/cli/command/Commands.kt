@@ -1,16 +1,16 @@
-package tasks.cli.command;
+package tasks.cli.command
 
-import java.util.Optional;
-import omnia.data.structure.Collection;
+import java.util.Optional
+import omnia.data.structure.Collection
 
-public interface Commands {
-
-  /** Gets all registered commands. */
-  Collection<Command> getAllCommands();
+interface Commands {
+  /** Gets all registered commands.  */
+  val allCommands: Collection<Command>
 
   /**
-   * Finds and returns the only command that matches the provided string (presumed to be userInput),
-   * or the empty Optional if there are no matches. Compares command canonical names and aliases.
+   * Finds and returns the only command that matches the provided string (presumed to be
+   * [userInput]), or [Optional.empty] if there are no matches. Compares command canonical names and
+   * aliases.
    */
-  Optional<Command> getMatchingCommand(String userInput);
+  fun getMatchingCommand(userInput: String): Optional<Command>
 }

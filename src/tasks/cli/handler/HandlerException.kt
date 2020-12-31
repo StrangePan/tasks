@@ -1,13 +1,10 @@
-package tasks.cli.handler;
+package tasks.cli.handler
 
-public final class HandlerException extends RuntimeException {
-  private static final long serialVersionUID = 374445314238057858L;
+class HandlerException : RuntimeException {
+  constructor(message: String) : super(message)
+  constructor(message: String, cause: Throwable) : super(message, cause)
 
-  public HandlerException(String message) {
-    super(message);
-  }
-
-  public HandlerException(String message, Throwable cause) {
-    super(message, cause);
+  companion object {
+    private const val serialVersionUID = 374445314238057858L
   }
 }

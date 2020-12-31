@@ -1,7 +1,7 @@
-package tasks.cli.parser;
+package tasks.cli.parser
 
-import omnia.data.structure.List;
+import omnia.data.structure.List
 
-public interface Parser<T> {
-  T parse(List<? extends String> commandLine);
+interface Parser<T : Any> {
+  fun parse(commandLine: List<out String>): T
 }

@@ -1,17 +1,13 @@
-package tasks.cli.feature.info;
+package tasks.cli.feature.info
 
-import omnia.data.cache.Memoized;
-import omnia.data.structure.List;
-import tasks.cli.command.common.simple.SimpleParser;
-import tasks.cli.parser.ParseResult;
-import tasks.cli.parser.Parser;
-import tasks.model.Task;
+import java.util.function.Function
+import omnia.data.cache.Memoized
+import omnia.data.structure.List
+import tasks.cli.command.common.simple.SimpleParser
+import tasks.cli.parser.ParseResult
+import tasks.cli.parser.Parser
+import tasks.model.Task
 
-/** Command line argument parser for the Info command. */
-public final class InfoParser extends SimpleParser<InfoArguments> {
-  public InfoParser(
-      Memoized<? extends Parser<? extends List<? extends ParseResult<? extends Task>>>>
-          taskParser) {
-    super(InfoArguments::new, taskParser);
-  }
-}
+/** Command line argument parser for the Info command.  */
+class InfoParser(
+    taskParser: Memoized<out Parser<out List<out ParseResult<out Task>>>>) : SimpleParser<InfoArguments>(Function { tasks: List<Task> -> InfoArguments(tasks) }, taskParser)

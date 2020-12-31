@@ -1,151 +1,145 @@
-package tasks.cli.parser;
+package tasks.cli.parser
 
-import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
-import static omnia.data.stream.Collectors.toList;
+import io.reactivex.rxjava3.core.Observable
+import java.util.Optional
+import java.util.OptionalInt
+import java.util.stream.Collectors.joining
+import omnia.data.cache.Memoized
+import omnia.data.stream.Collectors.toList
+import omnia.data.structure.Collection
+import omnia.data.structure.List
+import omnia.data.structure.List.Companion.masking
+import omnia.data.structure.immutable.ImmutableList
+import omnia.data.structure.tuple.Couple
+import omnia.data.structure.tuple.Tuple
+import org.apache.commons.cli.CommandLine
+import tasks.cli.command.FlagOption
+import tasks.cli.command.Option
+import tasks.cli.command.Parameter
+import tasks.model.ObservableTaskStore
+import tasks.model.Task
+import tasks.model.TaskStore
 
-import io.reactivex.rxjava3.core.Observable;
-import java.util.Optional;
-import java.util.OptionalInt;
-import omnia.data.cache.Memoized;
-import omnia.data.structure.Collection;
-import omnia.data.structure.List;
-import omnia.data.structure.immutable.ImmutableList;
-import omnia.data.structure.immutable.ImmutableSet;
-import omnia.data.structure.tuple.Couple;
-import omnia.data.structure.tuple.Tuple;
-import org.apache.commons.cli.CommandLine;
-import tasks.cli.command.FlagOption;
-import tasks.cli.command.Option;
-import tasks.cli.command.Parameter;
-import tasks.model.ObservableTaskStore;
-import tasks.model.Task;
-import tasks.model.TaskStore;
-
-public final class ParserUtil {
-
-  private ParserUtil() {}
-
-  public static Parser<List<ParseResult<? extends Task>>> taskListParser(
-      Memoized<? extends ObservableTaskStore> taskStore) {
-    return (args) -> parseTaskIds(ImmutableList.copyOf(args), taskStore.value());
+object ParserUtil {
+  fun taskListParser(
+      taskStore: Memoized<out ObservableTaskStore>): Parser<List<ParseResult<out Task>>> {
+    return object : Parser<List<ParseResult<out Task>>> {
+      override fun parse(commandLine: List<out String>): List<ParseResult<out Task>> {
+        return parseTaskIds(ImmutableList.copyOf(commandLine), taskStore.value())
+      }
+    }
   }
 
-  public static List<ParseResult<? extends Task>> parseTaskIds(
-      List<String> userInputs, ObservableTaskStore observableTaskStore) {
+  fun parseTaskIds(
+      userInputs: List<String>, observableTaskStore: ObservableTaskStore): List<ParseResult<out Task>> {
     return observableTaskStore.observe()
         .firstOrError()
-        .<List<ParseResult<? extends Task>>>map(
-            taskStore -> userInputs.stream()
-                .map(userInput -> parseTaskId(userInput, taskStore))
-                .collect(toList()))
-        .blockingGet();
+        .map { taskStore ->
+          userInputs.stream().map { parseTaskId(it, taskStore) }.collect(toList())
+        }
+        .blockingGet()
   }
 
-  private static ParseResult<? extends Task> parseTaskId(String userInput, TaskStore taskStore) {
-    ImmutableSet<? extends Task> matchingTasks = taskStore.allTasksMatchingCliPrefix(userInput);
-    if (matchingTasks.count() > 1) {
-      return ParseResult.failure(
-          String.format("Ambiguous task ID: multiple tasks match '%s'", userInput));
-    }
-    return matchingTasks.stream()
+  private fun parseTaskId(userInput: String, taskStore: TaskStore): ParseResult<out Task> {
+    val matchingTasks = taskStore.allTasksMatchingCliPrefix(userInput)
+    return if (matchingTasks.count() > 1) {
+      ParseResult.failure("Ambiguous task ID: multiple tasks match '$userInput'")
+    } else matchingTasks.stream()
         .findFirst()
-        .map(ParseResult::success)
-        .orElse(
-            ParseResult.failure(String.format("Unknown task ID: no tasks match '%s'", userInput)));
+        .map { ParseResult.success(it) }
+        .orElseGet { ParseResult.failure("Unknown task ID: no tasks match '$userInput'") }
   }
 
-  public static <T> T extractSuccessfulResultOrThrow(ParseResult<? extends T> parseResult) {
-    return extractSuccessfulResultsOrThrow(ImmutableList.of(parseResult)).itemAt(0);
+  fun <T : Any> extractSuccessfulResultOrThrow(parseResult: ParseResult<out T>): T {
+    return extractSuccessfulResultsOrThrow(ImmutableList.of(parseResult)).itemAt(0)
   }
 
-  public static <T> ImmutableList<T> extractSuccessfulResultsOrThrow(
-      Collection<? extends ParseResult<? extends T>> parseResults) {
+  fun <T : Any> extractSuccessfulResultsOrThrow(
+      parseResults: Collection<out ParseResult<out T>>): ImmutableList<T> {
     return Observable.fromIterable(parseResults)
-        .collectInto(
-            Tuple.of(ImmutableList.<T>builder(), ImmutableList.<String>builder()),
-            (couple, result) -> couple
-                .mapFirst(b -> maybeAdd(b, result.successResult()))
-                .mapSecond(b -> maybeAdd(b, result.failureMessage())))
-        .map(
-            couple -> couple
-                .mapFirst(ImmutableList.Builder::build)
-                .mapSecond(ImmutableList.Builder::build))
-        .doOnSuccess(couple -> throwIfPopulated(couple.second()))
-        .map(Couple::first)
-        .blockingGet();
+        .collect<Couple<ImmutableList.Builder<T>, ImmutableList.Builder<String>>>(
+            { Tuple.of(ImmutableList.builder(), ImmutableList.builder()) },
+            { couple, result ->
+              couple
+                  .mapFirst { maybeAdd(it, result.successResult) }
+                  .mapSecond { maybeAdd(it, result.failureMessage) }
+            })
+        .map { couple ->
+          couple
+              .mapFirst { it.build() }
+              .mapSecond { it.build() }
+        }
+        .doOnSuccess { throwIfPopulated(it.second()) }
+        .map { it.first() }
+        .blockingGet()
   }
 
-  private static <T> ImmutableList.Builder<T> maybeAdd(
-      ImmutableList.Builder<T> builder, Optional<? extends T> item) {
-    item.ifPresent(builder::add);
-    return builder;
+  private fun <T> maybeAdd(
+      builder: ImmutableList.Builder<T>, item: Optional<out T>): ImmutableList.Builder<T> {
+    item.ifPresent { builder.add(it) }
+    return builder
   }
 
-  private static void throwIfPopulated(List<? extends String> failureMessages) {
-    if (failureMessages.isPopulated()) {
-      throw new ParserException(
-          "Unable to parse task IDs: " + failureMessages.stream().collect(joining(",", "[", "]")));
+  private fun throwIfPopulated(failureMessages: List<out String>) {
+    if (failureMessages.isPopulated) {
+      throw ParserException(
+          "Unable to parse task IDs:" +
+              " ${failureMessages.stream().collect(joining(",", "[", "]"))}")
     }
   }
 
-  public static boolean getFlagPresence(CommandLine commandLine, FlagOption flagOption) {
-    return commandLine.hasOption(flagOption.shortName().orElse(flagOption.longName()));
+  fun getFlagPresence(commandLine: CommandLine, flagOption: FlagOption): Boolean {
+    return commandLine.hasOption(flagOption.shortName().orElse(flagOption.longName()))
   }
 
-  public static List<String> getOptionValues(CommandLine commandLine, Option option) {
-    return getOptionValues(commandLine, option.shortName().orElse(option.longName()));
+  fun getOptionValues(commandLine: CommandLine, option: Option): List<String> {
+    return getOptionValues(commandLine, option.shortName().orElse(option.longName()))
   }
 
-  public static List<String> getOptionValues(CommandLine commandLine, String opt) {
+  fun getOptionValues(commandLine: CommandLine, opt: String): List<String> {
     return ImmutableList.copyOf(
-        Optional.ofNullable(requireNonNull(commandLine).getOptionValues(requireNonNull(opt)))
-            .orElse(new String[0]));
+        Optional.ofNullable(commandLine.getOptionValues(opt)).orElse(arrayOfNulls(0)))
   }
 
-  public static Optional<String> getSingleOptionValue(CommandLine commandLine, Option option) {
-    return getSingleOptionValue(commandLine, option.shortName().orElse(option.longName()));
+  fun getSingleOptionValue(commandLine: CommandLine, option: Option): Optional<String> {
+    return getSingleOptionValue(commandLine, option.shortName().orElse(option.longName()))
   }
 
-  public static Optional<String> getSingleOptionValue(CommandLine commandLine, String opt) {
-    if (Optional.ofNullable(commandLine.getOptionValues(opt)).orElse(new String[0]).length > 1) {
-      throw new ParserException(
-          String.format("Too many values provided for parameter '%s'", opt));
+  fun getSingleOptionValue(commandLine: CommandLine, opt: String): Optional<String> {
+    if (Optional.ofNullable(commandLine.getOptionValues(opt)).orElse(arrayOfNulls(0)).size > 1) {
+      throw ParserException("Too many values provided for parameter '$opt'")
     }
-    return Optional.ofNullable(commandLine.getOptionValue(opt));
+    return Optional.ofNullable(commandLine.getOptionValue(opt))
   }
 
-  public static void assertNoExtraArgs(CommandLine commandLine) {
-    assertNoExtraArgs(List.masking(commandLine.getArgList()), 0);
+  fun assertNoExtraArgs(commandLine: CommandLine) {
+    assertNoExtraArgs(masking(commandLine.argList), 0)
   }
 
-  public static void assertNoExtraArgs(
-      CommandLine commandLine, Collection<Parameter> parameters) {
-    assertNoExtraArgs(List.masking(commandLine.getArgList()), parameters);
+  fun assertNoExtraArgs(
+      commandLine: CommandLine, parameters: Collection<Parameter>) {
+    assertNoExtraArgs(masking(commandLine.argList), parameters)
   }
 
-  public static void assertNoExtraArgs(
-      List<? extends String> args, Collection<Parameter> parameters) {
-    computeMaxNumberOfCommandParameters(parameters)
-        .ifPresent(max -> assertNoExtraArgs(args, max));
+  fun assertNoExtraArgs(
+      args: List<out String>, parameters: Collection<Parameter>) {
+    computeMaxNumberOfCommandParameters(parameters).ifPresent { assertNoExtraArgs(args, it) }
   }
 
-  private static void assertNoExtraArgs(
-      List<? extends String> args, int maxNumberOfCommandParameters) {
+  private fun assertNoExtraArgs(
+      args: List<out String>, maxNumberOfCommandParameters: Int) {
     if (args.count() - 1 > maxNumberOfCommandParameters) {
-      throw new ParserException(
-          "Unexpected arguments given: "
-              + args.stream()
-                  .skip(maxNumberOfCommandParameters)
-                  .map(s -> String.format("'%s'", s))
-                  .collect(joining(", ")));
+      throw ParserException("Unexpected arguments given: ${
+        args.stream()
+            .skip(maxNumberOfCommandParameters.toLong())
+            .map { "'$it'" }
+            .collect(joining(", "))
+      }")
     }
   }
 
-  public static OptionalInt computeMaxNumberOfCommandParameters(
-      Collection<Parameter> parameters) {
-    return parameters.stream().anyMatch(Parameter::isRepeatable)
-        ? OptionalInt.empty()
-        : OptionalInt.of(parameters.count());
+  fun computeMaxNumberOfCommandParameters(
+      parameters: Collection<Parameter>): OptionalInt {
+    return if (parameters.stream().anyMatch(Parameter::isRepeatable)) OptionalInt.empty() else OptionalInt.of(parameters.count())
   }
 }

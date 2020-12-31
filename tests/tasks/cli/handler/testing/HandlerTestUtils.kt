@@ -1,57 +1,51 @@
-package tasks.cli.handler.testing;
+package tasks.cli.handler.testing
 
-import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth.assertWithMessage;
-import static omnia.data.stream.Collectors.toImmutableList;
-
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import omnia.cli.out.Output;
-import omnia.data.structure.Collection;
-import omnia.data.structure.immutable.ImmutableList;
-import tasks.cli.command.common.CommonArguments;
-import tasks.model.ObservableTaskStore;
-import tasks.model.Task;
-import tasks.model.TaskBuilder;
+import com.google.common.truth.Truth
+import java.util.function.Consumer
+import java.util.function.Function
+import java.util.regex.Pattern
+import java.util.stream.Collectors
+import omnia.cli.out.Output
+import omnia.data.stream.Collectors.toImmutableList
+import omnia.data.structure.Collection
+import omnia.data.structure.immutable.ImmutableList
+import tasks.cli.command.common.CommonArguments
+import tasks.model.ObservableTaskStore
+import tasks.model.Task
+import tasks.model.TaskBuilder
 
 /**
- * Utilities for {@link tasks.cli.handler.ArgumentHandler} unit tests.
+ * Utilities for [tasks.cli.handler.ArgumentHandler] unit tests.
  */
-public final class HandlerTestUtils {
-
+object HandlerTestUtils {
   /**
-   * Creates a {@link CommonArguments} instance wrapping the provided specific args and setting
-   * {@link CommonArguments#enableOutputFormatting()} to {@code false}.
+   * Creates a [CommonArguments] instance wrapping the provided specific args and setting
+   * [CommonArguments.enableOutputFormatting] to `false`.
    */
-  public static <T> CommonArguments<T> commonArgs(T specificArgs) {
-    return new CommonArguments<>(specificArgs, /* enableColorOutput= */ false);
+  fun <T> commonArgs(specificArgs: T): CommonArguments<T> {
+    return CommonArguments(specificArgs,  /* enableColorOutput= */false)
   }
-
-  /**
-   * Creates a new task with the provided label in the provided task store. Blocks the calling
-   * thread until it returns the created {@link Task}.
-   */
-  public static Task createTask(ObservableTaskStore taskStore, String label) {
-    return createTask(taskStore, label, b -> b);
-  }
-
   /**
    * Creates a new task with the provided label in the provided task store, using the provided task
    * builder function to set up the new task. Blocks the calling thread until it returns the created
-   * {@link Task}.
+   * [Task].
    */
-  public static Task createTask(ObservableTaskStore taskStore, String label, Function<TaskBuilder, TaskBuilder> builderFunction) {
-    return taskStore.createTask(label, builderFunction).blockingGet().third();
+  /**
+   * Creates a new task with the provided label in the provided task store. Blocks the calling
+   * thread until it returns the created [Task].
+   */
+  @JvmOverloads
+  fun createTask(taskStore: ObservableTaskStore, label: String, builderFunction: Function<TaskBuilder, TaskBuilder> = Function { b: TaskBuilder -> b }): Task {
+    return taskStore.createTask(label, builderFunction).blockingGet().third()
   }
 
   /**
    * Assert that the given output contains a grouping of the provided tasks with only whitespace
    * between each task.
    */
-  public static void assertOutputContainsGroupedTasks(
-      String output, Collection<? extends Task> tasks) {
-    assertOutputContainsGroupedTasks(output, "", tasks);
+  fun assertOutputContainsGroupedTasks(
+      output: String, tasks: Collection<out Task>) {
+    assertOutputContainsGroupedTasks(output, "", tasks)
   }
 
   /**
@@ -59,58 +53,54 @@ public final class HandlerTestUtils {
    * between each task, and that this grouping is immediately preceded by the given prefix, which
    * again is only separated from the task group by whitespace.
    */
-  public static void assertOutputContainsGroupedTasks(
-      String output, String prefix, Collection<? extends Task> tasks) {
-    if (!tasks.isPopulated()) {
-      return; // nothing to assert
+  fun assertOutputContainsGroupedTasks(
+      output: String, prefix: String, tasks: Collection<out Task>) {
+    if (!tasks.isPopulated) {
+      return  // nothing to assert
     }
-
-    ImmutableList<String> renderedTasks = renderTasks(tasks);
-
-    assertThat(output).contains(prefix);
-    renderedTasks.forEach(renderedTask -> assertThat(output).contains(renderedTask));
-
-    assertWithMessage("tasks are not grouped together in the output")
+    val renderedTasks = renderTasks(tasks)
+    Truth.assertThat(output).contains(prefix)
+    renderedTasks.forEach(Consumer { renderedTask: String -> Truth.assertThat(output).contains(renderedTask) })
+    Truth.assertWithMessage("tasks are not grouped together in the output")
         .that(output)
         .containsMatch(
             Pattern.compile(
                 Pattern.quote(prefix) + patternMatchingGroupedSubstrings(renderedTasks),
-                Pattern.MULTILINE));
+                Pattern.MULTILINE))
   }
 
   /**
    * Returns a RegEx-compatible pattern that matches the provided tasks and asserts that each task
    * is separated only be whitespace.
    *
-   * <p>This pattern cannot check that each each task exists exactly once, and will match if the
+   *
+   * This pattern cannot check that each each task exists exactly once, and will match if the
    * same task is repeated multiple times, or if the expected task cluster is immediately preceded
    * or followed by one or more tasks.
    */
-  public static String patternMatchingGroupedTasks(Collection<? extends Task> tasks) {
-    return patternMatchingGroupedSubstrings(renderTasks(tasks));
+  fun patternMatchingGroupedTasks(tasks: Collection<out Task>): String {
+    return patternMatchingGroupedSubstrings(renderTasks(tasks))
   }
 
-  private static ImmutableList<String> renderTasks(Collection<? extends Task> tasks) {
+  private fun renderTasks(tasks: Collection<out Task>): ImmutableList<String> {
     return tasks.stream()
-        .map(Task::render)
-        .map(Output::renderWithoutCodes)
-        .collect(toImmutableList());
+        .map { obj: Task -> obj.render() }
+        .map { obj: Output -> obj.renderWithoutCodes() }
+        .collect(toImmutableList())
   }
 
-  private static String patternMatchingGroupedSubstrings(Collection<String> substrings) {
-    return substrings.isPopulated()
-        ? String.format(
-            "(\\s*(%s)){%d}",
-            substrings.stream().map(Pattern::quote).collect(Collectors.joining("|", "(", ")")),
-            substrings.count())
-        : "";
+  private fun patternMatchingGroupedSubstrings(substrings: Collection<String>): String {
+    return if (substrings.isPopulated) String.format(
+        "(\\s*(%s)){%d}",
+        substrings.stream().map { s: String -> Pattern.quote(s) }.collect(Collectors.joining("|", "(", ")")),
+        substrings.count()) else ""
   }
 
   /**
-   * Looks up the provided {@link Task} in the provided {@link ObservableTaskStore}, returning the
+   * Looks up the provided [Task] in the provided [ObservableTaskStore], returning the
    * latest immutable version of the task.
    */
-  public static Task getUpdatedVersionOf(ObservableTaskStore taskStore, Task task) {
-    return taskStore.observe().blockingFirst().lookUpById(task.id()).orElseThrow();
+  fun getUpdatedVersionOf(taskStore: ObservableTaskStore, task: Task): Task {
+    return taskStore.observe().blockingFirst().lookUpById(task.id()).orElseThrow()
   }
 }

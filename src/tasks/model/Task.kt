@@ -1,39 +1,24 @@
-package tasks.model;
+package tasks.model
 
-import omnia.cli.out.Output;
-import omnia.data.structure.Set;
+import omnia.cli.out.Output
+import omnia.data.structure.Set
 
-public interface Task {
+interface Task {
+  fun id(): TaskId
+  fun label(): String
+  fun status(): Status
+  val isUnblocked: Boolean
+  fun blockingTasks(): Set<out Task>
+  fun blockedTasks(): Set<out Task>
+  fun render(): Output
+  enum class Status {
+    OPEN, COMPLETED, STARTED;
 
-  TaskId id();
-
-  String label();
-
-  Status status();
-
-  boolean isUnblocked();
-
-  Set<? extends Task> blockingTasks();
-
-  Set<? extends Task> blockedTasks();
-
-  Output render();
-
-  enum Status {
-    OPEN,
-    COMPLETED,
-    STARTED;
-
-    public boolean isOpen() {
-      return this.equals(OPEN);
-    }
-
-    public boolean isCompleted() {
-      return this.equals(COMPLETED);
-    }
-
-    public boolean isStarted() {
-      return this.equals(STARTED);
-    }
+    val isOpen: Boolean
+      get() = this == OPEN
+    val isCompleted: Boolean
+      get() = this == COMPLETED
+    val isStarted: Boolean
+      get() = this == STARTED
   }
 }

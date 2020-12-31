@@ -1,35 +1,26 @@
-package tasks.cli.output;
+package tasks.cli.output
 
-import static java.util.Objects.requireNonNull;
-
-import java.io.PrintStream;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import omnia.cli.out.Output;
-import tasks.cli.command.common.CommonArguments;
+import java.io.PrintStream
+import java.util.Objects
+import java.util.function.Function
+import java.util.function.Supplier
+import omnia.cli.out.Output
+import tasks.cli.command.common.CommonArguments
 
 /**
  * A simple abstraction for interfacing with proper Java print streams. Useful for applying uniform
  * formatting options to all CLI output.
  */
-public final class Printer {
-
-  private final PrintStream out;
-  private final Function<? super Output, ? extends String> renderer;
-
-  private Printer(PrintStream out, Function<? super Output, ? extends String> renderer) {
-    this.out = requireNonNull(out);
-    this.renderer = requireNonNull(renderer);
-  }
+class Printer private constructor(private val out: PrintStream, private val renderer: Function<in Output, out String>) {
 
   /**
    * Concatenates the supplied output to the console and flushes immediately.
    * @param output The output to render and output. Must not be null, but may be empty.
    * @return this printer, allowing method chaining
    */
-  public Printer print(Output output) {
-    out.print(requireNonNull(renderer.apply(output)));
-    return this;
+  fun print(output: Output): Printer {
+    out.print(Objects.requireNonNull(renderer.apply(output)))
+    return this
   }
 
   /**
@@ -38,26 +29,17 @@ public final class Printer {
    * @param output The output to render and output. Must not be null, but may be empty.
    * @return this printer, allowing method chaining
    */
-  public Printer printLine(Output output) {
-    out.println(requireNonNull(renderer.apply(output)));
-    return this;
+  fun printLine(output: Output): Printer {
+    out.println(Objects.requireNonNull(renderer.apply(output)))
+    return this
   }
 
-  public static final class Factory {
-    private final Supplier<? extends PrintStream> printStreamSupplier;
-
-    public Factory() {
-      this(() -> System.out);
-    }
-
-    public Factory(Supplier<? extends PrintStream> printStreamSupplier) {
-      this.printStreamSupplier = printStreamSupplier;
-    }
-
-    public Printer create(CommonArguments<?> arguments) {
-      return new Printer(
+  class Factory @JvmOverloads constructor(private val printStreamSupplier: Supplier<out PrintStream> = Supplier { System.out }) {
+    fun create(arguments: CommonArguments<*>): Printer {
+      return Printer(
           printStreamSupplier.get(),
-          arguments.enableOutputFormatting() ? Output::render : Output::renderWithoutCodes);
+          if (arguments.enableOutputFormatting()) Function(Output::render) else Function(Output::renderWithoutCodes))
     }
   }
+
 }

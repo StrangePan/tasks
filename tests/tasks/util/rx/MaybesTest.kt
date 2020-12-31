@@ -1,20 +1,20 @@
-package tasks.util.rx;
+package tasks.util.rx
 
-import java.util.Optional;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import java.util.Optional
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
+import tasks.util.rx.Maybes.fromOptional
 
-@RunWith(JUnit4.class)
-public final class MaybesTest {
-
+@RunWith(JUnit4::class)
+class MaybesTest {
   @Test
-  public void fromOptional_whenPresent_emitsValue() {
-    Maybes.fromOptional(Optional.of(132)).test().assertValue(132).assertComplete();
+  fun fromOptional_whenPresent_emitsValue() {
+    fromOptional(Optional.of(132)).test().assertValue(132).assertComplete()
   }
 
   @Test
-  public void fromOptional_whenEmpty_completes() {
-    Maybes.fromOptional(Optional.empty()).test().assertNoValues().assertComplete();
+  fun fromOptional_whenEmpty_completes() {
+    fromOptional(Optional.empty<Any>()).test().assertNoValues().assertComplete()
   }
 }

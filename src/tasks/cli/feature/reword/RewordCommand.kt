@@ -1,36 +1,30 @@
-package tasks.cli.feature.reword;
+package tasks.cli.feature.reword
 
-import static omnia.data.cache.Memoized.memoize;
-import static tasks.cli.command.Parameter.Repeatable.NOT_REPEATABLE;
+import omnia.data.cache.Memoized
+import omnia.data.cache.Memoized.Companion.memoize
+import omnia.data.structure.immutable.ImmutableList
+import tasks.cli.command.Command
+import tasks.cli.command.Parameter
+import tasks.cli.command.StringParameter
+import tasks.cli.command.TaskParameter
 
-import omnia.data.cache.Memoized;
-import omnia.data.structure.immutable.ImmutableList;
-import tasks.cli.command.Command;
-import tasks.cli.command.Parameter;
-import tasks.cli.command.StringParameter;
-import tasks.cli.command.TaskParameter;
-
-/** Canonical definition for the Reword command. */
-public final class RewordCommand {
-  private RewordCommand() {}
-
-  public static Command registration() {
-    return COMMAND.value();
+/** Canonical definition for the Reword command.  */
+object RewordCommand {
+  fun registration(): Command {
+    return COMMAND.value()
   }
 
-  static final Memoized<ImmutableList<Parameter>> COMMAND_PARAMETERS =
-      memoize(
-          () ->
-              ImmutableList.of(
-                  new TaskParameter(NOT_REPEATABLE),
-                  new StringParameter("description", NOT_REPEATABLE)));
-
-  private static final Memoized<Command> COMMAND =
-      memoize(
-          () -> Command.builder()
-              .canonicalName("reword")
-              .aliases()
-              .parameters(COMMAND_PARAMETERS.value())
-              .options(ImmutableList.empty())
-              .helpDocumentation("Changes the description of a task."));
+  val COMMAND_PARAMETERS = memoize {
+    ImmutableList.of(
+        TaskParameter(Parameter.Repeatable.NOT_REPEATABLE),
+        StringParameter("description", Parameter.Repeatable.NOT_REPEATABLE))
+  }
+  private val COMMAND: Memoized<Command> = memoize {
+    Command.builder()
+        .canonicalName("reword")
+        .aliases()
+        .parameters(COMMAND_PARAMETERS.value())
+        .options(ImmutableList.empty())
+        .helpDocumentation("Changes the description of a task.")
+  }
 }

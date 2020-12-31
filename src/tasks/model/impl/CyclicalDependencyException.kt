@@ -1,29 +1,22 @@
-package tasks.model.impl;
+package tasks.model.impl
 
-import omnia.data.structure.List;
-import omnia.data.structure.immutable.ImmutableList;
+import omnia.data.structure.List
+import omnia.data.structure.immutable.ImmutableList
 
-public class CyclicalDependencyException extends IllegalStateException {
-  private static final long serialVersionUID = -1193897049921304555L;
+class CyclicalDependencyException internal constructor(msg: String, cycle: List<out Any>) : IllegalStateException(buildMessage(msg, ImmutableList.copyOf(cycle))) {
+  val cycle: List<Any> = ImmutableList.copyOf(cycle)
 
-  private final List<Object> cycle;
+  companion object {
+    private const val serialVersionUID = -1193897049921304555L
 
-  CyclicalDependencyException(String msg, List<?> cycle) {
-    super(buildMessage(msg, ImmutableList.copyOf(cycle)));
-    this.cycle = ImmutableList.copyOf(cycle);
-  }
-
-  private static String buildMessage(String prefix, List<?> cycle) {
-    StringBuilder message = new StringBuilder().append(prefix).append("\n");
-    message.append("->").append(cycle.itemAt(0)).append("\n");
-    for (int i = 1; i < cycle.count(); i++) {
-      message.append("| ").append(cycle.itemAt(i)).append("\n");
+    private fun buildMessage(prefix: String, cycle: List<*>): String {
+      val message = StringBuilder().append(prefix).append("\n")
+      message.append("->").append(cycle.itemAt(0)).append("\n")
+      for (i in 1 until cycle.count()) {
+        message.append("| ").append(cycle.itemAt(i)).append("\n")
+      }
+      message.append("--").append(cycle.itemAt(0))
+      return message.toString()
     }
-    message.append("--").append(cycle.itemAt(0));
-    return message.toString();
-  }
-
-  public List<Object> cycle() {
-    return cycle;
   }
 }

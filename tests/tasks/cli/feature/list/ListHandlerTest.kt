@@ -1,234 +1,205 @@
-package tasks.cli.feature.list;
+package tasks.cli.feature.list
 
-import static com.google.common.truth.Truth.assertThat;
-import static java.util.regex.Pattern.DOTALL;
-import static tasks.cli.handler.testing.HandlerTestUtils.assertOutputContainsGroupedTasks;
-import static tasks.cli.handler.testing.HandlerTestUtils.commonArgs;
-import static tasks.model.Task.Status.COMPLETED;
-import static tasks.model.Task.Status.STARTED;
+import com.google.common.truth.Truth
+import java.util.function.Function
+import java.util.regex.Pattern
+import omnia.data.cache.Memoized.Companion.just
+import omnia.data.structure.immutable.ImmutableList
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
+import tasks.cli.command.common.CommonArguments
+import tasks.cli.handler.testing.HandlerTestUtils
+import tasks.model.ObservableTaskStore
+import tasks.model.Task
+import tasks.model.TaskBuilder
+import tasks.model.impl.ObservableTaskStoreImpl.Companion.createInMemoryStorage
 
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import omnia.data.cache.Memoized;
-import omnia.data.structure.immutable.ImmutableList;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-import tasks.cli.handler.testing.HandlerTestUtils;
-import tasks.cli.command.common.CommonArguments;
-import tasks.model.ObservableTaskStore;
-import tasks.model.Task;
-import tasks.model.TaskBuilder;
-import tasks.model.impl.ObservableTaskStoreImpl;
-
-@RunWith(JUnit4.class)
-public final class ListHandlerTest {
-
-  public static final String UNBLOCKED_TASKS_HEADER = "unblocked tasks:";
-  public static final String BLOCKED_TASKS_HEADER = "blocked tasks:";
-  public static final String COMPLETED_TASKS_HEADER = "completed tasks:";
-
-  private final ObservableTaskStore taskStore = ObservableTaskStoreImpl.createInMemoryStorage();
-
-  private final ListHandler underTest = new ListHandler(Memoized.just(taskStore));
+@RunWith(JUnit4::class)
+class ListHandlerTest {
+  private val taskStore: ObservableTaskStore = createInMemoryStorage()
+  private val underTest = ListHandler(just(taskStore))
 
   @Test
-  public void list_withEmptyGraph_printsNothing() {
-    assertThat(underTest.handle(listArgsAll()).blockingGet().toString()).isEmpty();
+  fun list_withEmptyGraph_printsNothing() {
+    Truth.assertThat(underTest.handle(listArgsAll()).blockingGet().toString()).isEmpty()
   }
 
   @Test
-  public void list_withOneItem_printsItem() {
-    Task task = createTask("example");
-
-    String output = underTest.handle(listArgsUnblockedOnly()).blockingGet().renderWithoutCodes();
-
-    assertOutputContainsGroupedTasks(output, UNBLOCKED_TASKS_HEADER, ImmutableList.of(task));
+  fun list_withOneItem_printsItem() {
+    val task = createTask("example")
+    val output = underTest.handle(listArgsUnblockedOnly()).blockingGet().renderWithoutCodes()
+    HandlerTestUtils.assertOutputContainsGroupedTasks(output, UNBLOCKED_TASKS_HEADER, ImmutableList.of(task))
   }
 
   @Test
-  public void list_withThreeItems_printsItems() {
-    Task task1 = createTask("example 1");
-    Task task2 = createTask("example 2");
-    Task task3 = createTask("example 3");
-
-    String output = underTest.handle(listArgsUnblockedOnly()).blockingGet().renderWithoutCodes();
-
-    assertOutputContainsGroupedTasks(output, UNBLOCKED_TASKS_HEADER, ImmutableList.of(task1, task2, task3));
+  fun list_withThreeItems_printsItems() {
+    val task1 = createTask("example 1")
+    val task2 = createTask("example 2")
+    val task3 = createTask("example 3")
+    val output = underTest.handle(listArgsUnblockedOnly()).blockingGet().renderWithoutCodes()
+    HandlerTestUtils.assertOutputContainsGroupedTasks(output, UNBLOCKED_TASKS_HEADER, ImmutableList.of(task1, task2, task3))
   }
 
   @Test
-  public void list_withBlockedItems_withUnblockedOnlyArgs_doesNotPrintBlockedItems() {
-    Task task1 = createTask("example task");
-    Task blockedTask1 = createTask("blocked task 1", b -> b.addBlockingTask(task1));
-    Task blockedTask2 = createTask("blocked task 2", b -> b.addBlockingTask(task1));
-
-    String output = underTest.handle(listArgsUnblockedOnly()).blockingGet().renderWithoutCodes();
-
-    assertOutputContainsGroupedTasks(output, UNBLOCKED_TASKS_HEADER, ImmutableList.of(task1));
-    assertThat(output).doesNotContain("^" + Pattern.quote(BLOCKED_TASKS_HEADER));
-    assertThat(output).doesNotContain(blockedTask1.render().renderWithoutCodes());
-    assertThat(output).doesNotContain(blockedTask2.render().renderWithoutCodes());
+  fun list_withBlockedItems_withUnblockedOnlyArgs_doesNotPrintBlockedItems() {
+    val task1 = createTask("example task")
+    val blockedTask1 = createTask("blocked task 1") { b: TaskBuilder -> b.addBlockingTask(task1) }
+    val blockedTask2 = createTask("blocked task 2") { b: TaskBuilder -> b.addBlockingTask(task1) }
+    val output = underTest.handle(listArgsUnblockedOnly()).blockingGet().renderWithoutCodes()
+    HandlerTestUtils.assertOutputContainsGroupedTasks(output, UNBLOCKED_TASKS_HEADER, ImmutableList.of(task1))
+    Truth.assertThat(output).doesNotContain("^" + Pattern.quote(BLOCKED_TASKS_HEADER))
+    Truth.assertThat(output).doesNotContain(blockedTask1.render().renderWithoutCodes())
+    Truth.assertThat(output).doesNotContain(blockedTask2.render().renderWithoutCodes())
   }
 
   @Test
-  public void list_withBlockedItems_withBlockedOnlyArgs_printsOnlyBlockedItems() {
-    Task task1 = createTask("example task");
-    Task blockedTask1 = createTask("blocked task 1", b -> b.addBlockingTask(task1));
-    Task blockedTask2 = createTask("blocked task 2", b -> b.addBlockingTask(task1));
-
-    String output = underTest.handle(listArgsBlockedOnly()).blockingGet().renderWithoutCodes();
-
-    assertOutputContainsGroupedTasks(
-        output, BLOCKED_TASKS_HEADER, ImmutableList.of(blockedTask1, blockedTask2));
-    assertThat(output).doesNotContainMatch(UNBLOCKED_TASKS_HEADER);
-    assertThat(output).doesNotContain(task1.render().renderWithoutCodes());
+  fun list_withBlockedItems_withBlockedOnlyArgs_printsOnlyBlockedItems() {
+    val task1 = createTask("example task")
+    val blockedTask1 = createTask("blocked task 1") { b: TaskBuilder -> b.addBlockingTask(task1) }
+    val blockedTask2 = createTask("blocked task 2") { b: TaskBuilder -> b.addBlockingTask(task1) }
+    val output = underTest.handle(listArgsBlockedOnly()).blockingGet().renderWithoutCodes()
+    HandlerTestUtils.assertOutputContainsGroupedTasks(
+        output, BLOCKED_TASKS_HEADER, ImmutableList.of(blockedTask1, blockedTask2))
+    Truth.assertThat(output).doesNotContainMatch(UNBLOCKED_TASKS_HEADER)
+    Truth.assertThat(output).doesNotContain(task1.render().renderWithoutCodes())
   }
 
   @Test
-  public void list_withCompletedItems_withCompletedOnlyArgs_printsOnlyCompletedItems() {
-    Task completedTask1 = createTask("completed task 1", b -> b.setStatus(COMPLETED));
-    Task completedTask2 = createTask("completed task 2", b -> b.setStatus(COMPLETED));
-
-    String output = underTest.handle(listArgsCompletedOnly()).blockingGet().renderWithoutCodes();
-
-    assertOutputContainsGroupedTasks(
-        output, COMPLETED_TASKS_HEADER, ImmutableList.of(completedTask1, completedTask2));
-    assertThat(output).doesNotContain(UNBLOCKED_TASKS_HEADER);
-    assertThat(output).doesNotContain(BLOCKED_TASKS_HEADER);
+  fun list_withCompletedItems_withCompletedOnlyArgs_printsOnlyCompletedItems() {
+    val completedTask1 = createTask("completed task 1") { b: TaskBuilder -> b.setStatus(Task.Status.COMPLETED) }
+    val completedTask2 = createTask("completed task 2") { b: TaskBuilder -> b.setStatus(Task.Status.COMPLETED) }
+    val output = underTest.handle(listArgsCompletedOnly()).blockingGet().renderWithoutCodes()
+    HandlerTestUtils.assertOutputContainsGroupedTasks(
+        output, COMPLETED_TASKS_HEADER, ImmutableList.of(completedTask1, completedTask2))
+    Truth.assertThat(output).doesNotContain(UNBLOCKED_TASKS_HEADER)
+    Truth.assertThat(output).doesNotContain(BLOCKED_TASKS_HEADER)
   }
 
   @Test
-  public void list_withCompletedItems_withUnblockedOnlyArgs_doesNotPrintCompletedItems() {
-    Task completedTask1 = createTask("completed task 1", b -> b.setStatus(COMPLETED));
-    Task completedTask2 = createTask("completed task 2", b -> b.setStatus(COMPLETED));
-
-    String output = underTest.handle(listArgsBlockedOnly()).blockingGet().renderWithoutCodes();
-
-    assertThat(output).doesNotContain(COMPLETED_TASKS_HEADER);
-    assertThat(output).doesNotContain(completedTask1.render().renderWithoutCodes());
-    assertThat(output).doesNotContain(completedTask2.render().renderWithoutCodes());
+  fun list_withCompletedItems_withUnblockedOnlyArgs_doesNotPrintCompletedItems() {
+    val completedTask1 = createTask("completed task 1") { b: TaskBuilder -> b.setStatus(Task.Status.COMPLETED) }
+    val completedTask2 = createTask("completed task 2") { b: TaskBuilder -> b.setStatus(Task.Status.COMPLETED) }
+    val output = underTest.handle(listArgsBlockedOnly()).blockingGet().renderWithoutCodes()
+    Truth.assertThat(output).doesNotContain(COMPLETED_TASKS_HEADER)
+    Truth.assertThat(output).doesNotContain(completedTask1.render().renderWithoutCodes())
+    Truth.assertThat(output).doesNotContain(completedTask2.render().renderWithoutCodes())
   }
 
   @Test
-  public void list_withAllTypes_withAllArgs_printsAllItems() {
-    Task unblockedTask = createTask("unblocked task");
-    Task blockedTask = createTask("blocked task", b -> b.addBlockingTask(unblockedTask));
-    Task unblockedStartedTask = createTask("unblocked started task", b -> b.setStatus(STARTED));
-    Task blockedStartedTask =
-        createTask(
-            "blocked started task",
-            b -> b.addBlockingTask(unblockedStartedTask).setStatus(STARTED));
-    Task unblockedCompletedTask =
-        createTask("unblocked completed task", b -> b.setStatus(COMPLETED));
-    Task blockedCompletedTask =
-        createTask(
-            "blocked completed task", b -> b.addBlockingTask(unblockedTask).setStatus(COMPLETED));
-
-    String output = underTest.handle(listArgsAll()).blockingGet().renderWithoutCodes();
-
-    assertOutputContainsGroupedTasks(
-        output, UNBLOCKED_TASKS_HEADER, ImmutableList.of(unblockedTask, unblockedStartedTask));
-    assertOutputContainsGroupedTasks(
-        output, BLOCKED_TASKS_HEADER, ImmutableList.of(blockedTask, blockedStartedTask));
-    assertOutputContainsGroupedTasks(
+  fun list_withAllTypes_withAllArgs_printsAllItems() {
+    val unblockedTask = createTask("unblocked task")
+    val blockedTask = createTask("blocked task") { b: TaskBuilder -> b.addBlockingTask(unblockedTask) }
+    val unblockedStartedTask = createTask("unblocked started task") { b: TaskBuilder -> b.setStatus(Task.Status.STARTED) }
+    val blockedStartedTask = createTask(
+        "blocked started task"
+    ) { b: TaskBuilder -> b.addBlockingTask(unblockedStartedTask).setStatus(Task.Status.STARTED) }
+    val unblockedCompletedTask = createTask("unblocked completed task") { b: TaskBuilder -> b.setStatus(Task.Status.COMPLETED) }
+    val blockedCompletedTask = createTask(
+        "blocked completed task") { b: TaskBuilder -> b.addBlockingTask(unblockedTask).setStatus(Task.Status.COMPLETED) }
+    val output = underTest.handle(listArgsAll()).blockingGet().renderWithoutCodes()
+    HandlerTestUtils.assertOutputContainsGroupedTasks(
+        output, UNBLOCKED_TASKS_HEADER, ImmutableList.of(unblockedTask, unblockedStartedTask))
+    HandlerTestUtils.assertOutputContainsGroupedTasks(
+        output, BLOCKED_TASKS_HEADER, ImmutableList.of(blockedTask, blockedStartedTask))
+    HandlerTestUtils.assertOutputContainsGroupedTasks(
         output,
         COMPLETED_TASKS_HEADER,
-        ImmutableList.of(unblockedCompletedTask, blockedCompletedTask));
-    assertThat(output).containsMatch(
+        ImmutableList.of(unblockedCompletedTask, blockedCompletedTask))
+    Truth.assertThat(output).containsMatch(
         Pattern.compile(
             Pattern.quote(UNBLOCKED_TASKS_HEADER) +
                 ".*" +
                 Pattern.quote(BLOCKED_TASKS_HEADER) +
                 ".*" +
                 Pattern.quote(COMPLETED_TASKS_HEADER),
-            DOTALL));
+            Pattern.DOTALL))
   }
 
   @Test
-  public void list_withAllTypes_withAllArgs_withStartedOnlyFlag_printsOnlyStartedItems() {
-    Task unblockedTask = createTask("unblocked task");
-    Task blockedTask = createTask("blocked task", b -> b.addBlockingTask(unblockedTask));
-    Task unblockedStartedTask = createTask("unblocked started task", b -> b.setStatus(STARTED));
-    Task blockedStartedTask =
-        createTask(
-            "blocked started task",
-            b -> b.addBlockingTask(unblockedStartedTask).setStatus(STARTED));
-    Task unblockedCompletedTask =
-        createTask("unblocked completed task", b -> b.setStatus(COMPLETED));
-    Task blockedCompletedTask =
-        createTask(
-            "blocked completed task", b -> b.addBlockingTask(unblockedTask).setStatus(COMPLETED));
-
-    String output = underTest.handle(listArgsAllStartedOnly()).blockingGet().renderWithoutCodes();
-
-    assertOutputContainsGroupedTasks(
-        output, UNBLOCKED_TASKS_HEADER, ImmutableList.of(unblockedStartedTask));
-    assertOutputContainsGroupedTasks(
-        output, BLOCKED_TASKS_HEADER, ImmutableList.of(blockedStartedTask));
-    assertThat(output).containsMatch(
+  fun list_withAllTypes_withAllArgs_withStartedOnlyFlag_printsOnlyStartedItems() {
+    val unblockedTask = createTask("unblocked task")
+    val blockedTask = createTask("blocked task") { b: TaskBuilder -> b.addBlockingTask(unblockedTask) }
+    val unblockedStartedTask = createTask("unblocked started task") { b: TaskBuilder -> b.setStatus(Task.Status.STARTED) }
+    val blockedStartedTask = createTask(
+        "blocked started task"
+    ) { b: TaskBuilder -> b.addBlockingTask(unblockedStartedTask).setStatus(Task.Status.STARTED) }
+    val unblockedCompletedTask = createTask("unblocked completed task") { b: TaskBuilder -> b.setStatus(Task.Status.COMPLETED) }
+    val blockedCompletedTask = createTask(
+        "blocked completed task") { b: TaskBuilder -> b.addBlockingTask(unblockedTask).setStatus(Task.Status.COMPLETED) }
+    val output = underTest.handle(listArgsAllStartedOnly()).blockingGet().renderWithoutCodes()
+    HandlerTestUtils.assertOutputContainsGroupedTasks(
+        output, UNBLOCKED_TASKS_HEADER, ImmutableList.of(unblockedStartedTask))
+    HandlerTestUtils.assertOutputContainsGroupedTasks(
+        output, BLOCKED_TASKS_HEADER, ImmutableList.of(blockedStartedTask))
+    Truth.assertThat(output).containsMatch(
         Pattern.compile(
             Pattern.quote(UNBLOCKED_TASKS_HEADER) +
                 ".*" +
                 Pattern.quote(BLOCKED_TASKS_HEADER),
-            DOTALL));
-    assertThat(output).doesNotContain(COMPLETED_TASKS_HEADER);
-    assertThat(output).doesNotContain(unblockedTask.render().renderWithoutCodes());
-    assertThat(output).doesNotContain(blockedTask.render().renderWithoutCodes());
-    assertThat(output).doesNotContain(blockedCompletedTask.render().renderWithoutCodes());
-    assertThat(output).doesNotContain(unblockedCompletedTask.render().renderWithoutCodes());
+            Pattern.DOTALL))
+    Truth.assertThat(output).doesNotContain(COMPLETED_TASKS_HEADER)
+    Truth.assertThat(output).doesNotContain(unblockedTask.render().renderWithoutCodes())
+    Truth.assertThat(output).doesNotContain(blockedTask.render().renderWithoutCodes())
+    Truth.assertThat(output).doesNotContain(blockedCompletedTask.render().renderWithoutCodes())
+    Truth.assertThat(output).doesNotContain(unblockedCompletedTask.render().renderWithoutCodes())
   }
 
-  private static CommonArguments<ListArguments> listArgsAll() {
-    return commonArgs(
-        new ListArguments(
-            /* isUnblockedSet= */ true,
-            /* isBlockedSet= */ true,
-            /* isCompletedSet= */ true,
-            /* isStartedSet= */ false));
+  private fun createTask(label: String): Task {
+    return HandlerTestUtils.createTask(taskStore, label)
   }
 
-  private static CommonArguments<ListArguments> listArgsAllStartedOnly() {
-    return commonArgs(
-        new ListArguments(
-            /* isUnblockedSet= */ true,
-            /* isBlockedSet= */ true,
-            /* isCompletedSet= */ true,
-            /* isStartedSet= */ true));
+  private fun createTask(label: String, builderFunction: Function<TaskBuilder, TaskBuilder>): Task {
+    return HandlerTestUtils.createTask(taskStore, label, builderFunction)
   }
 
-  private static CommonArguments<ListArguments> listArgsUnblockedOnly() {
-    return commonArgs(
-        new ListArguments(
-            /* isUnblockedSet= */ true,
-            /* isBlockedSet= */ false,
-            /* isCompletedSet= */ false,
-            /* isStartedSet= */ false));
-  }
+  companion object {
+    const val UNBLOCKED_TASKS_HEADER = "unblocked tasks:"
+    const val BLOCKED_TASKS_HEADER = "blocked tasks:"
+    const val COMPLETED_TASKS_HEADER = "completed tasks:"
+    private fun listArgsAll(): CommonArguments<ListArguments> {
+      return HandlerTestUtils.commonArgs<ListArguments>(
+          ListArguments( /* isUnblockedSet= */
+              true,  /* isBlockedSet= */
+              true,  /* isCompletedSet= */
+              true,  /* isStartedSet= */
+              false))
+    }
 
-  private static CommonArguments<ListArguments> listArgsBlockedOnly() {
-    return commonArgs(
-        new ListArguments(
-            /* isUnblockedSet= */ false,
-            /* isBlockedSet= */ true,
-            /* isCompletedSet= */ false,
-            /* isStartedSet= */ false));
-  }
+    private fun listArgsAllStartedOnly(): CommonArguments<ListArguments> {
+      return HandlerTestUtils.commonArgs<ListArguments>(
+          ListArguments( /* isUnblockedSet= */
+              true,  /* isBlockedSet= */
+              true,  /* isCompletedSet= */
+              true,  /* isStartedSet= */
+              true))
+    }
 
-  private static CommonArguments<ListArguments> listArgsCompletedOnly() {
-    return commonArgs(
-        new ListArguments(
-            /* isUnblockedSet= */ false,
-            /* isBlockedSet= */ false,
-            /* isCompletedSet= */ true,
-            /* isStartedSet= */ false));
-  }
+    private fun listArgsUnblockedOnly(): CommonArguments<ListArguments> {
+      return HandlerTestUtils.commonArgs<ListArguments>(
+          ListArguments( /* isUnblockedSet= */
+              true,  /* isBlockedSet= */
+              false,  /* isCompletedSet= */
+              false,  /* isStartedSet= */
+              false))
+    }
 
-  private Task createTask(String label) {
-    return HandlerTestUtils.createTask(taskStore, label);
-  }
+    private fun listArgsBlockedOnly(): CommonArguments<ListArguments> {
+      return HandlerTestUtils.commonArgs<ListArguments>(
+          ListArguments( /* isUnblockedSet= */
+              false,  /* isBlockedSet= */
+              true,  /* isCompletedSet= */
+              false,  /* isStartedSet= */
+              false))
+    }
 
-  private Task createTask(String label, Function<TaskBuilder, TaskBuilder> builderFunction) {
-    return HandlerTestUtils.createTask(taskStore, label, builderFunction);
+    private fun listArgsCompletedOnly(): CommonArguments<ListArguments> {
+      return HandlerTestUtils.commonArgs<ListArguments>(
+          ListArguments( /* isUnblockedSet= */
+              false,  /* isBlockedSet= */
+              false,  /* isCompletedSet= */
+              true,  /* isStartedSet= */
+              false))
+    }
   }
 }

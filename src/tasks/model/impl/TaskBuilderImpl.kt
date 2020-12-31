@@ -1,94 +1,78 @@
-package tasks.model.impl;
+package tasks.model.impl
 
-import static java.util.Objects.requireNonNull;
+import io.reactivex.rxjava3.core.Observable
+import java.util.Objects
+import java.util.function.Consumer
+import omnia.data.structure.Set
+import omnia.data.structure.immutable.ImmutableSet
+import omnia.data.structure.mutable.HashSet
+import omnia.data.structure.mutable.MutableSet
+import tasks.model.Task
+import tasks.model.TaskBuilder
 
-import io.reactivex.rxjava3.core.Observable;
-import omnia.data.structure.Set;
-import omnia.data.structure.immutable.ImmutableSet;
-import omnia.data.structure.mutable.HashSet;
-import omnia.data.structure.mutable.MutableSet;
-import tasks.model.Task;
-import tasks.model.TaskBuilder;
+class TaskBuilderImpl(private val taskStore: ObservableTaskStoreImpl, private val label: String) : TaskBuilder {
+  private var status = Task.Status.OPEN
+  private val blockingTasksToAdd: MutableSet<TaskIdImpl> = HashSet.create()
+  private val blockedTasksToAdd: MutableSet<TaskIdImpl> = HashSet.create()
 
-final class TaskBuilderImpl implements TaskBuilder {
-
-  private final ObservableTaskStoreImpl taskStore;
-  private final String label;
-
-  private Task.Status status = Task.Status.OPEN;
-  private final MutableSet<TaskIdImpl> blockingTasksToAdd = HashSet.create();
-  private final MutableSet<TaskIdImpl> blockedTasksToAdd = HashSet.create();
-
-  TaskBuilderImpl(ObservableTaskStoreImpl taskStore, String label) {
-    this.taskStore = requireNonNull(taskStore);
-    this.label = requireNonNull(label);
+  override fun setStatus(status: Task.Status): TaskBuilder {
+    this.status = Objects.requireNonNull(status)
+    return this
   }
 
-  @Override
-  public TaskBuilder setStatus(Task.Status status) {
-    this.status = requireNonNull(status);
-    return this;
+  override fun setBlockingTasks(tasks: Iterable<Task>): TaskBuilderImpl {
+    val taskIds = Observable.fromIterable(tasks)
+        .map { task: Task -> store().validateTask(task) }
+        .map { obj: TaskImpl -> obj.id() }
+        .blockingIterable()
+    blockingTasksToAdd.clear()
+    taskIds.forEach(Consumer { item: TaskIdImpl -> blockingTasksToAdd.add(item) })
+    return this
   }
 
-  @Override
-  public TaskBuilderImpl setBlockingTasks(Iterable<? extends Task> tasks) {
-    Iterable<TaskIdImpl> taskIds =
-        Observable.fromIterable(tasks)
-            .map(store()::validateTask)
-            .map(TaskImpl::id)
-            .blockingIterable();
-    blockingTasksToAdd.clear();
-    taskIds.forEach(blockingTasksToAdd::add);
-    return this;
+  override fun addBlockingTask(task: Task): TaskBuilderImpl {
+    val taskImpl = store().validateTask(task)
+    blockingTasksToAdd.add(taskImpl.id())
+    return this
   }
 
-  @Override
-  public TaskBuilderImpl addBlockingTask(Task task) {
-    TaskImpl taskImpl = store().validateTask(task);
-    blockingTasksToAdd.add(taskImpl.id());
-    return this;
+  override fun setBlockedTasks(tasks: Iterable<Task>): TaskBuilderImpl {
+    val taskIds = Observable.fromIterable(tasks)
+        .map { task: Task -> store().validateTask(task) }
+        .map { obj: TaskImpl -> obj.id() }
+        .blockingIterable()
+    blockedTasksToAdd.clear()
+    taskIds.forEach(Consumer { item: TaskIdImpl -> blockedTasksToAdd.add(item) })
+    return this
   }
 
-  @Override
-  public TaskBuilderImpl setBlockedTasks(Iterable<? extends Task> tasks) {
-    Iterable<TaskIdImpl> taskIds =
-        Observable.fromIterable(tasks)
-            .map(store()::validateTask)
-            .map(TaskImpl::id)
-            .blockingIterable();
-    blockedTasksToAdd.clear();
-    taskIds.forEach(blockedTasksToAdd::add);
-    return this;
+  override fun addBlockedTask(task: Task): TaskBuilderImpl {
+    val taskImpl = store().validateTask(task)
+    blockedTasksToAdd.add(taskImpl.id())
+    return this
   }
 
-  @Override
-  public TaskBuilderImpl addBlockedTask(Task task) {
-    TaskImpl taskImpl = store().validateTask(task);
-    blockedTasksToAdd.add(taskImpl.id());
-    return this;
+  fun store(): ObservableTaskStoreImpl {
+    return taskStore
   }
 
-  ObservableTaskStoreImpl store() {
-    return taskStore;
+  fun completed(): Boolean {
+    return status().isCompleted
   }
 
-  boolean completed() {
-    return status().isCompleted();
+  fun status(): Task.Status {
+    return status
   }
 
-  Task.Status status() {
-    return status;
+  fun label(): String {
+    return label
   }
 
-  String label() {
-    return label;
+  fun blockingTasks(): Set<TaskIdImpl> {
+    return ImmutableSet.copyOf(blockingTasksToAdd)
   }
 
-  Set<TaskIdImpl> blockingTasks() {
-    return ImmutableSet.copyOf(blockingTasksToAdd);
-  }
-
-  Set<TaskIdImpl> blockedTasks() {
-    return ImmutableSet.copyOf(blockedTasksToAdd);
+  fun blockedTasks(): Set<TaskIdImpl> {
+    return ImmutableSet.copyOf(blockedTasksToAdd)
   }
 }

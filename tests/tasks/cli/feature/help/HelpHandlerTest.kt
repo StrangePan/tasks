@@ -1,121 +1,111 @@
-package tasks.cli.feature.help;
+package tasks.cli.feature.help
 
-import static com.google.common.truth.Truth.assertThat;
-import static java.util.Comparator.comparing;
-import static java.util.regex.Pattern.MULTILINE;
-import static java.util.stream.Collectors.joining;
-import static omnia.data.stream.Collectors.toImmutableList;
-import static tasks.cli.handler.testing.HandlerTestUtils.commonArgs;
+import java.util.stream.Collectors as JavaCollectors
+import omnia.data.stream.Collectors as OmniaCollectors
+import com.google.common.truth.Truth
+import java.util.Comparator
+import java.util.Optional
+import java.util.regex.Pattern
+import omnia.data.cache.Memoized.Companion.just
+import omnia.data.structure.Collection
+import omnia.data.structure.immutable.ImmutableMap.Companion.builder
+import omnia.data.structure.immutable.ImmutableSet
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
+import tasks.cli.command.Command
+import tasks.cli.command.Command.Companion.builder
+import tasks.cli.command.Commands
+import tasks.cli.command.common.CommonArguments
+import tasks.cli.handler.testing.HandlerTestUtils
 
-import java.util.Comparator;
-import java.util.Optional;
-import java.util.regex.Pattern;
-import omnia.data.cache.Memoized;
-import omnia.data.structure.Collection;
-import omnia.data.structure.immutable.ImmutableMap;
-import omnia.data.structure.immutable.ImmutableSet;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-import tasks.cli.command.Command;
-import tasks.cli.command.Commands;
-import tasks.cli.command.common.CommonArguments;
-
-@RunWith(JUnit4.class)
-public final class HelpHandlerTest {
-
-  private static final Command TEST_COMMAND_ALPHA = generateCommand("alpha");
-  private static final Command TEST_COMMAND_BETA = generateCommand("beta");
-  private static final Command TEST_COMMAND_GAMMA = generateCommand("gamma");
-
-  private static final Commands TEST_COMMANDS =
-      new Commands() {
-        private final ImmutableMap<String, Command> commands =
-            ImmutableMap.<String, Command>builder()
-                .putMapping(TEST_COMMAND_ALPHA.canonicalName(), TEST_COMMAND_ALPHA)
-                .putMapping(TEST_COMMAND_BETA.canonicalName(), TEST_COMMAND_BETA)
-                .putMapping(TEST_COMMAND_GAMMA.canonicalName(), TEST_COMMAND_GAMMA)
-                .build();
-
-        @Override
-        public Collection<Command> getAllCommands() {
-          return commands.values()
-              .stream()
-              .sorted(comparing(Command::canonicalName))
-              .collect(toImmutableList());
-        }
-
-        @Override
-        public Optional<Command> getMatchingCommand(String userInput) {
-          return commands.valueOf(userInput);
-        }
-      };
-
-  private static Command generateCommand(String name) {
-    return Command.builder()
-        .canonicalName(name)
-        .aliases(name + "_alias")
-        .parameters(ImmutableSet.empty())
-        .options(ImmutableSet.empty())
-        .helpDocumentation(name + " help documentation");
-  }
-
-  private final HelpHandler underTest = new HelpHandler(Memoized.just(TEST_COMMANDS));
+@RunWith(JUnit4::class)
+class HelpHandlerTest {
+  private val underTest = HelpHandler(just(TEST_COMMANDS))
 
   @Test
-  public void handle_withNoArguments_listsAllCommands() {
-    assertOutputListsAllCommands(underTest.handle(helpArgs()).blockingGet().renderWithoutCodes());
+  fun handle_withNoArguments_listsAllCommands() {
+    assertOutputListsAllCommands(underTest.handle(helpArgs()).blockingGet().renderWithoutCodes())
   }
 
   @Test
-  public void handle_forUnrecognizedCommand_listsAllCommands() {
+  fun handle_forUnrecognizedCommand_listsAllCommands() {
     assertOutputListsAllCommands(
-        underTest.handle(helpArgs("zeta")).blockingGet().renderWithoutCodes());
+        underTest.handle(helpArgs("zeta")).blockingGet().renderWithoutCodes())
   }
 
   @Test
-  public void handle_forSpecificCommand_printsCommandDetails() {
-    String output =
-        underTest.handle(helpArgs(TEST_COMMAND_ALPHA.canonicalName()))
-            .blockingGet()
-            .renderWithoutCodes();
-
-    assertThat(output).contains(TEST_COMMAND_ALPHA.canonicalName());
-    assertThat(output).contains(TEST_COMMAND_ALPHA.aliases().iterator().next());
-    assertThat(output).contains(TEST_COMMAND_ALPHA.description());
-
-    assertThat(output).doesNotContain(TEST_COMMAND_BETA.canonicalName());
-    assertThat(output).doesNotContain(TEST_COMMAND_GAMMA.canonicalName());
+  fun handle_forSpecificCommand_printsCommandDetails() {
+    val output = underTest.handle(helpArgs(TEST_COMMAND_ALPHA.canonicalName()))
+        .blockingGet()
+        .renderWithoutCodes()
+    Truth.assertThat(output).contains(TEST_COMMAND_ALPHA.canonicalName())
+    Truth.assertThat(output).contains(TEST_COMMAND_ALPHA.aliases().iterator().next())
+    Truth.assertThat(output).contains(TEST_COMMAND_ALPHA.description())
+    Truth.assertThat(output).doesNotContain(TEST_COMMAND_BETA.canonicalName())
+    Truth.assertThat(output).doesNotContain(TEST_COMMAND_GAMMA.canonicalName())
   }
 
   @Test
-  public void handle_withUnrecognizedArguments_listsAllCommands() {
+  fun handle_withUnrecognizedArguments_listsAllCommands() {
     assertOutputListsAllCommands(
-        underTest.handle(helpArgs("zeta")).blockingGet().renderWithoutCodes());
+        underTest.handle(helpArgs("zeta")).blockingGet().renderWithoutCodes())
   }
 
-  private static CommonArguments<HelpArguments> helpArgs() {
-    return commonArgs(new HelpArguments());
-  }
+  companion object {
+    private val TEST_COMMAND_ALPHA = generateCommand("alpha")
+    private val TEST_COMMAND_BETA = generateCommand("beta")
+    private val TEST_COMMAND_GAMMA = generateCommand("gamma")
+    private val TEST_COMMANDS: Commands = object : Commands {
+      private val commands = builder<String, Command>()
+          .putMapping(TEST_COMMAND_ALPHA.canonicalName(), TEST_COMMAND_ALPHA)
+          .putMapping(TEST_COMMAND_BETA.canonicalName(), TEST_COMMAND_BETA)
+          .putMapping(TEST_COMMAND_GAMMA.canonicalName(), TEST_COMMAND_GAMMA)
+          .build()
+      override val allCommands: Collection<Command>
+        get() = commands.values()
+            .stream()
+            .sorted(Comparator.comparing(Command::canonicalName))
+            .collect(OmniaCollectors.toImmutableList())
 
-  private static CommonArguments<HelpArguments> helpArgs(String command) {
-    return commonArgs(new HelpArguments(command));
-  }
+      override fun getMatchingCommand(userInput: String): Optional<Command> {
+        return commands.valueOf(userInput)
+      }
+    }
 
-  private static void assertOutputListsAllCommands(String output) {
-    assertThat(output).matches(
-        Pattern.compile(
-            "Commands:\\s+" +
-                TEST_COMMANDS.getAllCommands()
-                    .stream()
-                    .map(
-                        command -> command.canonicalNameAndAliases()
+    private fun generateCommand(name: String): Command {
+      return builder()
+          .canonicalName(name)
+          .aliases(name + "_alias")
+          .parameters(ImmutableSet.empty())
+          .options(ImmutableSet.empty())
+          .helpDocumentation("$name help documentation")
+    }
+
+    private fun helpArgs(): CommonArguments<HelpArguments> {
+      return HandlerTestUtils.commonArgs(HelpArguments())
+    }
+
+    private fun helpArgs(command: String): CommonArguments<HelpArguments> {
+      return HandlerTestUtils.commonArgs(HelpArguments(command))
+    }
+
+    private fun assertOutputListsAllCommands(output: String) {
+      Truth.assertThat(output).matches(
+          Pattern.compile(
+              "Commands:\\s+" +
+                  TEST_COMMANDS.allCommands
+                      .stream()
+                      .map { command: Command ->
+                        command.canonicalNameAndAliases()
                             .stream()
-                            .collect(joining(", ")))
-                    .map(Pattern::quote)
-                    .map(s -> "\\s+" + s)
-                    .collect(joining()) +
-                "\\s*",
-            MULTILINE));
+                            .collect(JavaCollectors.joining(", "))
+                      }
+                      .map { s: String -> Pattern.quote(s) }
+                      .map { s: String -> "\\s+$s" }
+                      .collect(JavaCollectors.joining()) +
+                  "\\s*",
+              Pattern.MULTILINE))
+    }
   }
 }

@@ -1,96 +1,70 @@
-package tasks.model.impl;
+package tasks.model.impl
 
-import static java.util.Objects.requireNonNull;
-import static omnia.data.cache.Memoized.memoize;
+import java.util.Objects
+import java.util.function.Supplier
+import kotlin.math.max
+import omnia.cli.out.Output
+import omnia.cli.out.Output.Companion.builder
+import omnia.cli.out.Output.Companion.empty
+import omnia.data.cache.Memoized
+import omnia.data.cache.Memoized.Companion.memoize
+import omnia.data.structure.SortedSet
+import omnia.data.structure.immutable.ImmutableSet
+import tasks.model.Task
 
-import java.util.Objects;
-import java.util.Optional;
-import omnia.cli.out.Output;
-import omnia.data.cache.Memoized;
-import omnia.data.structure.SortedSet;
-import omnia.data.structure.immutable.ImmutableSet;
-import tasks.model.Task;
+class TaskImpl(private val store: TaskStoreImpl, private val id: TaskIdImpl, private val data: TaskData) : Task {
+  private val blockingTasks: Memoized<ImmutableSet<TaskImpl>> = memoize(Supplier { store.allTasksBlocking(id) })
+  private val blockedTasks: Memoized<ImmutableSet<TaskImpl>> = memoize(Supplier { store.allTasksBlockedBy(id) })
+  private val openBlockingTasks: Memoized<ImmutableSet<TaskImpl>> = memoize(Supplier { store.allOpenTasksBlocking(id) })
 
-final class TaskImpl implements Task {
-
-  private final TaskStoreImpl store;
-  private final TaskIdImpl id;
-  private final TaskData data;
-
-  private final Memoized<ImmutableSet<TaskImpl>> blockingTasks;
-  private final Memoized<ImmutableSet<TaskImpl>> blockedTasks;
-  private final Memoized<ImmutableSet<TaskImpl>> openBlockingTasks;
-
-  TaskImpl(TaskStoreImpl store, TaskIdImpl id, TaskData data) {
-    this.store = requireNonNull(store);
-    this.id = requireNonNull(id);
-    this.data = requireNonNull(data);
-
-    blockingTasks = memoize(() -> store.allTasksBlocking(id));
-    blockedTasks = memoize(() -> store.allTasksBlockedBy(id));
-    openBlockingTasks = memoize(() -> store.allOpenTasksBlocking(id));
+  override fun id(): TaskIdImpl {
+    return id
   }
 
-  @Override
-  public TaskIdImpl id() {
-    return id;
+  override fun label(): String {
+    return data.label()
   }
 
-  @Override
-  public String label() {
-    return data.label();
+  override fun status(): Task.Status {
+    return data.status()
   }
 
-  @Override
-  public Status status() {
-    return data.status();
+  override val isUnblocked: Boolean
+    get() = !openBlockingTasks.value().isPopulated
+
+  override fun blockingTasks(): ImmutableSet<TaskImpl> {
+    return blockingTasks.value()
   }
 
-  @Override
-  public boolean isUnblocked() {
-    return !openBlockingTasks.value().isPopulated();
+  override fun blockedTasks(): ImmutableSet<TaskImpl> {
+    return blockedTasks.value()
   }
 
-  @Override
-  public ImmutableSet<TaskImpl> blockingTasks() {
-    return blockingTasks.value();
+  override fun equals(other: Any?): Boolean {
+    return (other === this
+        || (other is TaskImpl
+        && id == other.id
+        && store == other.store
+        && data == other.data))
   }
 
-  @Override
-  public ImmutableSet<TaskImpl> blockedTasks() {
-    return blockedTasks.value();
+  override fun hashCode(): Int {
+    return Objects.hash(store, id, data)
   }
 
-  @Override
-  public boolean equals(Object obj) {
-    return obj == this
-        || (obj instanceof TaskImpl
-            && Objects.equals(id, ((TaskImpl) obj).id)
-            && Objects.equals(store, ((TaskImpl) obj).store)
-            && Objects.equals(data, ((TaskImpl) obj).data));
+  override fun toString(): String {
+    return render().toString()
   }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(store, id, data);
-  }
-
-  @Override
-  public String toString() {
-    return render().toString();
-  }
-
-  @Override
-  public Output render() {
-    SortedSet<TaskIdImpl> allIds = store.allTaskIds();
-    Optional<TaskIdImpl> precedingId = allIds.itemPreceding(id);
-    Optional<TaskIdImpl> followingId = allIds.itemFollowing(id);
-
-    String stringId = id.toString();
-    int longestCommonPrefix = Math.max(
-        precedingId.map(other -> longestCommonPrefix(other.toString(), stringId)).orElse(0),
-        followingId.map(other -> longestCommonPrefix(other.toString(), stringId)).orElse(0)) + 1;
-    return Output.builder()
+  override fun render(): Output {
+    val allIds: SortedSet<TaskIdImpl> = store.allTaskIds()
+    val precedingId = allIds.itemPreceding(id)
+    val followingId = allIds.itemFollowing(id)
+    val stringId = id.toString()
+    val longestCommonPrefix = max(
+        precedingId.map { other -> longestCommonPrefix(other.toString(), stringId) }.orElse(0),
+        followingId.map { other -> longestCommonPrefix(other.toString(), stringId) }.orElse(0)) + 1
+    return builder()
         .underlined()
         .color(Output.Color16.LIGHT_GREEN)
         .append(stringId.substring(0, longestCommonPrefix))
@@ -101,31 +75,33 @@ final class TaskImpl implements Task {
         .append(": ")
         .defaultColor()
         .append(label())
-        .build();
+        .build()
   }
 
-  private static Output render(Task.Status status) {
-    switch (status) {
-      case STARTED:
-        return Output.builder()
+  companion object {
+    private fun render(status: Task.Status): Output {
+      return when (status) {
+        Task.Status.STARTED -> builder()
             .color(Output.Color16.YELLOW)
             .append(" (started)")
-            .build();
-      case COMPLETED:
-        return Output.builder()
+            .build()
+        Task.Status.COMPLETED -> builder()
             .color(Output.Color16.LIGHT_CYAN)
             .append(" (completed)")
-            .build();
-      default:
-        return Output.empty();
+            .build()
+        else -> empty()
+      }
     }
-  }
 
-  private static int longestCommonPrefix(String a, String b) {
-    for (int i = 0;; i++) {
-      if (i > a.length() || i > b.length() || a.charAt(i) != b.charAt(i)) {
-        return i;
+    private fun longestCommonPrefix(a: String, b: String): Int {
+      var i = 0
+      while (true) {
+        if (i > a.length || i > b.length || a[i] != b[i]) {
+          return i
+        }
+        i++
       }
     }
   }
+
 }

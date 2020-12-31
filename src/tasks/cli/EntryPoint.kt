@@ -1,8 +1,9 @@
-package tasks.cli;
+package tasks.cli
 
-/** CLI entry point into the Tasks application. */
-public final class EntryPoint {
-  public static void main(String[] args) {
-    new Application(args).run();
+/** CLI entry point into the Tasks application.  */
+object EntryPoint {
+  @JvmStatic
+  fun main(args: Array<String>) {
+    Application(args).run()
   }
 }

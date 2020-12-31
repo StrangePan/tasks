@@ -1,7 +1,3 @@
-package tasks.cli.command;
+package tasks.cli.command
 
-public final class StringParameter extends Parameter {
-  public StringParameter(String semanticName, Repeatable repeatable) {
-    super(semanticName, repeatable);
-  }
-}
+class StringParameter(semanticName: String, repeatable: Repeatable) : Parameter(semanticName, repeatable)

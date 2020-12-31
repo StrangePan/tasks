@@ -1,33 +1,16 @@
-package tasks.model;
+package tasks.model
 
-public interface TaskMutator extends TaskBuilder {
-
-  TaskMutator setLabel(String label);
-
-  @Override
-  TaskMutator setStatus(Task.Status status);
-
-  TaskMutator complete();
-
-  TaskMutator reopen();
-
-  TaskMutator start();
-
-  TaskMutator stop();
-
-  @Override
-  TaskMutator setBlockingTasks(Iterable<? extends Task> task);
-
-  @Override
-  TaskMutator addBlockingTask(Task task);
-
-  TaskMutator removeBlockingTask(Task task);
-
-  @Override
-  TaskMutator setBlockedTasks(Iterable<? extends Task> task);
-
-  @Override
-  TaskMutator addBlockedTask(Task task);
-
-  TaskMutator removeBlockedTask(Task task);
+interface TaskMutator : TaskBuilder {
+  fun setLabel(label: String): TaskMutator
+  override fun setStatus(status: Task.Status): TaskMutator
+  fun complete(): TaskMutator
+  fun reopen(): TaskMutator
+  fun start(): TaskMutator
+  fun stop(): TaskMutator
+  override fun setBlockingTasks(tasks: Iterable<Task>): TaskMutator
+  override fun addBlockingTask(task: Task): TaskMutator
+  fun removeBlockingTask(task: Task): TaskMutator
+  override fun setBlockedTasks(tasks: Iterable<Task>): TaskMutator
+  override fun addBlockedTask(task: Task): TaskMutator
+  fun removeBlockedTask(task: Task): TaskMutator
 }

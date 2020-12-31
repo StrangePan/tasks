@@ -1,3 +1,3 @@
-package tasks.model;
+package tasks.model
 
-public interface TaskId {}
+interface TaskId 

@@ -1,65 +1,47 @@
-package tasks.cli.command;
+package tasks.cli.command
 
-import static java.util.Objects.requireNonNull;
+import java.util.Optional
+import org.apache.commons.cli.Option
 
-import java.util.Optional;
+abstract class Option private constructor(
+    private val longName: String,
+    private val shortName: Optional<String>,
+    private val description: String,
+    private val repeatable: Parameter.Repeatable,
+    private val parameterRepresentation: Optional<String>) {
 
-public abstract class Option {
-  private final String longName;
-  private final Optional<String> shortName;
-  private final String description;
-  private final Parameter.Repeatable repeatable;
-  private final Optional<String> parameterRepresentation;
+  protected constructor(
+      longName: String,
+      shortName: String,
+      description: String,
+      repeatable: Parameter.Repeatable,
+      parameterRepresentation: Optional<String>) : this(longName, Optional.of<String>(shortName), description, repeatable, parameterRepresentation)
 
-  protected Option(
-      String longName,
-      String shortName,
-      String description,
-      Parameter.Repeatable repeatable,
-      Optional<String> parameterRepresentation) {
-    this(longName, Optional.of(shortName), description, repeatable, parameterRepresentation);
+  protected constructor(
+      longName: String,
+      description: String,
+      repeatable: Parameter.Repeatable,
+      parameterRepresentation: Optional<String>) : this(longName, Optional.empty<String>(), description, repeatable, parameterRepresentation)
+
+  fun longName(): String {
+    return longName
   }
 
-  protected Option(
-      String longName,
-      String description,
-      Parameter.Repeatable repeatable,
-      Optional<String> parameterRepresentation) {
-    this(longName, Optional.empty(), description, repeatable, parameterRepresentation);
+  fun shortName(): Optional<String> {
+    return shortName
   }
 
-  private Option(
-      String longName,
-      Optional<String> shortName,
-      String description,
-      Parameter.Repeatable repeatable,
-      Optional<String> parameterRepresentation) {
-    this.longName = requireNonNull(longName);
-    this.shortName = requireNonNull(shortName);
-    this.description = requireNonNull(description);
-    this.repeatable = repeatable;
-    this.parameterRepresentation = requireNonNull(parameterRepresentation);
+  fun description(): String {
+    return description
   }
 
-  public String longName() {
-    return longName;
+  fun isRepeatable(): Boolean {
+    return repeatable == Parameter.Repeatable.REPEATABLE
   }
 
-  public Optional<String> shortName() {
-    return shortName;
+  fun parameterRepresentation(): Optional<String> {
+    return parameterRepresentation
   }
 
-  public String description() {
-    return description;
-  }
-
-  public boolean isRepeatable() {
-    return repeatable == Parameter.Repeatable.REPEATABLE;
-  }
-
-  public Optional<String> parameterRepresentation() {
-    return parameterRepresentation;
-  }
-
-  public abstract org.apache.commons.cli.Option toCliOption();
+  abstract fun toCliOption(): Option
 }

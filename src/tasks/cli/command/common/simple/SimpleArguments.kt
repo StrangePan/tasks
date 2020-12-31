@@ -1,17 +1,12 @@
-package tasks.cli.command.common.simple;
+package tasks.cli.command.common.simple
 
-import omnia.data.structure.List;
-import tasks.model.Task;
+import omnia.data.structure.List
+import tasks.model.Task
 
-public abstract class SimpleArguments {
-  private final List<Task> tasks;
+abstract class SimpleArguments protected constructor(private val tasks: List<Task>) {
 
-  protected SimpleArguments(List<Task> tasks) {
-    this.tasks = tasks;
-  }
-
-  /** The list of tasks parsed from the command line. */
-  protected List<Task> tasks() {
-    return tasks;
+  /** The list of tasks parsed from the command line.  */
+  protected open fun tasks(): List<Task> {
+    return tasks
   }
 }

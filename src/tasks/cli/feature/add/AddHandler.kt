@@ -1,56 +1,47 @@
-package tasks.cli.feature.add;
+package tasks.cli.feature.add
 
-import static java.util.Objects.requireNonNull;
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Single
+import omnia.cli.out.Output
+import omnia.cli.out.Output.Companion.builder
+import omnia.data.cache.Memoized
+import omnia.data.structure.Set
+import omnia.data.structure.immutable.ImmutableSet
+import tasks.cli.command.common.CommonArguments
+import tasks.cli.handler.ArgumentHandler
+import tasks.cli.handler.HandlerException
+import tasks.model.ObservableTaskStore
+import tasks.model.Task
+import tasks.model.TaskBuilder
 
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.Single;
-import omnia.cli.out.Output;
-import omnia.data.cache.Memoized;
-import omnia.data.structure.Set;
-import omnia.data.structure.immutable.ImmutableSet;
-import omnia.data.structure.tuple.Triple;
-import tasks.cli.command.common.CommonArguments;
-import tasks.cli.handler.ArgumentHandler;
-import tasks.cli.handler.HandlerException;
-import tasks.model.Task;
-import tasks.model.TaskBuilder;
-import tasks.model.ObservableTaskStore;
+/** Business logic for the Add command.  */
+class AddHandler(private val taskStore: Memoized<out ObservableTaskStore>) : ArgumentHandler<AddArguments> {
 
-/** Business logic for the Add command. */
-public final class AddHandler implements ArgumentHandler<AddArguments> {
-  private final Memoized<? extends ObservableTaskStore> taskStore;
-
-  public AddHandler(Memoized<? extends ObservableTaskStore> taskStore) {
-    this.taskStore = requireNonNull(taskStore);
-  }
-
-  @Override
-  public Single<Output> handle(CommonArguments<? extends AddArguments> arguments) {
+  override fun handle(arguments: CommonArguments<out AddArguments>): Single<Output> {
     // Validate arguments
-    String description = arguments.specificArguments().description().trim();
+    val description = arguments.specificArguments().description().trim { it <= ' ' }
     if (description.isEmpty()) {
-      throw new HandlerException("description cannot be empty or whitespace only");
+      throw HandlerException("description cannot be empty or whitespace only")
     }
 
     // Collect the dependencies and dependents
-    Set<Task> blockingTasks = ImmutableSet.copyOf(arguments.specificArguments().blockingTasks());
-    Set<Task> blockedTasks = ImmutableSet.copyOf(arguments.specificArguments().blockedTasks());
-
-    ObservableTaskStore taskStore = this.taskStore.value();
+    val blockingTasks: Set<Task> = ImmutableSet.copyOf(arguments.specificArguments().blockingTasks())
+    val blockedTasks: Set<Task> = ImmutableSet.copyOf(arguments.specificArguments().blockedTasks())
+    val taskStore = taskStore.value()
 
     // Construct the new task, commit to disk, print output
     return taskStore.createTask(
-        description,
-        builder ->
-            Single.just(builder)
-                .flatMap(b ->
-                    Observable.fromIterable(blockingTasks).reduce(b, TaskBuilder::addBlockingTask))
-                .flatMap(b ->
-                    Observable.fromIterable(blockedTasks).reduce(b, TaskBuilder::addBlockedTask))
-                .blockingGet())
-        .map(Triple::third)
-        .map(Task::render)
-        .map(output -> Output.builder().append("task created: ").append(output).build())
-        .map(output -> Output.builder().appendLine(output).build());
+        description
+    ) { builder: TaskBuilder ->
+      Single.just(builder)
+          .flatMap { b: TaskBuilder -> Observable.fromIterable(blockingTasks).reduce(b, { obj: TaskBuilder, task: Task -> obj.addBlockingTask(task) }) }
+          .flatMap { b: TaskBuilder -> Observable.fromIterable(blockedTasks).reduce(b, { obj: TaskBuilder, task: Task -> obj.addBlockedTask(task) }) }
+          .blockingGet()
+    }
+        .map { obj -> obj.third() }
+        .map { obj -> obj.render() }
+        .map { output: Output -> builder().append("task created: ").append(output).build() }
+        .map { output: Output -> builder().appendLine(output).build() }
   }
+
 }

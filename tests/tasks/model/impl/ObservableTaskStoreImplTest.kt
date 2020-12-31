@@ -1,179 +1,136 @@
-package tasks.model.impl;
+package tasks.model.impl
 
-import static com.google.common.truth.Truth.assertThat;
+import com.google.common.truth.Truth
+import java.util.concurrent.TimeUnit
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
+import tasks.model.Task
+import tasks.model.impl.ObservableTaskStoreImpl.Companion.createInMemoryStorage
 
-import io.reactivex.rxjava3.observers.TestObserver;
-import java.util.concurrent.TimeUnit;
-import omnia.data.structure.tuple.Triple;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-import tasks.model.Task;
-
-@RunWith(JUnit4.class)
-public final class ObservableTaskStoreImplTest {
-
-  private final ObservableTaskStoreImpl underTest = ObservableTaskStoreImpl.createInMemoryStorage();
+@RunWith(JUnit4::class)
+class ObservableTaskStoreImplTest {
+  private val underTest = createInMemoryStorage()
 
   @Test
-  public void observe_whenEmpty_emitsEmptyStore() {
+  fun observe_whenEmpty_emitsEmptyStore() {
     underTest.observe()
         .test()
         .assertNotComplete()
         .assertValueCount(1)
-        .assertValue(store -> !store.allTasks().isPopulated());
+        .assertValue { store: TaskStoreImpl -> !store.allTasks().isPopulated }
   }
 
   @Test
-  public void observe_whenShutdown_emitsNothingAndCompletes() {
-    underTest.shutdown().blockingAwait();
-
-    underTest.observe().test().assertNoValues().assertComplete();
+  fun observe_whenShutdown_emitsNothingAndCompletes() {
+    underTest.shutdown().blockingAwait()
+    underTest.observe().test().assertNoValues().assertComplete()
   }
 
   @Test
-  public void observe_thenShutdown_completes() {
-    TestObserver<TaskStoreImpl> observer = underTest.observe().test();
-
-    underTest.shutdown().blockingAwait();
-
-    observer.assertValueCount(1).assertComplete();
+  fun observe_thenShutdown_completes() {
+    val observer = underTest.observe().test()
+    underTest.shutdown().blockingAwait()
+    observer.assertValueCount(1).assertComplete()
   }
 
   @Test
-  public void createTask_thenObserve_receivesLatestStateOnly() {
-    TaskImpl task = underTest.createTask("example task", b -> b).blockingGet().third();
-
-    underTest.observe().test().assertValue(store -> store.allTasks().contains(task));
+  fun createTask_thenObserve_receivesLatestStateOnly() {
+    val task = underTest.createTask("example task") { it }.blockingGet().third()
+    underTest.observe().test().assertValue { it.allTasks().contains(task) }
   }
 
   @Test
-  public void createTask_whenOpen_isOpen() {
-    TaskImpl task =
-        underTest.createTask("example task", b -> b.setStatus(Task.Status.OPEN))
-            .blockingGet().third();
-
-    assertThat(task.status().isOpen()).isTrue();
-
-    underTest.observe().test().assertValue(
-        store -> store.lookUpById(task.id()).orElseThrow().status().isOpen());
+  fun createTask_whenOpen_isOpen() {
+    val task = underTest.createTask("example task") { it.setStatus(Task.Status.OPEN) }
+        .blockingGet().third()
+    Truth.assertThat(task.status().isOpen).isTrue()
+    underTest.observe().test().assertValue { it.lookUpById(task.id()).orElseThrow().status().isOpen }
   }
 
   @Test
-  public void createTask_whenCompleted_isCompleted() {
-    TaskImpl task =
-        underTest.createTask("example task", b -> b.setStatus(Task.Status.COMPLETED))
-            .blockingGet().third();
-
-    assertThat(task.status().isCompleted()).isTrue();
-
-    underTest.observe().test().assertValue(
-        store -> store.lookUpById(task.id()).orElseThrow().status().isCompleted());
+  fun createTask_whenCompleted_isCompleted() {
+    val task = underTest.createTask("example task") { it.setStatus(Task.Status.COMPLETED) }
+        .blockingGet().third()
+    Truth.assertThat(task.status().isCompleted).isTrue()
+    underTest.observe().test().assertValue { it.lookUpById(task.id()).orElseThrow().status().isCompleted }
   }
 
   @Test
-  public void createTask_whenStarted_isStarted() {
-    TaskImpl task =
-        underTest.createTask("example task", b -> b.setStatus(Task.Status.STARTED))
-            .blockingGet().third();
-
-    assertThat(task.status().isStarted()).isTrue();
-
-    underTest.observe().test().assertValue(
-        store -> store.lookUpById(task.id()).orElseThrow().status().isStarted());
+  fun createTask_whenStarted_isStarted() {
+    val task = underTest.createTask("example task") { it.setStatus(Task.Status.STARTED) }
+        .blockingGet().third()
+    Truth.assertThat(task.status().isStarted).isTrue()
+    underTest.observe().test().assertValue { it.lookUpById(task.id()).orElseThrow().status().isStarted }
   }
 
   @Test
-  public void createTask_whenCircularDependency_fails() {
-    Task task = underTest.createTask("example task 1", b -> b).blockingGet().third();
-
-    underTest.createTask("example task 2", b -> b.addBlockingTask(task).addBlockedTask(task))
+  fun createTask_whenCircularDependency_fails() {
+    val task: Task = underTest.createTask("example task 1") { it }.blockingGet().third()
+    underTest.createTask("example task 2") { it.addBlockingTask(task).addBlockedTask(task) }
         .test()
-        .assertError(CyclicalDependencyException.class);
+        .assertError(CyclicalDependencyException::class.java)
   }
 
   @Test
-  public void addItem_thenRemove_isEmpty() {
-    TaskImpl task = underTest.createTask("example task", b -> b).blockingGet().third();
-
-    underTest.deleteTask(task);
-
-    underTest.observe().test().assertValue(store -> !store.allTasks().isPopulated());
+  fun addItem_thenRemove_isEmpty() {
+    val task = underTest.createTask("example task") { it }.blockingGet().third()
+    underTest.deleteTask(task)
+    underTest.observe().test().assertValue { !it.allTasks().isPopulated }
   }
 
   @Test
-  public void mutateTask_whenReword_rewordsTask() {
-    Task task = underTest.createTask("example task", b -> b).blockingGet().third();
-
-    Task mutatedTask =
-        underTest.mutateTask(task, m -> m.setLabel("modified task")).blockingGet().third();
-
-    assertThat(mutatedTask.label()).isEqualTo("modified task");
+  fun mutateTask_whenReword_rewordsTask() {
+    val task: Task = underTest.createTask("example task") { it }.blockingGet().third()
+    val mutatedTask: Task = underTest.mutateTask(task) { it.setLabel("modified task") }.blockingGet().third()
+    Truth.assertThat(mutatedTask.label()).isEqualTo("modified task")
   }
 
   @Test
-  public void mutateTask_whenReword_emitsNewState() {
-    Task task = underTest.createTask("example task", b -> b).blockingGet().third();
-
-    TestObserver<TaskStoreImpl> observer = underTest.observe().test();
-
-    Task mutatedTask =
-        underTest.mutateTask(task, m -> m.setLabel("modified task")).blockingGet().third();
-
+  fun mutateTask_whenReword_emitsNewState() {
+    val task: Task = underTest.createTask("example task") { it }.blockingGet().third()
+    val observer = underTest.observe().test()
+    val mutatedTask: Task = underTest.mutateTask(task) { it.setLabel("modified task") }.blockingGet().third()
     observer.assertValueCount(2)
-        .assertValueAt(
-            1,
-            store -> store.lookUpById(mutatedTask.id())
-                .orElseThrow()
-                .label()
-                .equals("modified task"));
+        .assertValueAt(1) { it.lookUpById(mutatedTask.id()).orElseThrow().label() == "modified task" }
   }
 
   @Test
-  public void mutateTask_whenBlocksSelf_emitsError() {
-    Task task = underTest.createTask("example task", b -> b).blockingGet().third();
-
-    underTest.mutateTask(task, m -> m.addBlockingTask(task))
+  fun mutateTask_whenBlocksSelf_emitsError() {
+    val task: Task = underTest.createTask("example task") { it }.blockingGet().third()
+    underTest.mutateTask(task) { it.addBlockingTask(task) }
         .test()
-        .assertError(CyclicalDependencyException.class);
+        .assertError(CyclicalDependencyException::class.java)
   }
 
   @Test
-  public void mutateTask_whenCyclical_emitsError() {
-    Task task1 = underTest.createTask("example task", b -> b).blockingGet().third();
-    Task task2 = underTest.createTask("example task", b -> b).blockingGet().third();
-
-    underTest.mutateTask(task2, m -> m.addBlockingTask(task1).addBlockedTask(task1))
+  fun mutateTask_whenCyclical_emitsError() {
+    val task1: Task = underTest.createTask("example task") { it }.blockingGet().third()
+    val task2: Task = underTest.createTask("example task") { it }.blockingGet().third()
+    underTest.mutateTask(task2) {it.addBlockingTask(task1).addBlockedTask(task1) }
         .test()
-        .assertError(CyclicalDependencyException.class);
+        .assertError(CyclicalDependencyException::class.java)
   }
 
   @Test
-  public void mutateTask_whenCyclical_doesNotBreakObservers() {
-    Task task1 = underTest.createTask("example task", b -> b).blockingGet().third();
-    Task task2 = underTest.createTask("example task", b -> b).blockingGet().third();
-
-    TestObserver<TaskStoreImpl> testObserver = underTest.observe().test();
-
-    underTest.mutateTask(task2, m -> m.addBlockingTask(task1).addBlockedTask(task1)).test()
-        .awaitDone(1, TimeUnit.SECONDS);
-
-    testObserver.assertValueCount(1).assertNoErrors().assertNotComplete();
+  fun mutateTask_whenCyclical_doesNotBreakObservers() {
+    val task1: Task = underTest.createTask("example task") { it }.blockingGet().third()
+    val task2: Task = underTest.createTask("example task") { it }.blockingGet().third()
+    val testObserver = underTest.observe().test()
+    underTest.mutateTask(task2) { it.addBlockingTask(task1).addBlockedTask(task1) }.test()
+        .awaitDone(1, TimeUnit.SECONDS)
+    testObserver.assertValueCount(1).assertNoErrors().assertNotComplete()
   }
 
   @Test
-  public void mutateTask_emitsBeforeAndAfterStates() {
-    Task originalTask = underTest.createTask("example task", b -> b).blockingGet().third();
-
-    TaskStoreImpl originalStore = underTest.observe().blockingFirst();
-
-    Triple<TaskStoreImpl, TaskStoreImpl, TaskImpl> mutationResult =
-        underTest.mutateTask(originalTask, m -> m.setLabel("modified task")).blockingGet();
-
-    assertThat(mutationResult.first()).isEqualTo(originalStore);
-    assertThat(mutationResult.second()).isEqualTo(underTest.observe().blockingFirst());
-    assertThat(mutationResult.second()).isNotEqualTo(mutationResult.first());
-    assertThat(mutationResult.second().allTasks()).contains(mutationResult.third());
-    assertThat(mutationResult.second().allTasks()).doesNotContain(originalTask);
+  fun mutateTask_emitsBeforeAndAfterStates() {
+    val originalTask: Task = underTest.createTask("example task") { it }.blockingGet().third()
+    val originalStore = underTest.observe().blockingFirst()
+    val mutationResult = underTest.mutateTask(originalTask) { it.setLabel("modified task") }.blockingGet()
+    Truth.assertThat(mutationResult.first()).isEqualTo(originalStore)
+    Truth.assertThat(mutationResult.second()).isEqualTo(underTest.observe().blockingFirst())
+    Truth.assertThat(mutationResult.second()).isNotEqualTo(mutationResult.first())
+    Truth.assertThat(mutationResult.second().allTasks()).contains(mutationResult.third())
+    Truth.assertThat(mutationResult.second().allTasks()).doesNotContain(originalTask)
   }
 }

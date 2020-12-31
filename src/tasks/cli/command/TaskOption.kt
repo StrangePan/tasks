@@ -1,19 +1,14 @@
-package tasks.cli.command;
+package tasks.cli.command
 
-import java.util.Optional;
+import java.util.Optional
 
-public final class TaskOption extends Option {
-  public TaskOption(String longName, String shortName, String description, Parameter.Repeatable repeatable) {
-    super(longName, shortName, description, repeatable, Optional.of("task"));
-  }
-
-  @Override
-  public org.apache.commons.cli.Option toCliOption() {
+class TaskOption(longName: String, shortName: String, description: String, repeatable: Parameter.Repeatable) : Option(longName, shortName, description, repeatable, Optional.of("task")) {
+  override fun toCliOption(): org.apache.commons.cli.Option {
     return org.apache.commons.cli.Option.builder(shortName().orElse(null))
         .longOpt(longName())
         .desc(description())
         .optionalArg(false)
         .numberOfArgs(1)
-        .build();
+        .build()
   }
 }

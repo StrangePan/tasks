@@ -1,7 +1,3 @@
-package tasks.cli.command;
+package tasks.cli.command
 
-public final class TaskParameter extends Parameter {
-  public TaskParameter(Repeatable repeatable) {
-    super("task", repeatable);
-  }
-}
+class TaskParameter(repeatable: Repeatable) : Parameter("task", repeatable)

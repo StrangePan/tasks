@@ -1,13 +1,9 @@
-package tasks.cli.command.common;
+package tasks.cli.command.common
 
-import static omnia.data.cache.Memoized.memoize;
+import omnia.data.cache.Memoized
+import omnia.data.structure.immutable.ImmutableList
+import tasks.cli.command.Option
 
-import omnia.data.cache.Memoized;
-import omnia.data.structure.immutable.ImmutableList;
-import tasks.cli.command.Option;
-
-public final class CommonOptions {
-
-  public static final Memoized<ImmutableList<Option>> OPTIONS =
-      memoize(() -> ImmutableList.of(StripColors.STRIP_COLORS_OPTION.value()));
+object CommonOptions {
+  val OPTIONS: Memoized<ImmutableList<Option>> = Memoized.memoize { ImmutableList.of(StripColors.STRIP_COLORS_OPTION.value()) }
 }

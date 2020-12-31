@@ -1,8 +1,6 @@
-package tasks.io;
+package tasks.io
 
-public interface Store<T> {
-
-  T retrieveBlocking();
-
-  void storeBlocking(T data);
+interface Store<T> {
+  fun retrieveBlocking(): T
+  fun storeBlocking(data: T)
 }
