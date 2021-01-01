@@ -21,23 +21,26 @@ object BlockersCommand {
         TaskOption(
             "add",
             "a",
-            "Adds another task as a blocker.", Parameter.Repeatable.REPEATABLE)
+            "Adds another task as a blocker.",
+            Parameter.Repeatable.REPEATABLE)
       })
   val CLEAR_OPTION: Memoized<FlagOption> = memoize(
       Supplier {
         FlagOption(
             "clear",
             "c",
-            "Removes all blocking tasks. Can be used together with --"
-                + ADD_OPTION.value().longName() + " to replace existing blockers with new ones.", Parameter.Repeatable.NOT_REPEATABLE)
+            "Removes all blocking tasks. Can be used together with " +
+                "--${ADD_OPTION.value().longName()} to replace existing blockers with new ones.",
+            Parameter.Repeatable.NOT_REPEATABLE)
       })
   val REMOVE_OPTION: Memoized<TaskOption> = memoize(
       Supplier {
         TaskOption(
             "remove",
             "d",
-            "Removes another task from being a blocker. Ignored if --"
-                + CLEAR_OPTION.value().longName() + " is set.", Parameter.Repeatable.REPEATABLE)
+            "Removes another task from being a blocker. Ignored if " +
+                "--${CLEAR_OPTION.value().longName()} is set.",
+            Parameter.Repeatable.REPEATABLE)
       })
   private val OPTIONS = memoize {
     ImmutableList.of(
@@ -50,7 +53,7 @@ object BlockersCommand {
         Command.builder()
             .canonicalName("blockers")
             .aliases("blocker", "bk")
-            .parameters(ImmutableList.of(TaskParameter(Parameter.Repeatable.NOT_REPEATABLE)))
+            .parameters(ImmutableList.of(TaskParameter(Parameter.Repeatable.REPEATABLE)))
             .options(OPTIONS.value())
             .helpDocumentation(
                 "Modifies or lists blockers of an existing task. Can be used to add or remove "

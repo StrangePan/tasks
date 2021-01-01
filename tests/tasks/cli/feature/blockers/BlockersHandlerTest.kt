@@ -29,7 +29,7 @@ class BlockersHandlerTest {
     ) {
       underTest.handle(
           HandlerTestUtils.commonArgs(BlockersArguments(
-              existingTask,
+              ImmutableList.of(existingTask),
               ImmutableList.of(existingTask),
               ImmutableList.empty(),  /* clearAllBlockers= */
               false)))
@@ -45,7 +45,7 @@ class BlockersHandlerTest {
     ) {
       underTest.handle(
           HandlerTestUtils.commonArgs(BlockersArguments(
-              targetTask,
+              ImmutableList.of(targetTask),
               ImmutableList.of(existingTask),
               ImmutableList.of(existingTask),  /* clearAllBlockers= */
               false)))
@@ -58,7 +58,7 @@ class BlockersHandlerTest {
 
     /* clearAllBlockers= */underTest.handle(
         HandlerTestUtils.commonArgs(BlockersArguments(
-            targetTask,
+            ImmutableList.of(targetTask),
             ImmutableList.empty(),
             ImmutableList.empty(),  /* clearAllBlockers= */
             false)))
@@ -73,7 +73,7 @@ class BlockersHandlerTest {
 
     /* clearAllBlockers= */underTest.handle(
         HandlerTestUtils.commonArgs(BlockersArguments(
-            targetTask,
+            ImmutableList.of(targetTask),
             ImmutableList.empty(),
             ImmutableList.empty(),  /* clearAllBlockers= */
             true)))
@@ -100,7 +100,7 @@ class BlockersHandlerTest {
     /* clearAllBlockers= */
     val output = underTest.handle(
         HandlerTestUtils.commonArgs(BlockersArguments(
-            targetTask,
+            ImmutableList.of(targetTask),
             ImmutableList.empty(),
             ImmutableList.empty(),  /* clearAllBlockers= */
             true)))
@@ -119,7 +119,7 @@ class BlockersHandlerTest {
 
     /* clearAllBlockers= */underTest.handle(
         HandlerTestUtils.commonArgs(BlockersArguments(
-            targetTask,
+            ImmutableList.of(targetTask),
             ImmutableList.empty(),
             ImmutableList.of(existingTask),  /* clearAllBlockers= */
             false)))
@@ -144,7 +144,7 @@ class BlockersHandlerTest {
     /* clearAllBlockers= */
     val output = underTest.handle(
         HandlerTestUtils.commonArgs(BlockersArguments(
-            targetTask,
+            ImmutableList.of(targetTask),
             ImmutableList.empty(),
             ImmutableList.of(existingTask),  /* clearAllBlockers= */
             false)))
@@ -162,7 +162,7 @@ class BlockersHandlerTest {
 
     /* clearAllBlockers= */underTest.handle(
         HandlerTestUtils.commonArgs(BlockersArguments(
-            targetTask,
+            ImmutableList.of(targetTask),
             ImmutableList.of(existingTask),
             ImmutableList.empty(),  /* clearAllBlockers= */
             false)))
@@ -185,7 +185,7 @@ class BlockersHandlerTest {
     /* clearAllBlockers= */
     val output = underTest.handle(
         HandlerTestUtils.commonArgs(BlockersArguments(
-            targetTask,
+            ImmutableList.of(targetTask),
             ImmutableList.of(existingTask),
             ImmutableList.empty(),  /* clearAllBlockers= */
             false)))
@@ -204,7 +204,7 @@ class BlockersHandlerTest {
 
     /* clearAllBlockers= */underTest.handle(
         HandlerTestUtils.commonArgs(BlockersArguments(
-            targetTask,
+            ImmutableList.of(targetTask),
             ImmutableList.of(blockerToAdd),
             ImmutableList.of(existingBlocker),  /* clearAllBlockers= */
             false)))
@@ -228,7 +228,7 @@ class BlockersHandlerTest {
     /* clearAllBlockers= */
     val output = underTest.handle(
         HandlerTestUtils.commonArgs(BlockersArguments(
-            targetTask,
+            ImmutableList.of(targetTask),
             ImmutableList.of(blockerToAdd),
             ImmutableList.of(existingBlocker),  /* clearAllBlockers= */
             false)))
@@ -248,7 +248,7 @@ class BlockersHandlerTest {
 
     /* clearAllBlockers= */underTest.handle(
         HandlerTestUtils.commonArgs(BlockersArguments(
-            targetTask,
+            ImmutableList.of(targetTask),
             ImmutableList.of(blockerToAdd),
             ImmutableList.of(existingBlocker),  /* clearAllBlockers= */
             false)))
@@ -270,7 +270,7 @@ class BlockersHandlerTest {
 
     /* clearAllBlockers= */underTest.handle(
         HandlerTestUtils.commonArgs(BlockersArguments(
-            targetTask,
+            ImmutableList.of(targetTask),
             ImmutableList.of(blockerToAdd),
             ImmutableList.empty(),  /* clearAllBlockers= */
             false)))
