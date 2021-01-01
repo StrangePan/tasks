@@ -4,6 +4,7 @@ import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.core.SingleConverter
+import java.io.PrintStream
 import java.util.Objects
 import java.util.function.Supplier
 import omnia.algorithm.ListAlgorithms.toArray
@@ -54,13 +55,33 @@ class Feature<T : Any> internal constructor(
       taskStore: Memoized<out ObservableTaskStore>): Completable {
     return Single.just(args)
         .to(SingleConverter(::toArguments))
-        .flatMapCompletable { arguments ->
-          toOutput(arguments)
-              .doOnSuccess { Printer.Factory().create(arguments).print(it) }
-              .ignoreElement()
-        }
-        .andThen(taskStore.value().shutdown())
+        .flatMap { arguments -> toOutput(arguments).map { Tuple.of(arguments, it) } }
+        .flatMap { taskStore.value().shutdown().andThen(Single.just(it)) }
+        .flatMapCompletable(::printToMore)
         .to(::maybeConsumeError)
+  }
+
+  private fun printToMore(argumentsAndOutput: Couple<out CommonArguments<*>, Output>): Completable {
+    val arguments = argumentsAndOutput.first()
+    val output = argumentsAndOutput.second()
+
+    return Completable.create { emitter ->
+      val process = ProcessBuilder("more")
+          .directory(null)
+          .inheritIO()
+          .redirectInput(ProcessBuilder.Redirect.PIPE)
+          .start()
+
+      PrintStream(process.outputStream).use {
+        if (!emitter.isDisposed) {
+          Printer.Factory { it }.create(arguments).print(output)
+        }
+      }
+
+      emitter.setCancellable(process::destroy)
+      process.waitFor()
+      emitter.onComplete()
+    }
   }
 
   private fun toArguments(args: Single<out List<out String>>): Single<CommonArguments<out T>> {
