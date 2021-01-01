@@ -252,7 +252,7 @@ class GraphHandlerTest {
       try {
         Objects.checkIndex(row, lines.count())
       } catch (ex: ArrayIndexOutOfBoundsException) {
-        throw RuntimeException("row out of bounds. row=$row\n$source", ex)
+        throw RuntimeException("row out of bounds. row=$row${lineSeparator()}$source", ex)
       }
       return lines.itemAt(row)
     }
