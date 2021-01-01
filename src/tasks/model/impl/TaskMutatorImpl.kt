@@ -38,7 +38,7 @@ class TaskMutatorImpl internal constructor(private val taskStore: ObservableTask
   }
 
   override fun reopen(): TaskMutator {
-    statusMutator = Optional.of(Function { task: TaskData -> if (task.status().isCompleted) Task.Status.OPEN else task.status() })
+    statusMutator = Optional.of(Function { if (it.status().isCompleted) Task.Status.OPEN else it.status() })
     return this
   }
 
@@ -48,20 +48,20 @@ class TaskMutatorImpl internal constructor(private val taskStore: ObservableTask
   }
 
   override fun stop(): TaskMutator {
-    statusMutator = Optional.of(Function { task: TaskData -> if (task.status().isStarted) Task.Status.OPEN else task.status() })
+    statusMutator = Optional.of(Function { if (it.status().isStarted) Task.Status.OPEN else it.status() })
     return this
   }
 
   override fun setBlockingTasks(tasks: Iterable<Task>): TaskMutatorImpl {
     val taskIds: Iterable<TaskIdImpl> = ImmutableList.copyOf(
         Observable.fromIterable(tasks)
-            .map { task -> store().validateTask(task) }
-            .map { obj -> obj.id() }
+            .map { store().validateTask(it) }
+            .map { it.id() }
             .blockingIterable())
     overwriteBlockingTasks = true
     blockingTasksToAdd.clear()
     blockingTasksToRemove.clear()
-    taskIds.forEach(Consumer { item: TaskIdImpl -> blockingTasksToAdd.add(item) })
+    taskIds.forEach(Consumer { blockingTasksToAdd.add(it) })
     return this
   }
 
@@ -84,13 +84,13 @@ class TaskMutatorImpl internal constructor(private val taskStore: ObservableTask
   override fun setBlockedTasks(tasks: Iterable<Task>): TaskMutatorImpl {
     val taskIds: Iterable<TaskIdImpl> = ImmutableList.copyOf(
         Observable.fromIterable(tasks)
-            .map { task: Task -> store().validateTask(task) }
-            .map { obj: TaskImpl -> obj.id() }
+            .map { store().validateTask(it) }
+            .map { it.id() }
             .blockingIterable())
     overwriteBlockedTasks = true
     blockedTasksToAdd.clear()
     blockedTasksToRemove.clear()
-    taskIds.forEach(Consumer { item: TaskIdImpl -> blockedTasksToAdd.add(item) })
+    taskIds.forEach(Consumer { blockedTasksToAdd.add(it) })
     return this
   }
 
