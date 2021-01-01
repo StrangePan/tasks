@@ -19,6 +19,17 @@ import tasks.model.Task
 import tasks.model.TaskId
 import tasks.model.TaskMutator
 
+/**
+ * An [ArgumentHandler] that changes the state of one or more tasks simultaneously and outputs the
+ * resulting updates.
+ *
+ * @param taskStore the task store to mutate
+ * @param mutator the mutation to apply to all tasks specified in the commands
+ * @param diffDetector the comparator to use to detect if the [mutator] did its job
+ * @param headerWhenChanged the header to print above the tasks that were successfully mutated
+ * @param headerWhenUnchanged the header to print above the tasks that were not affected for
+ *     whatever reason
+ */
 abstract class SimpleHandler<T : SimpleArguments> protected constructor(
     private val taskStore: Memoized<out ObservableTaskStore>,
     private val mutator: Function<TaskMutator, TaskMutator>,
