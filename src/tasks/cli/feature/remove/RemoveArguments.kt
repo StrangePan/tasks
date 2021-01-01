@@ -6,11 +6,6 @@ import tasks.model.Task
 
 /** Model for parsed Remove command arguments.  */
 class RemoveArguments internal constructor(tasks: List<Task>, private val force: Boolean) : SimpleArguments(tasks) {
-  /** The tasks to remove from the store.  */
-  public override fun tasks(): List<Task> {
-    return super.tasks()
-  }
-
   /** Force. auto-confirm deletions, bypassing manual confirmations.  */
   fun force(): Boolean {
     return force

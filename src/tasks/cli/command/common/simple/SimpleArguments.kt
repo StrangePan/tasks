@@ -6,7 +6,7 @@ import tasks.model.Task
 abstract class SimpleArguments protected constructor(private val tasks: List<Task>) {
 
   /** The list of tasks parsed from the command line.  */
-  protected open fun tasks(): List<Task> {
+  open fun tasks(): List<Task> {
     return tasks
   }
 }
