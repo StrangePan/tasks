@@ -1,6 +1,5 @@
 package tasks.cli.feature.blockers
 
-import java.util.Objects
 import omnia.data.cache.Memoized
 import omnia.data.structure.List
 import omnia.data.structure.immutable.ImmutableList
@@ -14,8 +13,7 @@ import tasks.model.Task
 
 /** Command line argument parser for the Blockers command.  */
 class BlockersParser(
-    taskParser: Memoized<out Parser<out List<out ParseResult<out Task>>>>) : CommandParser<BlockersArguments> {
-  private val taskParser: Memoized<out Parser<out List<out ParseResult<out Task>>>>
+    private val taskListParser: Memoized<out Parser<out List<out ParseResult<out Task>>>>) : CommandParser<BlockersArguments> {
   override fun parse(commandLine: CommandLine): BlockersArguments {
     /*
      * 1st param assumed to be task ID
@@ -24,34 +22,30 @@ class BlockersParser(
      * optional blockers to remove
      * optional clear flag
      */
-    val argsList: List<String> = ImmutableList.copyOf(commandLine.argList)
+    val argsList = ImmutableList.copyOf(commandLine.argList)
     if (argsList.count() < 1) {
       throw ParserException("ObservableTask not specified")
     }
     if (argsList.count() > 1) {
       throw ParserException("Unexpected extra arguments")
     }
-    val targetTask = taskParser.value().parse(
-        ImmutableList.of<String>(argsList.itemAt(0))).itemAt(0)
-    val tasksToAdd = taskParser.value().parse(
+    val targetTasks = taskListParser.value().parse(argsList)
+    val tasksToAdd = taskListParser.value().parse(
         ParserUtil.getOptionValues(commandLine, BlockersCommand.ADD_OPTION.value()))
-    val tasksToRemove = taskParser.value().parse(
+    val tasksToRemove = taskListParser.value().parse(
         ParserUtil.getOptionValues(commandLine, BlockersCommand.REMOVE_OPTION.value()))
     val isClearSet = ParserUtil.getFlagPresence(commandLine, BlockersCommand.CLEAR_OPTION.value())
     ParserUtil.extractSuccessfulResultsOrThrow(
         ImmutableList.builder<ParseResult<*>>()
-            .add(targetTask)
+            .addAll(targetTasks)
             .addAll(tasksToAdd)
             .addAll(tasksToRemove)
             .build())
     return BlockersArguments(
-        ParserUtil.extractSuccessfulResultOrThrow(targetTask),
+        ParserUtil.extractSuccessfulResultsOrThrow(targetTasks),
         ParserUtil.extractSuccessfulResultsOrThrow(tasksToAdd),
         ParserUtil.extractSuccessfulResultsOrThrow(tasksToRemove),
         isClearSet)
   }
 
-  init {
-    this.taskParser = Objects.requireNonNull(taskParser)
-  }
 }
