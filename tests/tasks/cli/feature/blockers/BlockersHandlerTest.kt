@@ -107,7 +107,7 @@ class BlockersHandlerTest {
 
     assertThat(output).contains(targetTask.label())
     assertOutputContainsGroupedTasks(
-        output, "removed blockers:", ImmutableList.of(existingTask1, existingTask2))
+        output, "removed blockers:", existingTask1, existingTask2)
     assertThat(output).doesNotContain("current blockers")
   }
 
@@ -151,7 +151,7 @@ class BlockersHandlerTest {
         .toString()
 
     assertThat(output).startsWith(targetTask.render().renderWithoutCodes())
-    assertOutputContainsGroupedTasks(output, "removed blockers:", ImmutableList.of(existingTask))
+    assertOutputContainsGroupedTasks(output, "removed blockers:", existingTask)
     assertThat(output).doesNotContain("current blockers")
   }
 
@@ -217,7 +217,7 @@ class BlockersHandlerTest {
         .toString()
 
     assertThat(output).startsWith(targetTask.render().renderWithoutCodes())
-    assertOutputContainsGroupedTasks(output, "current blockers:", ImmutableList.of(existingTask))
+    assertOutputContainsGroupedTasks(output, "current blockers:", existingTask)
     assertThat(output).doesNotContain("removed blockers")
   }
 
@@ -261,8 +261,8 @@ class BlockersHandlerTest {
         .toString()
 
     assertThat(output).startsWith(targetTask.render().renderWithoutCodes())
-    assertOutputContainsGroupedTasks(output, "removed blockers:", ImmutableList.of(existingBlocker))
-    assertOutputContainsGroupedTasks(output, "current blockers:", ImmutableList.of(blockerToAdd))
+    assertOutputContainsGroupedTasks(output, "removed blockers:", existingBlocker)
+    assertOutputContainsGroupedTasks(output, "current blockers:", blockerToAdd)
   }
 
   @Test
