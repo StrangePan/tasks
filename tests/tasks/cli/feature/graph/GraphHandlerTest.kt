@@ -1,11 +1,13 @@
 package tasks.cli.feature.graph
 
 import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertWithMessage
 import com.google.common.truth.Truth8
 import io.reactivex.rxjava3.core.Observable
 import java.lang.System.lineSeparator
 import java.util.Objects
 import java.util.OptionalInt
+import java.util.function.Function
 import java.util.regex.Pattern
 import omnia.algorithm.ListAlgorithms.binarySearch
 import omnia.data.cache.Memoized.Companion.just
@@ -30,6 +32,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import tasks.cli.command.common.CommonArguments
 import tasks.cli.handler.testing.HandlerTestUtils
+import tasks.cli.handler.testing.HandlerTestUtils.commonArgs
 import tasks.model.ObservableTaskStore
 import tasks.model.Task
 import tasks.model.TaskBuilder
@@ -65,7 +68,7 @@ class GraphHandlerTest {
   @Test
   fun handle_withTwoConnectedItems_printsGraph() {
     val task1 = createTask("example task 1")
-    createTask("example task 2") { b: TaskBuilder -> b.addBlockingTask(task1) }
+    createTask("example task 2") { it.addBlockingTask(task1) }
     val output = underTest.handle(graphArgsAll()).blockingGet().renderWithoutCodes()
     assertThatOutputRepresentsCurrentTaskGraph(output)
   }
@@ -73,8 +76,8 @@ class GraphHandlerTest {
   @Test
   fun handle_whenThreeConnectedItems_printsGraph() {
     val task1 = createTask("example task 1")
-    createTask("example task 2") { b: TaskBuilder -> b.addBlockingTask(task1) }
-    createTask("example task 3") { b: TaskBuilder -> b.addBlockingTask(task1) }
+    createTask("example task 2") { it.addBlockingTask(task1) }
+    createTask("example task 3") { it.addBlockingTask(task1) }
     val output = underTest.handle(graphArgsAll()).blockingGet().renderWithoutCodes()
     assertThatOutputRepresentsCurrentTaskGraph(output)
   }
@@ -82,9 +85,9 @@ class GraphHandlerTest {
   @Test
   fun handle_whenDiamond_printsGraph() {
     val task1 = createTask("example task 1")
-    val task2 = createTask("example task 2") { b: TaskBuilder -> b.addBlockingTask(task1) }
-    val task3 = createTask("example task 3") { b: TaskBuilder -> b.addBlockingTask(task1) }
-    createTask("example task 4") { b: TaskBuilder -> b.addBlockingTask(task2).addBlockingTask(task3) }
+    val task2 = createTask("example task 2") { it.addBlockingTask(task1) }
+    val task3 = createTask("example task 3") { it.addBlockingTask(task1) }
+    createTask("example task 4") { it.addBlockingTask(task2).addBlockingTask(task3) }
     val output = underTest.handle(graphArgsAll()).blockingGet().renderWithoutCodes()
     assertThatOutputRepresentsCurrentTaskGraph(output)
   }
@@ -93,11 +96,11 @@ class GraphHandlerTest {
   fun handle_whenWideDiamond_printsGraph() {
     val task1 = createTask("example task 1")
     val task7 = createTask("example task 7")
-    createTask("example task 2") { b: TaskBuilder -> b.addBlockingTask(task1).addBlockedTask(task7) }
-    createTask("example task 3") { b: TaskBuilder -> b.addBlockingTask(task1).addBlockedTask(task7) }
-    createTask("example task 4") { b: TaskBuilder -> b.addBlockingTask(task1).addBlockedTask(task7) }
-    createTask("example task 5") { b: TaskBuilder -> b.addBlockingTask(task1).addBlockedTask(task7) }
-    createTask("example task 6") { b: TaskBuilder -> b.addBlockingTask(task1).addBlockedTask(task7) }
+    createTask("example task 2") { it.addBlockingTask(task1).addBlockedTask(task7) }
+    createTask("example task 3") { it.addBlockingTask(task1).addBlockedTask(task7) }
+    createTask("example task 4") { it.addBlockingTask(task1).addBlockedTask(task7) }
+    createTask("example task 5") { it.addBlockingTask(task1).addBlockedTask(task7) }
+    createTask("example task 6") { it.addBlockingTask(task1).addBlockedTask(task7) }
     val output = underTest.handle(graphArgsAll()).blockingGet().renderWithoutCodes()
     assertThatOutputRepresentsCurrentTaskGraph(output)
   }
@@ -105,11 +108,11 @@ class GraphHandlerTest {
   @Test
   fun handle_whenFork_printsGraph() {
     val task1 = createTask("example task 1")
-    createTask("example task 2") { b: TaskBuilder -> b.addBlockingTask(task1) }
-    createTask("example task 3") { b: TaskBuilder -> b.addBlockingTask(task1) }
-    createTask("example task 4") { b: TaskBuilder -> b.addBlockingTask(task1) }
-    createTask("example task 5") { b: TaskBuilder -> b.addBlockingTask(task1) }
-    createTask("example task 6") { b: TaskBuilder -> b.addBlockingTask(task1) }
+    createTask("example task 2") { it.addBlockingTask(task1) }
+    createTask("example task 3") { it.addBlockingTask(task1) }
+    createTask("example task 4") { it.addBlockingTask(task1) }
+    createTask("example task 5") { it.addBlockingTask(task1) }
+    createTask("example task 6") { it.addBlockingTask(task1) }
     val output = underTest.handle(graphArgsAll()).blockingGet().renderWithoutCodes()
     assertThatOutputRepresentsCurrentTaskGraph(output)
   }
@@ -117,11 +120,11 @@ class GraphHandlerTest {
   @Test
   fun handle_whenReverseFork_printsGraph() {
     val task1 = createTask("example task 1")
-    createTask("example task 2") { b: TaskBuilder -> b.addBlockedTask(task1) }
-    createTask("example task 3") { b: TaskBuilder -> b.addBlockedTask(task1) }
-    createTask("example task 4") { b: TaskBuilder -> b.addBlockedTask(task1) }
-    createTask("example task 5") { b: TaskBuilder -> b.addBlockedTask(task1) }
-    createTask("example task 6") { b: TaskBuilder -> b.addBlockedTask(task1) }
+    createTask("example task 2") { it.addBlockedTask(task1) }
+    createTask("example task 3") { it.addBlockedTask(task1) }
+    createTask("example task 4") { it.addBlockedTask(task1) }
+    createTask("example task 5") { it.addBlockedTask(task1) }
+    createTask("example task 6") { it.addBlockedTask(task1) }
     val output = underTest.handle(graphArgsAll()).blockingGet().renderWithoutCodes()
     assertThatOutputRepresentsCurrentTaskGraph(output)
   }
@@ -129,11 +132,11 @@ class GraphHandlerTest {
   @Test
   fun handle_whenChain_whenAll_withVariousStatus_printsGraph() {
     val task1 = createTask("example task 1")
-    val task2 = createTask("example task 2") { b: TaskBuilder -> b.addBlockingTask(task1) }
+    val task2 = createTask("example task 2") { it.addBlockingTask(task1) }
     val task3 = createTask(
-        "example task 3") { b: TaskBuilder -> b.addBlockingTask(task2).setStatus(Task.Status.COMPLETED) }
-    val task4 = createTask("example task 4") { b: TaskBuilder -> b.addBlockingTask(task3).setStatus(Task.Status.STARTED) }
-    createTask("example task 5") { b: TaskBuilder -> b.addBlockingTask(task4) }
+        "example task 3") { it.addBlockingTask(task2).setStatus(Task.Status.COMPLETED) }
+    val task4 = createTask("example task 4") { it.addBlockingTask(task3).setStatus(Task.Status.STARTED) }
+    createTask("example task 5") { it.addBlockingTask(task4) }
     val output = underTest.handle(graphArgsAll()).blockingGet().renderWithoutCodes()
     assertThatOutputRepresentsCurrentTaskGraph(output)
   }
@@ -141,11 +144,11 @@ class GraphHandlerTest {
   @Test
   fun handle_whenChain_withSomeCompleted_printsGraph() {
     val task1 = createTask("example task 1")
-    val task2 = createTask("example task 2") { b: TaskBuilder -> b.addBlockingTask(task1) }
+    val task2 = createTask("example task 2") { it.addBlockingTask(task1) }
     val task3 = createTask(
-        "example task 3") { b: TaskBuilder -> b.addBlockingTask(task2).setStatus(Task.Status.COMPLETED) }
-    val task4 = createTask("example task 4") { b: TaskBuilder -> b.addBlockingTask(task3) }
-    createTask("example task 5") { b: TaskBuilder -> b.addBlockingTask(task4) }
+        "example task 3") { it.addBlockingTask(task2).setStatus(Task.Status.COMPLETED) }
+    val task4 = createTask("example task 4") { it.addBlockingTask(task3) }
+    createTask("example task 5") { it.addBlockingTask(task4) }
     val output = underTest.handle(graphArgs()).blockingGet().renderWithoutCodes()
     assertThatOutputRepresentsGraph(output, stripCompletedTasksFromCurrentGraph())
   }
@@ -154,15 +157,15 @@ class GraphHandlerTest {
   fun handle_whenWideDiamond_withSomeCompleted_printsGraph() {
     val task1 = createTask("example task 1")
     val task7 = createTask("example task 7")
-    createTask("example task 2") { b: TaskBuilder -> b.addBlockingTask(task1).addBlockedTask(task7) }
+    createTask("example task 2") { it.addBlockingTask(task1).addBlockedTask(task7) }
     createTask(
         "example task 3"
-    ) { b: TaskBuilder -> b.addBlockingTask(task1).addBlockedTask(task7).setStatus(Task.Status.COMPLETED) }
-    createTask("example task 4") { b: TaskBuilder -> b.addBlockingTask(task1).addBlockedTask(task7) }
+    ) { it.addBlockingTask(task1).addBlockedTask(task7).setStatus(Task.Status.COMPLETED) }
+    createTask("example task 4") { it.addBlockingTask(task1).addBlockedTask(task7) }
     createTask(
         "example task 5"
-    ) { b: TaskBuilder -> b.addBlockingTask(task1).addBlockedTask(task7).setStatus(Task.Status.COMPLETED) }
-    createTask("example task 6") { b: TaskBuilder -> b.addBlockingTask(task1).addBlockedTask(task7) }
+    ) { it.addBlockingTask(task1).addBlockedTask(task7).setStatus(Task.Status.COMPLETED) }
+    createTask("example task 6") { it.addBlockingTask(task1).addBlockedTask(task7) }
     val output = underTest.handle(graphArgs()).blockingGet().renderWithoutCodes()
     assertThatOutputRepresentsGraph(output, stripCompletedTasksFromCurrentGraph())
   }
@@ -170,11 +173,11 @@ class GraphHandlerTest {
   @Test
   fun handle_whenD_printsGraph() {
     val task1 = createTask("example task 1")
-    val task2 = createTask("example task 2") { b: TaskBuilder -> b.addBlockingTask(task1) }
-    val task3 = createTask("example task 3") { b: TaskBuilder -> b.addBlockingTask(task2) }
-    val task4 = createTask("example task 4") { b: TaskBuilder -> b.addBlockingTask(task3) }
-    val task5 = createTask("example task 5") { b: TaskBuilder -> b.addBlockingTask(task4) }
-    createTask("example task 6") { b: TaskBuilder -> b.addBlockingTask(task1).addBlockingTask(task5) }
+    val task2 = createTask("example task 2") { it.addBlockingTask(task1) }
+    val task3 = createTask("example task 3") { it.addBlockingTask(task2) }
+    val task4 = createTask("example task 4") { it.addBlockingTask(task3) }
+    val task5 = createTask("example task 5") { it.addBlockingTask(task4) }
+    createTask("example task 6") { it.addBlockingTask(task1).addBlockingTask(task5) }
     val output = underTest.handle(graphArgsAll()).blockingGet().renderWithoutCodes()
     assertThatOutputRepresentsCurrentTaskGraph(output)
   }
@@ -182,32 +185,74 @@ class GraphHandlerTest {
   @Test
   fun handle_whenD_wheSomeCompleted_printsGraph() {
     val task1 = createTask("example task 1")
-    val task2 = createTask("example task 2") { b: TaskBuilder -> b.addBlockingTask(task1) }
-    val task3 = createTask("example task 3") { b: TaskBuilder -> b.addBlockingTask(task2) }
+    val task2 = createTask("example task 2") { it.addBlockingTask(task1) }
+    val task3 = createTask("example task 3") { it.addBlockingTask(task2) }
     val task4 = createTask(
-        "example task 4") { b: TaskBuilder -> b.addBlockingTask(task3).setStatus(Task.Status.COMPLETED) }
-    val task5 = createTask("example task 5") { b: TaskBuilder -> b.addBlockingTask(task4) }
-    createTask("example task 6") { b: TaskBuilder -> b.addBlockingTask(task1).addBlockingTask(task5) }
+        "example task 4") { it.addBlockingTask(task3).setStatus(Task.Status.COMPLETED) }
+    val task5 = createTask("example task 5") { it.addBlockingTask(task4) }
+    createTask("example task 6") { it.addBlockingTask(task1).addBlockingTask(task5) }
     val output = underTest.handle(graphArgs()).blockingGet().renderWithoutCodes()
     assertThatOutputRepresentsGraph(output, stripCompletedTasksFromCurrentGraph())
+  }
+
+  @Test
+  fun handle_whenRelatedToTask_displaysOnlyRelatedTasks() {
+    val task1 = createTask("example task 1")
+    val task2 = createTask("example task 2") { it.addBlockingTask(task1) }
+    val task3 = createTask("example task 3") { it.addBlockingTask(task2) }
+    createTask("example task 4")
+    createTask("example task 5")
+    createTask("example task 6")
+
+    val output = underTest.handle(graphArgsRelatedTo(task2)).blockingGet().renderWithoutCodes()
+
+    assertThatOutputRepresentsGraph(output, isolateGivenTasksFromCurrentGraph(task1, task2, task3))
+  }
+
+  @Test
+  fun handle_whenBlockingATask_displaysOnlyBlockingTasks() {
+    val task1 = createTask("example task 1")
+    val task2 = createTask("example task 2") { it.addBlockingTask(task1) }
+    createTask("example task 3") { it.addBlockingTask(task2) }
+    createTask("example task 4")
+    createTask("example task 5")
+    createTask("example task 6")
+
+    val output = underTest.handle(graphArgsBefore(task2)).blockingGet().renderWithoutCodes()
+
+    assertThatOutputRepresentsGraph(output, isolateGivenTasksFromCurrentGraph(task1, task2))
   }
 
   private fun createTask(label: String): Task {
     return HandlerTestUtils.createTask(taskStore, label)
   }
 
-  private fun createTask(label: String, builderFunction: java.util.function.Function<TaskBuilder, TaskBuilder>): Task {
+  private fun createTask(label: String, builderFunction: Function<TaskBuilder, TaskBuilder>): Task {
     return HandlerTestUtils.createTask(taskStore, label, builderFunction)
   }
 
   private fun stripCompletedTasksFromCurrentGraph(): ImmutableDirectedGraph<out Task> {
-    val currentGraph = taskStore.observe().blockingFirst().taskGraph()
+    val currentGraph = getCurrentGraph()
     val builder = currentGraph.toBuilder()
     currentGraph.contents()
         .stream()
-        .filter { t: Task -> t.status().isCompleted }.forEach { element: Any -> builder.removeUnknownTypedNode(element) }
+        .filter { it.status().isCompleted }.forEach(builder::removeUnknownTypedNode)
     return builder.build()
   }
+
+  private fun isolateGivenTasksFromCurrentGraph(vararg tasks: Task):
+      ImmutableDirectedGraph<out Task> {
+    val currentGraph = getCurrentGraph()
+   return Observable.fromIterable(currentGraph.contents())
+      .filter { !tasks.contains(it) }
+      .collect({ ImmutableDirectedGraph.buildUpon(currentGraph) },
+        ImmutableDirectedGraph.Builder<Task>::removeNode)
+      .map(ImmutableDirectedGraph.Builder<out Task>::build)
+      .blockingGet()
+  }
+
+  private fun getCurrentGraph(): ImmutableDirectedGraph<out Task> =
+    taskStore.observe().blockingFirst().taskGraph()
 
   private fun assertThatOutputRepresentsCurrentTaskGraph(output: String) {
     assertThatOutputRepresentsGraph(output, taskStore.observe().blockingFirst().taskGraph())
@@ -317,13 +362,33 @@ class GraphHandlerTest {
   }
 
   companion object {
-    private fun graphArgs(): CommonArguments<GraphArguments> {
-      return HandlerTestUtils.commonArgs<GraphArguments>(GraphArguments( /* isAllSet= */false))
-    }
+    private fun graphArgs(): CommonArguments<GraphArguments> =
+      commonArgs(
+        GraphArguments(
+          isAllSet = false,
+          tasksToRelateTo = ImmutableList.empty(),
+          tasksToGetBlockersOf = ImmutableList.empty()))
 
-    private fun graphArgsAll(): CommonArguments<GraphArguments> {
-      return HandlerTestUtils.commonArgs<GraphArguments>(GraphArguments( /* isAllSet= */true))
-    }
+    private fun graphArgsAll(): CommonArguments<GraphArguments> =
+      commonArgs(
+        GraphArguments(
+          isAllSet = true,
+          tasksToRelateTo = ImmutableList.empty(),
+          tasksToGetBlockersOf = ImmutableList.empty()))
+
+    private fun graphArgsRelatedTo(vararg relatedToTasks: Task): CommonArguments<GraphArguments> =
+      commonArgs(
+        GraphArguments(
+          isAllSet = false,
+          tasksToRelateTo = ImmutableList.copyOf(relatedToTasks),
+          tasksToGetBlockersOf = ImmutableList.empty()))
+
+    private fun graphArgsBefore(vararg occurringBefore: Task): CommonArguments<GraphArguments> =
+      commonArgs(
+        GraphArguments(
+          isAllSet = false,
+          tasksToRelateTo = ImmutableList.empty(),
+          tasksToGetBlockersOf = ImmutableList.copyOf(occurringBefore)))
 
     private fun <T : Task> assertThatOutputRepresentsGraph(
         output: String, graph: DirectedGraph<T>) {
@@ -367,7 +432,7 @@ class GraphHandlerTest {
                   unfinishedEdges.putMappingIfAbsent(c) { HashSet.create() }
                       .add(tasksByRow.valueOf(row - 1).orElseThrow())
                 }
-                Truth.assertWithMessage("mismatch at row ${cursor.row()} col ${cursor.col()}${lineSeparator()}$output")
+                assertWithMessage("mismatch at row ${cursor.row()} col ${cursor.col()}${lineSeparator()}$output")
                     .that(codePoint)
                     .isEqualTo(if (unfinishedEdges.keys().contains(c)) GraphHandler.CONTINUATION_UP_DOWN else if (c == colOfNode) if (taskAtCurrentRow.status().isCompleted) GraphHandler.NODE_COMPLETED else GraphHandler.NODE_OPEN else GraphHandler.GAP)
               }
@@ -422,7 +487,7 @@ class GraphHandlerTest {
       Truth.assertThat(unfinishedEdges.entries().isPopulated).isFalse()
       val parsedGraph = parsedGraphBuilder.build()
       for (originalEdge in graph.edges()) {
-        Truth.assertWithMessage(String.format(
+        assertWithMessage(String.format(
             "Rendered graph doesn't contain edge %s%s%s",
             originalEdge,
             lineSeparator(),
@@ -433,7 +498,7 @@ class GraphHandlerTest {
             .isTrue()
       }
       for (originalNode in graph.nodes()) {
-        Truth.assertWithMessage(String.format(
+        assertWithMessage(String.format(
             "Rendered graph doesn't contain task %s%s%s",
             originalNode,
             lineSeparator(),
