@@ -1,6 +1,7 @@
 package tasks.cli.feature.graph
 
 import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertWithMessage
 import com.google.common.truth.Truth8
 import io.reactivex.rxjava3.core.Observable
 import java.lang.System.lineSeparator
@@ -348,13 +349,25 @@ class GraphHandlerTest {
 
   companion object {
     private fun graphArgs(): CommonArguments<GraphArguments> =
-      commonArgs(GraphArguments(isAllSet = false, ImmutableList.empty()))
+      commonArgs(
+        GraphArguments(
+          isAllSet = false,
+          tasksToRelateTo = ImmutableList.empty(),
+          tasksToGetBlockersOf = ImmutableList.empty()))
 
     private fun graphArgsAll(): CommonArguments<GraphArguments> =
-      commonArgs(GraphArguments(isAllSet = true, ImmutableList.empty()))
+      commonArgs(
+        GraphArguments(
+          isAllSet = true,
+          tasksToRelateTo = ImmutableList.empty(),
+          tasksToGetBlockersOf = ImmutableList.empty()))
 
     private fun graphArgsRelatedTo(vararg relatedToTasks: Task): CommonArguments<GraphArguments> =
-      commonArgs(GraphArguments(isAllSet = false, ImmutableList.copyOf(relatedToTasks)))
+      commonArgs(
+        GraphArguments(
+          isAllSet = false,
+          tasksToRelateTo = ImmutableList.copyOf(relatedToTasks),
+          tasksToGetBlockersOf = ImmutableList.empty()))
 
     private fun <T : Task> assertThatOutputRepresentsGraph(
         output: String, graph: DirectedGraph<T>) {
@@ -398,7 +411,7 @@ class GraphHandlerTest {
                   unfinishedEdges.putMappingIfAbsent(c) { HashSet.create() }
                       .add(tasksByRow.valueOf(row - 1).orElseThrow())
                 }
-                Truth.assertWithMessage("mismatch at row ${cursor.row()} col ${cursor.col()}${lineSeparator()}$output")
+                assertWithMessage("mismatch at row ${cursor.row()} col ${cursor.col()}${lineSeparator()}$output")
                     .that(codePoint)
                     .isEqualTo(if (unfinishedEdges.keys().contains(c)) GraphHandler.CONTINUATION_UP_DOWN else if (c == colOfNode) if (taskAtCurrentRow.status().isCompleted) GraphHandler.NODE_COMPLETED else GraphHandler.NODE_OPEN else GraphHandler.GAP)
               }
@@ -453,7 +466,7 @@ class GraphHandlerTest {
       Truth.assertThat(unfinishedEdges.entries().isPopulated).isFalse()
       val parsedGraph = parsedGraphBuilder.build()
       for (originalEdge in graph.edges()) {
-        Truth.assertWithMessage(String.format(
+        assertWithMessage(String.format(
             "Rendered graph doesn't contain edge %s%s%s",
             originalEdge,
             lineSeparator(),
@@ -464,7 +477,7 @@ class GraphHandlerTest {
             .isTrue()
       }
       for (originalNode in graph.nodes()) {
-        Truth.assertWithMessage(String.format(
+        assertWithMessage(String.format(
             "Rendered graph doesn't contain task %s%s%s",
             originalNode,
             lineSeparator(),
