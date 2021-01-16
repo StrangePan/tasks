@@ -12,6 +12,7 @@ import omnia.data.cache.Memoized
 import omnia.data.stream.Collectors.toImmutableList
 import omnia.data.stream.Collectors.toImmutableSet
 import omnia.data.structure.DirectedGraph
+import omnia.data.structure.Graph
 import omnia.data.structure.List
 import omnia.data.structure.Map
 import omnia.data.structure.Set
@@ -34,9 +35,12 @@ import tasks.util.rx.Observables.incrementingInteger
 import tasks.util.rx.Observables.toImmutableMap
 
 /** Business logic for the Graph command.  */
-class GraphHandler internal constructor(private val taskStore: Memoized<out ObservableTaskStore>, private val sorter: TopologicalSorter) : ArgumentHandler<GraphArguments> {
+class GraphHandler internal constructor(
+  private val taskStore: Memoized<out ObservableTaskStore>, private val sorter: TopologicalSorter)
+  : ArgumentHandler<GraphArguments> {
 
-  constructor(taskStore: Memoized<out ObservableTaskStore>) : this(taskStore, object : TopologicalSorter {
+  constructor(taskStore: Memoized<out ObservableTaskStore>)
+      : this(taskStore, object : TopologicalSorter {
     override fun <T : Task> sort(graph: DirectedGraph<T>): ImmutableList<T> {
       return GraphAlgorithms.topologicallySort(graph)
     }
@@ -44,26 +48,20 @@ class GraphHandler internal constructor(private val taskStore: Memoized<out Obse
 
   override fun handle(arguments: CommonArguments<out GraphArguments>): Single<Output> {
     return taskStore.value()
-        .observe()
-        .firstOrError()
-        .map(TaskStore::taskGraph)
-        .flatMap { doHandle(arguments, it) }
+      .observe()
+      .firstOrError()
+      .map(TaskStore::taskGraph)
+      .flatMap { doHandle(arguments, it) }
   }
 
   private fun <T : Task> doHandle(
-      arguments: CommonArguments<out GraphArguments>,
-      taskStoreSingle: ImmutableDirectedGraph<T>): Single<Output> {
+    arguments: CommonArguments<out GraphArguments>,
+    taskStoreSingle: ImmutableDirectedGraph<T>): Single<Output> {
     return Single.just(taskStoreSingle)
-        .map { graph -> maybeStripCompletedTasks(graph, arguments.specificArguments()) }
-        .map { Tuple.of(it, sorter.sort(it)) }
-        .map { couple ->
-          couple.append(
-              assignColumns(couple.first(), couple.second(), arguments.specificArguments()))
-        }
-        .map { triple ->
-          renderGraph(
-              triple.first(), triple.second(), triple.third(), arguments.specificArguments())
-        }
+      .map { maybeStripCompletedTasks(it, arguments.specificArguments()) }
+      .map { Tuple.of(it, sorter.sort(it)) }
+      .map { it.append(assignColumns(it.first(), it.second(), arguments.specificArguments())) }
+      .map { renderGraph(it.first(), it.second(), it.third(), arguments.specificArguments()) }
   }
 
   internal interface TopologicalSorter {
@@ -88,13 +86,17 @@ class GraphHandler internal constructor(private val taskStore: Memoized<out Obse
     const val NODE_COMPLETED: Char = '☑'
     const val NODE_OPEN: Char = '☐'
 
-    private fun <T : Task> maybeStripCompletedTasks(taskGraph: DirectedGraph<T>, arguments: GraphArguments): DirectedGraph<T> {
+    private fun <T : Task> maybeStripCompletedTasks(
+      taskGraph: DirectedGraph<T>, arguments: GraphArguments)
+        : DirectedGraph<T> {
       return if (arguments.isAllSet) taskGraph else {
         Observable.fromIterable(taskGraph.contents())
-            .filter { it.status().isCompleted }
-            .collect({ ImmutableDirectedGraph.buildUpon(taskGraph) }, ImmutableDirectedGraph.Builder<T>::removeNode)
-            .map { it.build() }
-            .blockingGet()
+          .filter { it.status().isCompleted }
+          .collect(
+            { ImmutableDirectedGraph.buildUpon(taskGraph) },
+            ImmutableDirectedGraph.Builder<T>::removeNode)
+          .map(ImmutableDirectedGraph.Builder<T>::build)
+          .blockingGet()
       }
     }
 
@@ -114,34 +116,35 @@ class GraphHandler internal constructor(private val taskStore: Memoized<out Obse
      * passed into `taskList` will have an entry in the result.
      */
     private fun <T : Task> assignColumns(
-        taskGraph: DirectedGraph<T>, taskList: List<T>, arguments: GraphArguments): Map<T, Int> {
+      taskGraph: DirectedGraph<T>, taskList: List<T>, arguments: GraphArguments): Map<T, Int> {
       val assignedColumns: MutableMap<T, Int> = HashMap.create()
       val unresolvedSuccessors: MutableSet<T> = HashSet.create()
       val topologicalIndexes: ImmutableMap<T, Int> =
-          Observable.fromIterable(taskList)
-              .zipWith(incrementingInteger(), { task, int -> Tuple.of(task, int) })
-              .to(toImmutableMap({ it.first() }, { it.second() }))
-              .blockingGet()
+        Observable.fromIterable(taskList)
+          .zipWith(incrementingInteger(), Tuple::of)
+          .to(toImmutableMap({ it.first() }, { it.second() }))
+          .blockingGet()
       for (taskToAssign in taskList) {
+        // scan for the first available column not already claimed by a node later in the list
         val assignedColumn = assignedColumns.putMappingIfAbsent(
-            taskToAssign,  // scan for the first available column not already claimed by a node later in the list
-            {
-              unresolvedSuccessors.stream().map { assignedColumns.valueOf(it) }
-                  .flatMap(Optional<Int>::stream)
-                  .reduce(0) { candidate, occupied -> max(candidate, occupied + 1) }
-            })
+          taskToAssign,
+          {
+            unresolvedSuccessors.stream().map(assignedColumns::valueOf)
+              .flatMap(Optional<Int>::stream)
+              .reduce(0) { candidate, occupied -> max(candidate, occupied + 1) }
+          })
         unresolvedSuccessors.remove(taskToAssign)
         val successorsToAssign: ImmutableList<T> = taskGraph.nodeOf(taskToAssign)
-            .map { it.successors() }
-            .orElse(ImmutableSet.empty())
-            .stream()
-            .map { it.item() }
-            .filter { assignedColumns.valueOf(it).isEmpty }
-            .filter { arguments.isAllSet || !it.status().isCompleted }
-            .sorted(
-                Comparator.comparing { item: T -> topologicalIndexes.valueOf(item).orElse(0) }
-                    .reversed())
-            .collect(toImmutableList())
+          .map(DirectedGraph.DirectedNode<T>::successors)
+          .orElse(ImmutableSet.empty())
+          .stream()
+          .map(Graph.Node<T>::item)
+          .filter { assignedColumns.valueOf(it).isEmpty }
+          .filter { arguments.isAllSet || !it.status().isCompleted }
+          .sorted(
+            Comparator.comparing { item: T -> topologicalIndexes.valueOf(item).orElse(0) }
+              .reversed())
+          .collect(toImmutableList())
         var successorColumn = assignedColumn
         for (successor in successorsToAssign) {
           assignedColumns.putMapping(successor, successorColumn)
@@ -153,64 +156,71 @@ class GraphHandler internal constructor(private val taskStore: Memoized<out Obse
     }
 
     private fun <T : Task> renderGraph(
-        taskGraph: DirectedGraph<T>,
-        taskList: List<T>,
-        taskColumns: Map<T, Int>,
-        arguments: GraphArguments): Output {
+      taskGraph: DirectedGraph<T>,
+      taskList: List<T>,
+      taskColumns: Map<T, Int>,
+      arguments: GraphArguments): Output {
       val output = Output.builder()
       val columnsWithEdges: MutableSet<Int> = HashSet.create()
       val topologicalIndexes: ImmutableMap<T, Int> =
-          Observable.fromIterable(taskList)
-              .zipWith(incrementingInteger()) { task, int -> Tuple.of(task, int) }
-              .to(toImmutableMap({ it.first() }, { it.second() }))
-              .blockingGet()
+        Observable.fromIterable(taskList)
+          .zipWith(incrementingInteger(), Tuple::of)
+          .to(toImmutableMap())
+          .blockingGet()
       for (task in taskList) {
-        taskColumns.valueOf(task).ifPresent { item: Int -> columnsWithEdges.remove(item) }
+        taskColumns.valueOf(task).ifPresent(columnsWithEdges::remove)
         output.appendLine(renderTaskLine(taskColumns, columnsWithEdges, task))
-        renderEdgeLine(taskGraph, topologicalIndexes, taskColumns, columnsWithEdges, arguments, task)
-            .ifPresent(output::appendLine)
+        renderEdgeLine(
+          taskGraph, topologicalIndexes, taskColumns, columnsWithEdges, arguments, task)
+          .ifPresent(output::appendLine)
         taskGraph.nodeOf(task)
-            .map { it.successors() }
-            .orElse(ImmutableSet.empty())
-            .stream()
-            .map { it.item() }
-            .map(taskColumns::valueOf)
-            .flatMap { it.stream() }
-            .forEach { columnsWithEdges.add(it) }
+          .map(DirectedGraph.DirectedNode<T>::successors)
+          .orElse(ImmutableSet.empty())
+          .stream()
+          .map(Graph.Node<T>::item)
+          .map(taskColumns::valueOf)
+          .flatMap(Optional<Int>::stream)
+          .forEach(columnsWithEdges::add)
       }
       return output.build()
     }
 
     private fun <T : Task> renderTaskLine(
-        taskColumns: Map<T, Int>, columnsWithEdges: Set<Int>, task: T): Output {
+      taskColumns: Map<T, Int>, columnsWithEdges: Set<Int>, task: T): Output {
       val taskColumn = taskColumns.valueOf(task).orElse(0)
       val maxColumnsWithEdges = columnsWithEdges.stream().reduce(taskColumn, ::max)
       return incrementingInteger()
-          .takeUntil { i -> i == maxColumnsWithEdges }
-          .map { column -> if (column == taskColumn) if (task.status().isCompleted) NODE_COMPLETED else NODE_OPEN else if (columnsWithEdges.contains(column)) CONTINUATION_UP_DOWN else GAP }
-          .map(Char::toString)
-          .collect(Output::builder, Output.Builder::append)
-          .map { it.append(GAP.toString()).append(task.render()) }
-          .map { it.build() }
-          .blockingGet()
+        .takeUntil { it == maxColumnsWithEdges }
+        .map {
+          when {
+            it == taskColumn -> (if (task.status().isCompleted) NODE_COMPLETED else NODE_OPEN)
+            columnsWithEdges.contains(it) -> CONTINUATION_UP_DOWN
+            else -> GAP
+          }
+        }
+        .map(Char::toString)
+        .collect(Output::builder, Output.Builder::append)
+        .map { it.append(GAP.toString()).append(task.render()) }
+        .map(Output.Builder::build)
+        .blockingGet()
     }
 
     private fun <T : Task> renderEdgeLine(
-        taskGraph: DirectedGraph<T>,
-        topologicalIndexes: Map<T, Int>,
-        taskColumns: Map<T, Int>,
-        previousColumnsWithEdges: Set<Int>,
-        arguments: GraphArguments,
-        task: T): Optional<Output> {
+      taskGraph: DirectedGraph<T>,
+      topologicalIndexes: Map<T, Int>,
+      taskColumns: Map<T, Int>,
+      previousColumnsWithEdges: Set<Int>,
+      arguments: GraphArguments,
+      task: T): Optional<Output> {
       val successorColumns = taskGraph.nodeOf(task)
-          .map { it.successors() }
-          .orElse(ImmutableSet.empty())
-          .stream()
-          .map { it.item() }
-          .filter { arguments.isAllSet || !it.status().isCompleted }
-          .map { taskColumns.valueOf(it) }
-          .flatMap { it.stream() }
-          .collect(toImmutableSet())
+        .map(DirectedGraph.DirectedNode<T>::successors)
+        .orElse(ImmutableSet.empty())
+        .stream()
+        .map(Graph.Node<T>::item)
+        .filter { arguments.isAllSet || !it.status().isCompleted }
+        .map(taskColumns::valueOf)
+        .flatMap(Optional<Int>::stream)
+        .collect(toImmutableSet())
       if (!successorColumns.isPopulated) {
         return Optional.empty()
       }
@@ -220,13 +230,14 @@ class GraphHandler internal constructor(private val taskStore: Memoized<out Obse
       // skip drawing the edge line
       if (successorColumns.count() == 1) {
         val successor: Optional<T> = taskGraph.nodeOf(task)
-            .map { it.successors() }
-            .orElse(ImmutableSet.empty())
-            .stream()
-            .findFirst()
-            .map { it.item() }
-        if (successor.flatMap { taskColumns.valueOf(it) }.orElse(0) == taskColumn
-            && topologicalIndexes.valueOf(task).map { it + 1 } != successor.flatMap { topologicalIndexes.valueOf(it) }) {
+          .map(DirectedGraph.DirectedNode<T>::successors)
+          .orElse(ImmutableSet.empty())
+          .stream()
+          .findFirst()
+          .map(DirectedGraph.DirectedNode<T>::item)
+        if (successor.flatMap(taskColumns::valueOf).orElse(0) == taskColumn
+          && topologicalIndexes.valueOf(task).map { it + 1 }
+          != successor.flatMap(topologicalIndexes::valueOf)) {
           return Optional.empty()
         }
       }
@@ -234,92 +245,65 @@ class GraphHandler internal constructor(private val taskStore: Memoized<out Obse
       val lateralEdgeMin = successorColumns.stream().reduce(taskColumn, ::min)
       val maxColumn = previousColumnsWithEdges.stream().reduce(lateralEdgeMax, ::max)
       return incrementingInteger()
-          .takeUntil { it == maxColumn }
-          .map { columnInteger ->
-            when {
-              isInRange(lateralEdgeMin, columnInteger, lateralEdgeMax) -> {
-                when {
-                  columnInteger == taskColumn -> {
-                    when {
-                      successorColumns.contains(columnInteger) -> {
-                        when {
-                          columnInteger == lateralEdgeMin && columnInteger != lateralEdgeMax -> {
-                            EDGE_UP_DOWN_RIGHT
-                          }
-                          columnInteger != lateralEdgeMin && columnInteger == lateralEdgeMax -> {
-                            EDGE_UP_DOWN_LEFT
-                          }
-                          columnInteger == lateralEdgeMin -> {
-                            EDGE_UP_DOWN
-                          }
-                          else -> {
-                            EDGE_UP_DOWN_LEFT_RIGHT
-                          }
-                        }
-                      }
-                      else -> {
-                        when {
-                          columnInteger == lateralEdgeMin && columnInteger != lateralEdgeMax -> {
-                            EDGE_UP_RIGHT
-                          }
-                          columnInteger != lateralEdgeMin && columnInteger == lateralEdgeMax -> {
-                            EDGE_UP_LEFT
-                          }
-                          else -> {
-                            EDGE_UP_LEFT_RIGHT
-                          }
-                        }
+        .takeUntil { it == maxColumn }
+        .map { columnInteger ->
+          when {
+            isInRange(lateralEdgeMin, columnInteger, lateralEdgeMax) -> {
+              when {
+                columnInteger == taskColumn -> {
+                  when {
+                    successorColumns.contains(columnInteger) -> {
+                      when {
+                        columnInteger == lateralEdgeMin && columnInteger != lateralEdgeMax ->
+                          EDGE_UP_DOWN_RIGHT
+                        columnInteger != lateralEdgeMin && columnInteger == lateralEdgeMax ->
+                          EDGE_UP_DOWN_LEFT
+                        columnInteger == lateralEdgeMin -> EDGE_UP_DOWN
+                        else -> EDGE_UP_DOWN_LEFT_RIGHT
                       }
                     }
-                  }
-                  previousColumnsWithEdges.contains(columnInteger) -> {
-                    if (successorColumns.contains(columnInteger)) {
-                      when (columnInteger) {
-                        lateralEdgeMin -> {
-                          EDGE_DOWN_RIGHT
-                        }
-                        lateralEdgeMax -> {
-                          EDGE_DOWN_LEFT
-                        }
-                        else -> {
-                          EDGE_DOWN_LEFT_RIGHT
-                        }
-                      }
-                    } else {
-                      EDGE_LEFT_RIGHT
-                    }
-                  }
-                  successorColumns.contains(columnInteger) -> {
-                    when (columnInteger) {
-                      lateralEdgeMin -> {
-                        EDGE_DOWN_RIGHT
-                      }
-                      lateralEdgeMax -> {
-                        EDGE_DOWN_LEFT
-                      }
-                      else -> {
-                        EDGE_DOWN_LEFT_RIGHT
+                    else -> {
+                      when {
+                        columnInteger == lateralEdgeMin && columnInteger != lateralEdgeMax ->
+                          EDGE_UP_RIGHT
+                        columnInteger != lateralEdgeMin && columnInteger == lateralEdgeMax ->
+                          EDGE_UP_LEFT
+                        else -> EDGE_UP_LEFT_RIGHT
                       }
                     }
-                  }
-                  else -> {
-                    EDGE_LEFT_RIGHT
                   }
                 }
-              }
-              previousColumnsWithEdges.contains(columnInteger) -> {
-                CONTINUATION_UP_DOWN
-              }
-              else -> {
-                GAP
+                previousColumnsWithEdges.contains(columnInteger) -> {
+                  when {
+                    successorColumns.contains(columnInteger) -> {
+                      when (columnInteger) {
+                        lateralEdgeMin -> EDGE_DOWN_RIGHT
+                        lateralEdgeMax -> EDGE_DOWN_LEFT
+                        else -> EDGE_DOWN_LEFT_RIGHT
+                      }
+                    }
+                    else -> EDGE_LEFT_RIGHT
+                  }
+                }
+                successorColumns.contains(columnInteger) -> {
+                  when (columnInteger) {
+                    lateralEdgeMin -> EDGE_DOWN_RIGHT
+                    lateralEdgeMax -> EDGE_DOWN_LEFT
+                    else -> EDGE_DOWN_LEFT_RIGHT
+                  }
+                }
+                else -> EDGE_LEFT_RIGHT
               }
             }
+            previousColumnsWithEdges.contains(columnInteger) -> CONTINUATION_UP_DOWN
+            else -> GAP
           }
-          .map { codePoint -> codePoint.toString() }
-          .collect(Output.Companion::builder, Output.Builder::append)
-          .map(Output.Builder::build)
-          .map { Optional.of(it) }
-          .blockingGet()
+        }
+        .map(Char::toString)
+        .collect(Output.Companion::builder, Output.Builder::append)
+        .map(Output.Builder::build)
+        .map { Optional.of(it) }
+        .blockingGet()
     }
 
     private fun isInRange(min: Int, mid: Int, max: Int): Boolean {
