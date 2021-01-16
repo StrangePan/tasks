@@ -1,5 +1,6 @@
 # version 2
 # tasks
+060k0qsmd8vc;open;Add subgraph targetting to list command;
 0j6p63xvhl9s;open;Strip color codes when parsing;
 0y6dpuel9kg0;complete;Add option to strip color from output;
 14a00nhsddz4;complete;Output formatting;
@@ -27,7 +28,7 @@ booswtafq3nk;open;Add help topic: tutorial;
 c1haep5qd9mo;complete;Update to RxJava 3;
 ckzwyq0nw4xs;complete;Fix remove confirmations not respecting --no-color flag;
 cystb0f3sk5c;complete;Move command registration to individual command definition classes;
-detipjqxxslc;started;Add subgraph targetting to list & graph commands;
+detipjqxxslc;complete;Add subgraph targetting to graph command;
 e3bpgvlmhvy8;complete;Add observable map;
 e6uo1ooklxc0;complete;Refactor complete, reopen, start, and stop handlers to share more code;
 fcb8wnt4twjk;complete;Omit completed tasks when reporting freshly unblocked tasks;
