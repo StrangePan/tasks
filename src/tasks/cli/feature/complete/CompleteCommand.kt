@@ -16,7 +16,7 @@ object CompleteCommand {
   private val COMMAND: Memoized<Command> = memoize {
     Command.builder()
         .canonicalName("complete")
-        .aliases()
+        .aliases("finish")
         .parameters(ImmutableList.of(TaskParameter(Parameter.Repeatable.REPEATABLE)))
         .options(ImmutableList.empty())
         .helpDocumentation(
