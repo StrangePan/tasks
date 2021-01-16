@@ -6,6 +6,7 @@ import omnia.data.structure.immutable.ImmutableList
 import tasks.cli.command.Command
 import tasks.cli.command.FlagOption
 import tasks.cli.command.Parameter
+import tasks.cli.command.TaskOption
 
 object GraphCommand {
   fun registration(): Command {
@@ -20,12 +21,24 @@ object GraphCommand {
             "included in the graph.",
         Parameter.Repeatable.NOT_REPEATABLE)
   }
+
+  val RELATED_TASKS_OPTION: Memoized<TaskOption> = memoize {
+    TaskOption(
+      "related",
+      "r",
+      "Restricts the output to only include tasks that are related to the ones specified here. " +
+          "When defined, the output will only print tasks that come before or after the tasks " +
+          "listed here AND any tasks that are come before or after those tasks, recursively. Use " +
+          "this option to restrict the output and focus your attention.",
+      Parameter.Repeatable.REPEATABLE)
+  }
+
   private val COMMAND: Memoized<Command> = memoize {
     Command.builder()
         .canonicalName("graph")
         .aliases("xl")
         .parameters(ImmutableList.empty())
-        .options(ImmutableList.of(ALL_OPTION.value()))
+        .options(ImmutableList.of(ALL_OPTION.value(), RELATED_TASKS_OPTION.value()))
         .helpDocumentation("Prints all tasks in graph format.")
   }
 }

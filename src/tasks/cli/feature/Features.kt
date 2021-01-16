@@ -115,7 +115,7 @@ class Features(taskStore: Memoized<out ObservableTaskStore>) : Commands {
             { CompleteParser(taskListParser) },
             { CompleteHandler(taskStore) }),
         Feature(
-            GraphCommand.registration(), { GraphParser() }, { GraphHandler(taskStore) }),
+            GraphCommand.registration(), { GraphParser(taskListParser) }, { GraphHandler(taskStore) }),
         fallbackFeature,
         Feature(
             InfoCommand.registration(),

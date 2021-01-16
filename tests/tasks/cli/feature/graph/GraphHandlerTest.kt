@@ -318,11 +318,11 @@ class GraphHandlerTest {
 
   companion object {
     private fun graphArgs(): CommonArguments<GraphArguments> {
-      return HandlerTestUtils.commonArgs<GraphArguments>(GraphArguments( /* isAllSet= */false))
+      return HandlerTestUtils.commonArgs(GraphArguments(isAllSet = false, ImmutableList.empty()))
     }
 
     private fun graphArgsAll(): CommonArguments<GraphArguments> {
-      return HandlerTestUtils.commonArgs<GraphArguments>(GraphArguments( /* isAllSet= */true))
+      return HandlerTestUtils.commonArgs(GraphArguments(isAllSet = true, ImmutableList.empty()))
     }
 
     private fun <T : Task> assertThatOutputRepresentsGraph(
