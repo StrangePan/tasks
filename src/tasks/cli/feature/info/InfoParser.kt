@@ -10,4 +10,5 @@ import tasks.model.Task
 
 /** Command line argument parser for the Info command.  */
 class InfoParser(
-    taskParser: Memoized<out Parser<out List<out ParseResult<out Task>>>>) : SimpleParser<InfoArguments>(Function { tasks: List<Task> -> InfoArguments(tasks) }, taskParser)
+    taskParser: Memoized<out Parser<out List<out ParseResult<out Task>>>>)
+    : SimpleParser<InfoArguments>(Function(::InfoArguments), taskParser)
