@@ -49,7 +49,9 @@ object GraphCommand {
       .canonicalName("graph")
       .aliases("xl")
       .parameters(ImmutableList.empty())
-      .options(ImmutableList.of(ALL_OPTION.value(), RELATED_TASKS_OPTION.value()))
+      .options(
+        ImmutableList.of(
+          ALL_OPTION.value(), RELATED_TASKS_OPTION.value(), BEFORE_TASKS_OPTION.value()))
       .helpDocumentation("Prints all tasks in graph format.")
   }
 }

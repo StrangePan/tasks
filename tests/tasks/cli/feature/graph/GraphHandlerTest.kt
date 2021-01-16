@@ -209,6 +209,20 @@ class GraphHandlerTest {
     assertThatOutputRepresentsGraph(output, isolateGivenTasksFromCurrentGraph(task1, task2, task3))
   }
 
+  @Test
+  fun handle_whenBlockingATask_displaysOnlyBlockingTasks() {
+    val task1 = createTask("example task 1")
+    val task2 = createTask("example task 2") { it.addBlockingTask(task1) }
+    createTask("example task 3") { it.addBlockingTask(task2) }
+    createTask("example task 4")
+    createTask("example task 5")
+    createTask("example task 6")
+
+    val output = underTest.handle(graphArgsBefore(task2)).blockingGet().renderWithoutCodes()
+
+    assertThatOutputRepresentsGraph(output, isolateGivenTasksFromCurrentGraph(task1, task2))
+  }
+
   private fun createTask(label: String): Task {
     return HandlerTestUtils.createTask(taskStore, label)
   }
@@ -368,6 +382,13 @@ class GraphHandlerTest {
           isAllSet = false,
           tasksToRelateTo = ImmutableList.copyOf(relatedToTasks),
           tasksToGetBlockersOf = ImmutableList.empty()))
+
+    private fun graphArgsBefore(vararg occurringBefore: Task): CommonArguments<GraphArguments> =
+      commonArgs(
+        GraphArguments(
+          isAllSet = false,
+          tasksToRelateTo = ImmutableList.empty(),
+          tasksToGetBlockersOf = ImmutableList.copyOf(occurringBefore)))
 
     private fun <T : Task> assertThatOutputRepresentsGraph(
         output: String, graph: DirectedGraph<T>) {

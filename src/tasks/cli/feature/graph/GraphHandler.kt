@@ -12,6 +12,7 @@ import omnia.cli.out.Output
 import omnia.data.cache.Memoized
 import omnia.data.stream.Collectors.toImmutableList
 import omnia.data.stream.Collectors.toImmutableSet
+import omnia.data.structure.Collection
 import omnia.data.structure.DirectedGraph
 import omnia.data.structure.Graph
 import omnia.data.structure.List
@@ -22,6 +23,7 @@ import omnia.data.structure.immutable.ImmutableList
 import omnia.data.structure.immutable.ImmutableMap
 import omnia.data.structure.immutable.ImmutableMap.Companion.copyOf
 import omnia.data.structure.immutable.ImmutableSet
+import omnia.data.structure.mutable.ArrayQueue
 import omnia.data.structure.mutable.HashMap
 import omnia.data.structure.mutable.HashSet
 import omnia.data.structure.mutable.MutableMap
@@ -92,27 +94,54 @@ class GraphHandler internal constructor(
     const val NODE_OPEN: Char = '☐'
 
     private fun <T : Task> maybeStripIrrelevantSubgraphs(
-      taskGraph: DirectedGraph<T>, arguments: GraphArguments)
-        : DirectedGraph<T> {
-      return if (arguments.tasksToRelateTo.isPopulated)
-        Observable.fromIterable(arguments.tasksToRelateTo)
-          .map { taskGraph.nodeOfUnknownType(it) }
-          .compose(unwrapOptionals())
-          .flatMapIterable(GraphAlgorithms::findOtherNodesInSubgraphContaining)
+        taskGraph: DirectedGraph<T>, arguments: GraphArguments): DirectedGraph<T> {
+      return if (arguments.tasksToRelateTo.isPopulated || arguments.tasksToGetBlockersOf.isPopulated)
+        Observable.merge(
+            Observable.fromIterable(arguments.tasksToRelateTo)
+              .map(taskGraph::nodeOfUnknownType)
+              .compose(unwrapOptionals())
+              .flatMapIterable(GraphAlgorithms::findOtherNodesInSubgraphContaining),
+            Observable.fromIterable(arguments.tasksToGetBlockersOf)
+              .map(taskGraph::nodeOfUnknownType)
+              .compose(unwrapOptionals())
+              .to(Observables.toImmutableSet())
+              .map(::findAllBlockersOf)
+              .flatMapObservable { Observable.fromIterable(it) })
           .to(Observables.toImmutableSet())
           .map { SetAlgorithms.differenceBetween(taskGraph.nodes(), it) }
           .flatMapObservable { Observable.fromIterable(it) }
           .map(Graph.Node<T>::item)
-          .collect({ ImmutableDirectedGraph.buildUpon(taskGraph) }, ImmutableDirectedGraph.Builder<T>::removeNode)
+          .collect(
+            { ImmutableDirectedGraph.buildUpon(taskGraph) },
+            ImmutableDirectedGraph.Builder<T>::removeNode)
           .map(ImmutableDirectedGraph.Builder<T>::build)
           .blockingGet()
       else
         taskGraph
     }
 
+    private fun <T : DirectedGraph.DirectedNode<*>> findAllBlockersOf(nodes: Collection<T>):
+        ImmutableSet<T> {
+      val seenNodes = HashSet.copyOf(nodes)
+      val queue = ArrayQueue.create<T>()
+      for (node in nodes) {
+        queue.enqueue(node)
+      }
+      while (queue.isPopulated) {
+        val node = queue.dequeue().orElseThrow()
+        for (predecessor in node.predecessors()) {
+          @Suppress("UNCHECKED_CAST")
+          if (predecessor as T !in seenNodes) {
+            seenNodes.add(predecessor)
+            queue.enqueue(predecessor)
+          }
+        }
+      }
+      return ImmutableSet.copyOf(seenNodes)
+    }
+
     private fun <T : Task> maybeStripCompletedTasks(
-      taskGraph: DirectedGraph<T>, arguments: GraphArguments)
-        : DirectedGraph<T> {
+        taskGraph: DirectedGraph<T>, arguments: GraphArguments): DirectedGraph<T> {
       return if (arguments.isAllSet) taskGraph else {
         Observable.fromIterable(taskGraph.contents())
           .filter { it.status().isCompleted }
@@ -146,7 +175,7 @@ class GraphHandler internal constructor(
       val topologicalIndexes: ImmutableMap<T, Int> =
         Observable.fromIterable(taskList)
           .zipWith(incrementingInteger(), Tuple::of)
-          .to(toImmutableMap({ it.first() }, { it.second() }))
+          .to(toImmutableMap())
           .blockingGet()
       for (taskToAssign in taskList) {
         // scan for the first available column not already claimed by a node later in the list
