@@ -3,10 +3,12 @@ package tasks.util.rx
 import io.reactivex.rxjava3.core.Emitter
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.ObservableConverter
+import io.reactivex.rxjava3.core.ObservableTransformer
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.functions.BiFunction
 import io.reactivex.rxjava3.functions.Function
 import io.reactivex.rxjava3.functions.Supplier
+import java.util.Optional
 import omnia.data.structure.immutable.ImmutableList
 import omnia.data.structure.immutable.ImmutableMap
 import omnia.data.structure.immutable.ImmutableSet
@@ -38,8 +40,8 @@ object Observables {
   @JvmStatic
   fun <T> toImmutableList(): ObservableConverter<T, Single<ImmutableList<T>>> {
     return ObservableConverter { observable: Observable<T> ->
-      observable.collect({ ImmutableList.builder<T>() }, { builder, item -> builder.add(item) })
-        .map { builder -> builder.build() }
+      observable.collect(ImmutableList.Companion::builder, ImmutableList.Builder<T>::add)
+        .map(ImmutableList.Builder<T>::build)
     }
   }
 
@@ -49,11 +51,10 @@ object Observables {
     valueExtractor: Function<in T, out V>
   ): ObservableConverter<T, Single<ImmutableMap<K, V>>> {
     return ObservableConverter { observable: Observable<T> ->
-      observable.collect(
-        { ImmutableMap.builder<K, V>() },
-        { builder, item ->
-          builder.putMapping(keyExtractor.apply(item), valueExtractor.apply(item)) })
-        .map { builder -> builder.build() }
+      observable.collect<ImmutableMap.Builder<K, V>>(ImmutableMap.Companion::builder) {
+          builder, item -> builder.putMapping(keyExtractor.apply(item), valueExtractor.apply(item))
+      }
+        .map(ImmutableMap.Builder<K, V>::build)
     }
   }
 
@@ -66,8 +67,13 @@ object Observables {
   @JvmStatic
   fun <T> toImmutableSet(): ObservableConverter<T, Single<ImmutableSet<T>>> {
     return ObservableConverter { observable: Observable<T> ->
-      observable.collect({ ImmutableSet.builder<T>() }, { builder, item -> builder.add(item) })
-        .map { builder -> builder.build() }
+      observable.collect(ImmutableSet.Companion::builder, ImmutableSet.Builder<T>::add)
+        .map(ImmutableSet.Builder<T>::build)
     }
+  }
+
+  @JvmStatic
+  fun <T> unwrapOptionals(): ObservableTransformer<in Optional<out T>, T> {
+    return ObservableTransformer { it.filter(Optional<*>::isPresent).map(Optional<out T>::get) }
   }
 }

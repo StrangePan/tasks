@@ -7,6 +7,7 @@ import java.util.Optional
 import kotlin.math.max
 import kotlin.math.min
 import omnia.algorithm.GraphAlgorithms
+import omnia.algorithm.SetAlgorithms
 import omnia.cli.out.Output
 import omnia.data.cache.Memoized
 import omnia.data.stream.Collectors.toImmutableList
@@ -31,8 +32,10 @@ import tasks.cli.handler.ArgumentHandler
 import tasks.model.ObservableTaskStore
 import tasks.model.Task
 import tasks.model.TaskStore
+import tasks.util.rx.Observables
 import tasks.util.rx.Observables.incrementingInteger
 import tasks.util.rx.Observables.toImmutableMap
+import tasks.util.rx.Observables.unwrapOptionals
 
 /** Business logic for the Graph command.  */
 class GraphHandler internal constructor(
@@ -51,13 +54,15 @@ class GraphHandler internal constructor(
       .observe()
       .firstOrError()
       .map(TaskStore::taskGraph)
-      .flatMap { doHandle(arguments, it) }
+      .flatMap { processAndRenderGraph(arguments, it) }
   }
 
-  private fun <T : Task> doHandle(
+  private fun <T : Task> processAndRenderGraph(
     arguments: CommonArguments<out GraphArguments>,
-    taskStoreSingle: ImmutableDirectedGraph<T>): Single<Output> {
-    return Single.just(taskStoreSingle)
+    taskGraph: ImmutableDirectedGraph<T>): Single<Output> {
+    // a separate method to facilitate generic type safety
+    return Single.just(taskGraph)
+      .map { maybeStripIrrelevantSubgraphs(it, arguments.specificArguments()) }
       .map { maybeStripCompletedTasks(it, arguments.specificArguments()) }
       .map { Tuple.of(it, sorter.sort(it)) }
       .map { it.append(assignColumns(it.first(), it.second(), arguments.specificArguments())) }
@@ -85,6 +90,25 @@ class GraphHandler internal constructor(
     const val GAP: Char = ' '
     const val NODE_COMPLETED: Char = '☑'
     const val NODE_OPEN: Char = '☐'
+
+    private fun <T : Task> maybeStripIrrelevantSubgraphs(
+      taskGraph: DirectedGraph<T>, arguments: GraphArguments)
+        : DirectedGraph<T> {
+      return if (arguments.tasksToRelateTo.isPopulated)
+        Observable.fromIterable(arguments.tasksToRelateTo)
+          .map { taskGraph.nodeOfUnknownType(it) }
+          .compose(unwrapOptionals())
+          .flatMapIterable(GraphAlgorithms::findOtherNodesInSubgraphContaining)
+          .to(Observables.toImmutableSet())
+          .map { SetAlgorithms.differenceBetween(taskGraph.nodes(), it) }
+          .flatMapObservable { Observable.fromIterable(it) }
+          .map(Graph.Node<T>::item)
+          .collect({ ImmutableDirectedGraph.buildUpon(taskGraph) }, ImmutableDirectedGraph.Builder<T>::removeNode)
+          .map(ImmutableDirectedGraph.Builder<T>::build)
+          .blockingGet()
+      else
+        taskGraph
+    }
 
     private fun <T : Task> maybeStripCompletedTasks(
       taskGraph: DirectedGraph<T>, arguments: GraphArguments)
