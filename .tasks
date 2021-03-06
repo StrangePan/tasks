@@ -70,7 +70,7 @@ vxi4873454w0;open;Add more sophisticated id hashing algorithm;
 w1ckqcfs7f28;open;Add help topics infrastructure;
 wmvfjco0dqm8;open;Add ability to compose multiple task stores;
 ws72zb5nx8g0;complete;Add 'finish' as an alias to 'complete';
-xo0sz94b34sg;started;Rename 'asdf' to .tasks;
+xo0sz94b34sg;complete;Rename 'asdf' to .tasks;
 yisiy12nlclc;complete;Add custom exceptions for graph builder's IllegalStateExceptions;
 zog7380c1tkw;complete;Optimize 'shortest-unique-prefix' algorithm;
 13g106gz8dqm8;complete;Output indentation;
