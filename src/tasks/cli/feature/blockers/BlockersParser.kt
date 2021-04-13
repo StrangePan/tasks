@@ -26,9 +26,6 @@ class BlockersParser(
     if (argsList.count() < 1) {
       throw ParserException("ObservableTask not specified")
     }
-    if (argsList.count() > 1) {
-      throw ParserException("Unexpected extra arguments")
-    }
     val targetTasks = taskListParser.value().parse(argsList)
     val tasksToAdd = taskListParser.value().parse(
         ParserUtil.getOptionValues(commandLine, BlockersCommand.ADD_OPTION.value()))

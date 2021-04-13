@@ -10,7 +10,8 @@ import tasks.cli.feature.Features
 import tasks.model.impl.ObservableTaskStoreImpl
 
 internal class Application(private val rawArgs: Array<String>) {
-  private val taskStore: Memoized<ObservableTaskStoreImpl> = memoize { ObservableTaskStoreImpl.createFromFile("asdf") }
+  private val taskStore: Memoized<ObservableTaskStoreImpl> =
+    memoize { ObservableTaskStoreImpl.createFromFile(".tasks") }
   private val features = memoize { Features(taskStore) }
 
   fun run() {
