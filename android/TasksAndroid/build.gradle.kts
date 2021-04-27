@@ -13,7 +13,7 @@ dependencies {
 android {
     compileSdkVersion(29)
     defaultConfig {
-        applicationId = "me.strangepan.tasks.android.TasksAndroid"
+        applicationId = "me.strangepan.me.strangepan.tasks.engine.tasks.android.TasksAndroid"
         minSdkVersion(24)
         targetSdkVersion(29)
         versionCode = 1

@@ -1,0 +1,12 @@
+# version 1
+# me.strangepan.tasks.engine.tasks
+0vefepae68zk;false;b;
+5qixbq4lzgjk;false;c;
+hrbfr2yl5dds;false;e;
+q5avxqxp0idc;false;a;
+zyekop4tq4u8;true;d;
+# dependencies
+5qixbq4lzgjk;0vefepae68zk;
+hrbfr2yl5dds;zyekop4tq4u8;
+q5avxqxp0idc;0vefepae68zk,hrbfr2yl5dds;
+zyekop4tq4u8;5qixbq4lzgjk;

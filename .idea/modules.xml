@@ -2,8 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/cli/cli.iml" filepath="$PROJECT_DIR$/cli/cli.iml" />
+      <module fileurl="file://$PROJECT_DIR$/engine/engine.iml" filepath="$PROJECT_DIR$/engine/engine.iml" />
       <module fileurl="file://$PROJECT_DIR$/lib/omnia/omnia.iml" filepath="$PROJECT_DIR$/lib/omnia/omnia.iml" />
-      <module fileurl="file://$PROJECT_DIR$/tasks.iml" filepath="$PROJECT_DIR$/tasks.iml" />
     </modules>
   </component>
 </project>
