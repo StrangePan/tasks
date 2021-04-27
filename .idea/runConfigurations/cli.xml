@@ -3,7 +3,7 @@
     <option name="ALTERNATIVE_JRE_PATH" value="11.0.8" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <option name="MAIN_CLASS_NAME" value="me.strangepan.tasks.cli.EntryPoint" />
-    <module name="tasks" />
+    <module name="cli" />
     <option name="PROGRAM_PARAMETERS" value="$Prompt$" />
     <method v="2">
       <option name="Make" enabled="true" />
