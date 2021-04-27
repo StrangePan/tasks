@@ -20,14 +20,14 @@ import me.strangepan.tasks.engine.model.TaskId
 import me.strangepan.tasks.engine.model.TaskMutator
 
 /**
- * An [ArgumentHandler] that changes the state of one or more me.strangepan.tasks.engine.tasks simultaneously and outputs the
+ * An [ArgumentHandler] that changes the state of one or more tasks simultaneously and outputs the
  * resulting updates.
  *
  * @param taskStore the task store to mutate
- * @param mutator the mutation to apply to all me.strangepan.tasks.engine.tasks specified in the commands
+ * @param mutator the mutation to apply to all tasks specified in the commands
  * @param diffDetector the comparator to use to detect if the [mutator] did its job
- * @param headerWhenChanged the header to print above the me.strangepan.tasks.engine.tasks that were successfully mutated
- * @param headerWhenUnchanged the header to print above the me.strangepan.tasks.engine.tasks that were not affected for
+ * @param headerWhenChanged the header to print above the tasks that were successfully mutated
+ * @param headerWhenUnchanged the header to print above the tasks that were not affected for
  *     whatever reason
  */
 abstract class SimpleHandler<T : SimpleArguments> protected constructor(
@@ -41,7 +41,7 @@ abstract class SimpleHandler<T : SimpleArguments> protected constructor(
   final override fun handle(arguments: CommonArguments<out T>): Single<Output> {
     // Validate arguments
     if (!arguments.specificArguments().tasks().isPopulated) {
-      throw HandlerException("no me.strangepan.tasks.engine.tasks specified")
+      throw HandlerException("no tasks specified")
     }
     val taskStore = taskStore.value()
 

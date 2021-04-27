@@ -19,14 +19,14 @@ object ListCommand {
       Supplier {
         FlagOption(
             "blocked",
-            "b", "List all me.strangepan.tasks.engine.tasks that are uncompleted, but blocked by other me.strangepan.tasks.engine.tasks. Can "
+            "b", "List all tasks that are uncompleted, but blocked by other tasks. Can "
             + "be combined with other flags.", Parameter.Repeatable.NOT_REPEATABLE)
       })
   val COMPLETED_OPTION: Memoized<FlagOption> = memoize(
       Supplier {
         FlagOption(
             "completed",
-            "c", "List all me.strangepan.tasks.engine.tasks already marked as completed. Can be combined with "
+            "c", "List all tasks already marked as completed. Can be combined with "
             + "other flags.", Parameter.Repeatable.NOT_REPEATABLE)
       })
   val UNBLOCKED_OPTION: Memoized<FlagOption> = memoize(
@@ -34,21 +34,21 @@ object ListCommand {
         FlagOption(
             "unblocked",
             "u",
-            "List all unblocked me.strangepan.tasks.engine.tasks. Can be combined with other flags.", Parameter.Repeatable.NOT_REPEATABLE)
+            "List all unblocked tasks. Can be combined with other flags.", Parameter.Repeatable.NOT_REPEATABLE)
       })
   val STARTED_OPTION: Memoized<FlagOption> = memoize(
       Supplier {
         FlagOption(
             "started",
             "s",
-            "List all started me.strangepan.tasks.engine.tasks. Can be combined with other flags.", Parameter.Repeatable.NOT_REPEATABLE)
+            "List all started tasks. Can be combined with other flags.", Parameter.Repeatable.NOT_REPEATABLE)
       })
   val ALL_OPTION: Memoized<FlagOption> = memoize(
       Supplier {
         FlagOption(
             "all",
             "a",
-            "Lists all me.strangepan.tasks.engine.tasks. A shortcut for all other flags put together.", Parameter.Repeatable.NOT_REPEATABLE)
+            "Lists all tasks. A shortcut for all other flags put together.", Parameter.Repeatable.NOT_REPEATABLE)
       })
 
   private val OPTIONS: Memoized<ImmutableList<Option>> = memoize {
@@ -66,8 +66,8 @@ object ListCommand {
         .parameters(ImmutableList.empty())
         .options(OPTIONS.value())
         .helpDocumentation(
-            "Prints a list of me.strangepan.tasks.engine.tasks. By default, only lists uncompleted me.strangepan.tasks.engine.tasks that are "
-                + "unblocked. Can also list only blocked me.strangepan.tasks.engine.tasks, only completed me.strangepan.tasks.engine.tasks, any "
-                + "combination of the three, or all me.strangepan.tasks.engine.tasks.")
+            "Prints a list of tasks. By default, only lists uncompleted tasks that are "
+                + "unblocked. Can also list only blocked tasks, only completed tasks, any "
+                + "combination of the three, or all tasks.")
   }
 }

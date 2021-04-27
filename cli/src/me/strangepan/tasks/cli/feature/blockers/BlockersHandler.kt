@@ -32,7 +32,7 @@ class BlockersHandler(private val taskStore: Memoized<out ObservableTaskStore>) 
      * task graph is cyclical.
      */
     HandlerUtil.verifyTasksAreMutuallyExclusive(
-        "me.strangepan.tasks.engine.tasks cannot block or be blocked by themselves:",
+        "tasks cannot block or be blocked by themselves:",
         arguments.specificArguments().blockingTasksToAdd(),
         arguments.specificArguments().targetTasks())
     HandlerUtil.verifyTasksAreMutuallyExclusive(

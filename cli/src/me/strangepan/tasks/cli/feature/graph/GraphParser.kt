@@ -17,7 +17,7 @@ class GraphParser(
     /*
      * No non-flag parameters allowed
      * optional --all flag
-     * optional --related me.strangepan.tasks.engine.tasks
+     * optional --related tasks
      */
     ParserUtil.assertNoExtraArgs(commandLine)
     val isAllSet = ParserUtil.getFlagPresence(commandLine, GraphCommand.ALL_OPTION.value())

@@ -30,7 +30,7 @@ object RemoveCommand {
         .options(ImmutableList.of(FORCE_OPTION.value()))
         .helpDocumentation(
             "Completely deletes a task. THIS CANNOT BE UNDONE. It is recommended that "
-                + "me.strangepan.tasks.engine.tasks be marked as completed rather than deleted, or amended if their "
+                + "tasks be marked as completed rather than deleted, or amended if their "
                 + "content needs to change.")
   }
 }

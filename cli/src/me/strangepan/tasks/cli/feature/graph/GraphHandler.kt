@@ -163,7 +163,7 @@ class GraphHandler internal constructor(
      *
      * @param taskGraph The graph containing the edges for each item in the task list. Must contain
      * every node in `taskList`.
-     * @param taskList a topologically sorted list of me.strangepan.tasks.engine.tasks to assign columns for, where each node
+     * @param taskList a topologically sorted list of tasks to assign columns for, where each node
      * precedes its successors
      * @return A mapping of column assignments for each node, where 0 is the first column. Every node
      * passed into `taskList` will have an entry in the result.

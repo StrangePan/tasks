@@ -168,9 +168,9 @@ class ListHandlerTest {
   }
 
   companion object {
-    const val UNBLOCKED_TASKS_HEADER = "unblocked me.strangepan.tasks.engine.tasks:"
-    const val BLOCKED_TASKS_HEADER = "blocked me.strangepan.tasks.engine.tasks:"
-    const val COMPLETED_TASKS_HEADER = "completed me.strangepan.tasks.engine.tasks:"
+    const val UNBLOCKED_TASKS_HEADER = "unblocked tasks:"
+    const val BLOCKED_TASKS_HEADER = "blocked tasks:"
+    const val COMPLETED_TASKS_HEADER = "completed tasks:"
     private fun listArgsAll(): CommonArguments<ListArguments> {
       return commonArgs(
           ListArguments(

@@ -37,7 +37,7 @@ class RemoveHandlerTest {
     val exception = assertThrows(HandlerException::class.java) {
       underTest.handle(removeArgsForcefully())
     }
-    assertThat(exception).hasMessageThat().isEqualTo("no me.strangepan.tasks.engine.tasks specified")
+    assertThat(exception).hasMessageThat().isEqualTo("no tasks specified")
   }
 
   @Test
@@ -227,7 +227,7 @@ class RemoveHandlerTest {
   }
 
   companion object {
-    private const val TASKS_DELETED_HEADER = "me.strangepan.tasks.engine.tasks deleted:"
+    private const val TASKS_DELETED_HEADER = "tasks deleted:"
     const val DELETE_THIS_TASK_PROMPT = "Delete this task [Y/n]:"
     const val UNRECOGNIZED_RESPONSE_PROMPT = "Unrecognized answer."
     private fun removeArgsWithPrompt(vararg tasks: Task): CommonArguments<RemoveArguments> {

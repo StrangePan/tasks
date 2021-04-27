@@ -163,7 +163,7 @@ class TaskStoreImpl(val graph: ImmutableDirectedGraph<TaskIdImpl>, val data: Imm
 
   init {
     require(graph.contents().count() == data.keys().count()) { "task graph and task data sizes don't match. " }
-    require(!differenceBetween(graph.contents(), data.keys()).isPopulated) { "me.strangepan.tasks.engine.tasks in graph do not match me.strangepan.tasks.engine.tasks in data set" }
+    require(!differenceBetween(graph.contents(), data.keys()).isPopulated) { "tasks in graph do not match tasks in data set" }
     allTaskIds = memoize {
       Observable.fromIterable(data.keys())
           .to(Observables.toImmutableSet())

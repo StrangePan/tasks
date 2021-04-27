@@ -19,8 +19,8 @@ class AddParser(
     /*
      * 1st param must be description
      * 2+ params not supported
-     * optional blocking me.strangepan.tasks.engine.tasks
-     * optional blocked me.strangepan.tasks.engine.tasks
+     * optional blocking tasks
+     * optional blocked tasks
      */
     val argsList: List<String> = ImmutableList.copyOf(commandLine.argList)
     val taskDescription = extractTaskDescriptionFrom(argsList)

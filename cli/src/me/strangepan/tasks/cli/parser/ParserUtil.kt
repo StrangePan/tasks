@@ -43,11 +43,11 @@ object ParserUtil {
   private fun parseTaskId(userInput: String, taskStore: TaskStore): ParseResult<out Task> {
     val matchingTasks = taskStore.allTasksMatchingCliPrefix(userInput)
     return if (matchingTasks.count() > 1) {
-      ParseResult.failure("Ambiguous task ID: multiple me.strangepan.tasks.engine.tasks match '$userInput'")
+      ParseResult.failure("Ambiguous task ID: multiple tasks match '$userInput'")
     } else matchingTasks.stream()
         .findFirst()
         .map { ParseResult.success(it) }
-        .orElseGet { ParseResult.failure("Unknown task ID: no me.strangepan.tasks.engine.tasks match '$userInput'") }
+        .orElseGet { ParseResult.failure("Unknown task ID: no tasks match '$userInput'") }
   }
 
   fun <T : Any> extractSuccessfulResultOrThrow(parseResult: ParseResult<out T>): T {

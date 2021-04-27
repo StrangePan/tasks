@@ -44,7 +44,7 @@ object HandlerTestUtils {
   }
 
   /**
-   * Assert that the given output contains a grouping of the provided me.strangepan.tasks.engine.tasks with only whitespace
+   * Assert that the given output contains a grouping of the provided tasks with only whitespace
    * between each task, and that this grouping is immediately preceded by the given prefix, which
    * again is only separated from the task group by whitespace.
    */
@@ -55,7 +55,7 @@ object HandlerTestUtils {
     val renderedTasks = renderTasks(*tasks)
     assertThat(output).contains(prefix)
     renderedTasks.forEach(Consumer { assertThat(output).contains(it) })
-    Truth.assertWithMessage("me.strangepan.tasks.engine.tasks are not grouped together in the output")
+    Truth.assertWithMessage("tasks are not grouped together in the output")
         .that(output)
         .containsMatch(
             Pattern.compile(

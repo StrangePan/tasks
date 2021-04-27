@@ -18,7 +18,7 @@ object ReopenCommand {
         .aliases()
         .parameters(ImmutableList.of(TaskParameter(Parameter.Repeatable.REPEATABLE)))
         .options(ImmutableList.empty())
-        .helpDocumentation("Reopens one or more completed me.strangepan.tasks.engine.tasks. This can be undone with the complete "
+        .helpDocumentation("Reopens one or more completed tasks. This can be undone with the complete "
             + "command.")
   }
 }

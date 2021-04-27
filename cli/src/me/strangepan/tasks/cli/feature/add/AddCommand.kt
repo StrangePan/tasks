@@ -22,14 +22,14 @@ object AddCommand {
         TaskOption(
             "after",
             "a",
-            "The me.strangepan.tasks.engine.tasks this one comes after. Tasks listed here will be blocking this task.", Parameter.Repeatable.REPEATABLE)
+            "The tasks this one comes after. Tasks listed here will be blocking this task.", Parameter.Repeatable.REPEATABLE)
       })
   val BEFORE_OPTION: Memoized<TaskOption> = memoize(
       Supplier {
         TaskOption(
             "before",
             "b",
-            "The me.strangepan.tasks.engine.tasks this one comes before. Tasks listed here will be blocked by this task.", Parameter.Repeatable.REPEATABLE)
+            "The tasks this one comes before. Tasks listed here will be blocked by this task.", Parameter.Repeatable.REPEATABLE)
       })
 
   private val OPTIONS: Memoized<ImmutableList<Option>> = memoize { ImmutableList.of(AFTER_OPTION.value(), BEFORE_OPTION.value()) }

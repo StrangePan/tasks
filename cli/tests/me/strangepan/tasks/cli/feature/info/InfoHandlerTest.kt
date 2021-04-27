@@ -26,7 +26,7 @@ class InfoHandlerTest {
   @Test
   fun handle_noTasks_throwsException() {
     val exception = assertThrows(HandlerException::class.java) { underTest.handle(infoArgs()) }
-    assertThat(exception.message).contains("no me.strangepan.tasks.engine.tasks specified")
+    assertThat(exception.message).contains("no tasks specified")
   }
 
   @Test
@@ -49,7 +49,7 @@ class InfoHandlerTest {
     val output = underTest.handle(infoArgs(task)).blockingGet().renderWithoutCodes()
 
     assertThat(output).startsWith(task.render().renderWithoutCodes())
-    assertOutputContainsGroupedTasks(output, "me.strangepan.tasks.engine.tasks blocking this:", blocker0, blocker1)
+    assertOutputContainsGroupedTasks(output, "tasks blocking this:", blocker0, blocker1)
   }
 
   @Test
@@ -61,7 +61,7 @@ class InfoHandlerTest {
     val output = underTest.handle(infoArgs(task)).blockingGet().renderWithoutCodes()
 
     assertThat(output).startsWith(task.render().renderWithoutCodes())
-    assertOutputContainsGroupedTasks(output, "me.strangepan.tasks.engine.tasks blocked by this:", blocked0, blocked1)
+    assertOutputContainsGroupedTasks(output, "tasks blocked by this:", blocked0, blocked1)
   }
 
   @Test
@@ -80,8 +80,8 @@ class InfoHandlerTest {
     val output = underTest.handle(infoArgs(task)).blockingGet().renderWithoutCodes()
 
     assertThat(output).startsWith(task.render().renderWithoutCodes())
-    assertOutputContainsGroupedTasks(output, "me.strangepan.tasks.engine.tasks blocking this:", blocker0, blocker1)
-    assertOutputContainsGroupedTasks(output, "me.strangepan.tasks.engine.tasks blocked by this:", blocked0, blocked1)
+    assertOutputContainsGroupedTasks(output, "tasks blocking this:", blocker0, blocker1)
+    assertOutputContainsGroupedTasks(output, "tasks blocked by this:", blocked0, blocked1)
   }
 
   private fun createTask(label: String): Task {

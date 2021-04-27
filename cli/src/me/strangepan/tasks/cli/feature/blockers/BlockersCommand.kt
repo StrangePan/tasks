@@ -27,7 +27,7 @@ object BlockersCommand {
     FlagOption(
       "clear",
       "c",
-      "Removes all blocking me.strangepan.tasks.engine.tasks. Can be used together with " +
+      "Removes all blocking tasks. Can be used together with " +
           "--${ADD_OPTION.value().longName()} to replace existing blockers with new ones.",
       Parameter.Repeatable.NOT_REPEATABLE
     )

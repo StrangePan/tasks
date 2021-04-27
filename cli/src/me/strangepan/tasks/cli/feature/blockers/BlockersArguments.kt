@@ -10,23 +10,23 @@ class BlockersArguments internal constructor(
     private val blockingTasksToRemove: List<Task>,
     private val clearAllBlockers: Boolean) {
 
-  /** The me.strangepan.tasks.engine.tasks whose blockers to modify.  */
+  /** The tasks whose blockers to modify.  */
   fun targetTasks(): List<Task> {
     return targetTasks
   }
 
-  /** The collection of me.strangepan.tasks.engine.tasks to add as blockers to [targetTasks].  */
+  /** The collection of tasks to add as blockers to [targetTasks].  */
   fun blockingTasksToAdd(): List<Task> {
     return blockingTasksToAdd
   }
 
   /**
-   * The collection of me.strangepan.tasks.engine.tasks to remove as blockers from [targetTasks]. These me.strangepan.tasks.engine.tasks are in
+   * The collection of tasks to remove as blockers from [targetTasks]. These tasks are in
    * the order defined in the command line.
    *
    *
    * This parameter is to be treated as mutually exclusive with the [clearAllBlockers]
-   * flag. If [clearAllBlockers] is set, me.strangepan.tasks.engine.tasks listed here are redundant.
+   * flag. If [clearAllBlockers] is set, tasks listed here are redundant.
    */
   fun blockingTasksToRemove(): List<Task> {
     return blockingTasksToRemove

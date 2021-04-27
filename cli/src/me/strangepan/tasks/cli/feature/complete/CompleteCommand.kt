@@ -20,8 +20,8 @@ object CompleteCommand {
         .parameters(ImmutableList.of(TaskParameter(Parameter.Repeatable.REPEATABLE)))
         .options(ImmutableList.empty())
         .helpDocumentation(
-            "Mark one or more me.strangepan.tasks.engine.tasks as complete. This can be undone with the reopen "
-                + "command. When a task is completed, other me.strangepan.tasks.engine.tasks it was blocking may "
+            "Mark one or more tasks as complete. This can be undone with the reopen "
+                + "command. When a task is completed, other tasks it was blocking may "
                 + "become unblocked.")
   }
 }

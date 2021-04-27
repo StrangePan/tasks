@@ -1,3 +1,0 @@
-Manifest-Version: 1.0
-Main-Class: me.strangepan.tasks.engine.tasks.engine.tasks.cli.EntryPoint
-

@@ -16,7 +16,7 @@ import me.strangepan.tasks.engine.model.Task
 class InfoHandler : ArgumentHandler<InfoArguments> {
   override fun handle(arguments: CommonArguments<out InfoArguments>): Single<Output> {
     if (!arguments.specificArguments().tasks().isPopulated) {
-      throw HandlerException("no me.strangepan.tasks.engine.tasks specified")
+      throw HandlerException("no tasks specified")
     }
     return Observable.fromIterable(arguments.specificArguments().tasks())
         .map { task: Task -> stringify(task) }
@@ -30,8 +30,8 @@ class InfoHandler : ArgumentHandler<InfoArguments> {
     private fun stringify(task: Task): Output {
       return builder()
           .appendLine(task.render())
-          .appendLine(stringifyIfPopulated("me.strangepan.tasks.engine.tasks blocking this:", task.blockingTasks()))
-          .appendLine(stringifyIfPopulated("me.strangepan.tasks.engine.tasks blocked by this:", task.blockedTasks()))
+          .appendLine(stringifyIfPopulated("tasks blocking this:", task.blockingTasks()))
+          .appendLine(stringifyIfPopulated("tasks blocked by this:", task.blockedTasks()))
           .build()
     }
 

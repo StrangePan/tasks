@@ -24,15 +24,15 @@ class ListHandler(private val taskStore: Memoized<out ObservableTaskStore>) : Ar
           Observable.just<Triple<Boolean, String, out Single<out ImmutableSet<out Task>>>>(
               Tuple.of(
                   arguments.specificArguments().isUnblockedSet,
-                  "unblocked me.strangepan.tasks.engine.tasks:",
+                  "unblocked tasks:",
                   Single.fromCallable(store::allOpenTasksWithoutOpenBlockers)),
               Tuple.of(
                   arguments.specificArguments().isBlockedSet,
-                  "blocked me.strangepan.tasks.engine.tasks:",
+                  "blocked tasks:",
                   Single.fromCallable(store::allOpenTasksWithOpenBlockers)),
               Tuple.of(
                   arguments.specificArguments().isCompletedSet,
-                  "completed me.strangepan.tasks.engine.tasks:",
+                  "completed tasks:",
                   Single.fromCallable(store::allCompletedTasks)))
         }
         .filter { it.first() }

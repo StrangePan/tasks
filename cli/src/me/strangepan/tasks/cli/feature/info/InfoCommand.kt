@@ -20,6 +20,6 @@ object InfoCommand {
         .parameters(ImmutableList.of(TaskParameter(Parameter.Repeatable.REPEATABLE)))
         .options(ImmutableList.empty())
         .helpDocumentation("Prints all known information about a particular task, including its "
-            + "description, all me.strangepan.tasks.engine.tasks blocking it, and all me.strangepan.tasks.engine.tasks it is blocking.")
+            + "description, all tasks blocking it, and all tasks it is blocking.")
   }
 }

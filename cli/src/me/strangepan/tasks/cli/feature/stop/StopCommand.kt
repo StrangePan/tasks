@@ -20,7 +20,7 @@ object StopCommand {
         .parameters(ImmutableList.of(TaskParameter(Parameter.Repeatable.REPEATABLE)))
         .options(ImmutableList.empty())
         .helpDocumentation(
-            "Mark one or more me.strangepan.tasks.engine.tasks as open. This is the opposite of the start command. " +
-                "Only me.strangepan.tasks.engine.tasks started with the start command can be stopped.")
+            "Mark one or more tasks as open. This is the opposite of the start command. " +
+                "Only tasks started with the start command can be stopped.")
   }
 }

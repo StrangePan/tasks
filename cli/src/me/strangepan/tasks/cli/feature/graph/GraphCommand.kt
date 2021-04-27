@@ -17,7 +17,7 @@ object GraphCommand {
     FlagOption(
       "all",
       "a",
-      "Lists all me.strangepan.tasks.engine.tasks, including completed me.strangepan.tasks.engine.tasks. By default, completed me.strangepan.tasks.engine.tasks are not " +
+      "Lists all tasks, including completed tasks. By default, completed tasks are not " +
           "included in the graph.",
       Parameter.Repeatable.NOT_REPEATABLE)
   }
@@ -26,9 +26,9 @@ object GraphCommand {
     TaskOption(
       "related",
       "r",
-      "Restricts the output to only include me.strangepan.tasks.engine.tasks that are related to the me.strangepan.tasks.engine.tasks specified here. " +
-          "When defined, the output will only print me.strangepan.tasks.engine.tasks that come before or after the me.strangepan.tasks.engine.tasks " +
-          "listed here AND any me.strangepan.tasks.engine.tasks that come before or after those me.strangepan.tasks.engine.tasks, recursively. Use this " +
+      "Restricts the output to only include tasks that are related to the tasks specified here. " +
+          "When defined, the output will only print tasks that come before or after the tasks " +
+          "listed here AND any tasks that come before or after those tasks, recursively. Use this " +
           "option to restrict the output and focus your attention.",
       Parameter.Repeatable.REPEATABLE)
   }
@@ -37,9 +37,9 @@ object GraphCommand {
     TaskOption(
       "before",
       "b",
-      "Restricts the output to only include me.strangepan.tasks.engine.tasks that come before (are blocking) the me.strangepan.tasks.engine.tasks " +
-          "specified here. When defined, the output will only print me.strangepan.tasks.engine.tasks that come before the " +
-          "me.strangepan.tasks.engine.tasks listed here AND any me.strangepan.tasks.engine.tasks that come before those me.strangepan.tasks.engine.tasks recursively. Use this " +
+      "Restricts the output to only include tasks that come before (are blocking) the tasks " +
+          "specified here. When defined, the output will only print tasks that come before the " +
+          "tasks listed here AND any tasks that come before those tasks recursively. Use this " +
           "option to restrict the output and focus your attention.",
       Parameter.Repeatable.REPEATABLE)
   }
@@ -52,6 +52,6 @@ object GraphCommand {
       .options(
         ImmutableList.of(
           ALL_OPTION.value(), RELATED_TASKS_OPTION.value(), BEFORE_TASKS_OPTION.value()))
-      .helpDocumentation("Prints all me.strangepan.tasks.engine.tasks in graph format.")
+      .helpDocumentation("Prints all tasks in graph format.")
   }
 }

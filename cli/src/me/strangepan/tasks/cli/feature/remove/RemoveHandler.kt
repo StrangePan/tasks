@@ -28,7 +28,7 @@ class RemoveHandler(
 
     // Validate arguments
     if (!tasksToDelete.isPopulated) {
-      throw HandlerException("no me.strangepan.tasks.engine.tasks specified")
+      throw HandlerException("no tasks specified")
     }
     val printer: Memoized<Printer> = memoize { printerFactory.create(arguments) }
     return Observable.fromIterable(tasksToDelete)
@@ -41,7 +41,7 @@ class RemoveHandler(
         }
         .flatMapMaybe { taskStore.value().deleteTask(it) }
         .to(Observables.toImmutableSet())
-        .map { HandlerUtil.stringifyIfPopulated("me.strangepan.tasks.engine.tasks deleted:", it) }
+        .map { HandlerUtil.stringifyIfPopulated("tasks deleted:", it) }
   }
 
   companion object {

@@ -20,9 +20,9 @@ object StartCommand {
         .parameters(ImmutableList.of(TaskParameter(Parameter.Repeatable.REPEATABLE)))
         .options(ImmutableList.empty())
         .helpDocumentation(
-            "Mark one or more me.strangepan.tasks.engine.tasks as started. This can be undone with the stop "
-                + "command. Started me.strangepan.tasks.engine.tasks will be highlighted and will appear at the top of "
+            "Mark one or more tasks as started. This can be undone with the stop "
+                + "command. Started tasks will be highlighted and will appear at the top of "
                 + "the list command. Starting a completed task will reopen the task, "
-                + "which may cause other me.strangepan.tasks.engine.tasks to become blocked.")
+                + "which may cause other tasks to become blocked.")
   }
 }
