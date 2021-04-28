@@ -74,7 +74,7 @@ class ObservableTaskStoreImpl private constructor(private val taskStorage: TaskS
   }
 
   private fun mutateTask(task: TaskImpl, mutation: java.util.function.Function<in TaskMutator, out TaskMutator>): Single<Triple<TaskStoreImpl, TaskStoreImpl, TaskImpl>> {
-    return Single.just(TaskMutatorImpl(this, task.id()))
+    return Single.just(TaskMutatorImpl(this, task.id))
         .map { mutation.apply(it) }
         .flatMap(::maybeApplyMutator)
         .cache()
@@ -119,12 +119,12 @@ class ObservableTaskStoreImpl private constructor(private val taskStorage: TaskS
 
   private fun deleteTask(task: TaskImpl): Maybe<TaskImpl> {
     return store.mutateAndReturn { oldTaskStore ->
-      val taskToRemove = oldTaskStore.lookUpById(task.id())
+      val taskToRemove = oldTaskStore.lookUpById(task.id)
       Tuple.of(
           taskToRemove.map {
             TaskStoreImpl(
-                oldTaskStore.graph.toBuilder().removeNode(it.id()).build(),
-                oldTaskStore.data.toBuilder().removeKey(it.id()).build())
+                oldTaskStore.graph.toBuilder().removeNode(it.id).build(),
+                oldTaskStore.data.toBuilder().removeKey(it.id).build())
           }
               .orElse(oldTaskStore),
           taskToRemove)

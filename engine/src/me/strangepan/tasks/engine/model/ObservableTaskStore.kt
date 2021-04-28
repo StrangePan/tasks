@@ -9,7 +9,7 @@ import omnia.data.structure.tuple.Triple
 
 /**
  * A queryable, observable collection of task objects. Contains the canonical data, or knows how to
- * fetch the canonical data of an individual ObservableTask.
+ * fetch the canonical data of an individual [Task].
  */
 interface ObservableTaskStore {
   fun observe(): Observable<out TaskStore>
@@ -24,7 +24,8 @@ interface ObservableTaskStore {
    * error if the mutation would have put the store in an invalid state.
    */
   fun createTask(
-      label: String, builder: Function<in TaskBuilder, out TaskBuilder>): Single<out Triple<out TaskStore, out TaskStore, out Task>>
+      label: String, builder: Function<in TaskBuilder, out TaskBuilder>):
+      Single<out Triple<out TaskStore, out TaskStore, out Task>>
 
   /**
    * Attempts to mutate an existing task in the store.
@@ -36,7 +37,8 @@ interface ObservableTaskStore {
    * error if the mutation would have put the store in an invalid state.
    */
   fun mutateTask(
-      task: Task, mutation: Function<in TaskMutator, out TaskMutator>): Single<out Triple<out TaskStore, out TaskStore, out Task>>
+      task: Task, mutation: Function<in TaskMutator, out TaskMutator>):
+      Single<out Triple<out TaskStore, out TaskStore, out Task>>
 
   /**
    * Attempts to delete a task from the store.

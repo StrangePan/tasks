@@ -144,7 +144,7 @@ class GraphHandler internal constructor(
         taskGraph: DirectedGraph<T>, arguments: GraphArguments): DirectedGraph<T> {
       return if (arguments.isAllSet) taskGraph else {
         Observable.fromIterable(taskGraph.contents())
-          .filter { it.status().isCompleted }
+          .filter { it.status.isCompleted }
           .collect(
             { ImmutableDirectedGraph.buildUpon(taskGraph) },
             ImmutableDirectedGraph.Builder<T>::removeNode)
@@ -193,7 +193,7 @@ class GraphHandler internal constructor(
           .stream()
           .map(Graph.Node<T>::item)
           .filter { assignedColumns.valueOf(it).isEmpty }
-          .filter { arguments.isAllSet || !it.status().isCompleted }
+          .filter { arguments.isAllSet || !it.status.isCompleted }
           .sorted(
             Comparator.comparing { item: T -> topologicalIndexes.valueOf(item).orElse(0) }
               .reversed())
@@ -246,7 +246,7 @@ class GraphHandler internal constructor(
         .takeUntil { it == maxColumnsWithEdges }
         .map {
           when {
-            it == taskColumn -> (if (task.status().isCompleted) NODE_COMPLETED else NODE_OPEN)
+            it == taskColumn -> (if (task.status.isCompleted) NODE_COMPLETED else NODE_OPEN)
             columnsWithEdges.contains(it) -> CONTINUATION_UP_DOWN
             else -> GAP
           }
@@ -270,7 +270,7 @@ class GraphHandler internal constructor(
         .orElse(ImmutableSet.empty())
         .stream()
         .map(Graph.Node<T>::item)
-        .filter { arguments.isAllSet || !it.status().isCompleted }
+        .filter { arguments.isAllSet || !it.status.isCompleted }
         .map(taskColumns::valueOf)
         .flatMap(Optional<Int>::stream)
         .collect(toImmutableSet())

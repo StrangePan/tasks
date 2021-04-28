@@ -1,5 +1,6 @@
 package me.strangepan.tasks.engine.model
 
+/** An object for mutating the properties of a task. */
 interface TaskMutator : TaskBuilder {
   fun setLabel(label: String): TaskMutator
   override fun setStatus(status: Task.Status): TaskMutator

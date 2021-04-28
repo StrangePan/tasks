@@ -48,7 +48,7 @@ class ListHandler(private val taskStore: Memoized<out ObservableTaskStore>) : Ar
     private fun <T : Task> filterOutUnstartedTasks(
         tasks: Single<out ImmutableSet<out T>>): Single<ImmutableSet<T>> {
       return tasks.flatMapObservable { source -> Observable.fromIterable(source) }
-          .filter { it.status().isStarted }
+          .filter { it.status.isStarted }
           .map { it }
           .to(Observables.toImmutableSet())
     }

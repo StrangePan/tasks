@@ -1,14 +1,11 @@
 package me.strangepan.tasks.cli.feature.stop
 
-import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import java.util.function.Function
 import java.util.regex.Pattern
 import omnia.data.cache.Memoized.Companion.just
-import omnia.data.structure.immutable.ImmutableList
 import omnia.data.structure.immutable.ImmutableList.Companion.copyOf
 import org.junit.Test
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -39,7 +36,7 @@ class StopHandlerTest {
 
     underTest.handle(startArgs(task)).ignoreElement().blockingAwait()
 
-    assertThat(getUpdatedVersionOf(task).status()).isEqualTo(Task.Status.OPEN)
+    assertThat(getUpdatedVersionOf(task).status).isEqualTo(Task.Status.OPEN)
   }
 
   @Test
@@ -58,7 +55,7 @@ class StopHandlerTest {
 
     underTest.handle(startArgs(task)).ignoreElement().blockingAwait()
 
-    assertThat(getUpdatedVersionOf(task).status()).isEqualTo(Task.Status.COMPLETED)
+    assertThat(getUpdatedVersionOf(task).status).isEqualTo(Task.Status.COMPLETED)
   }
 
   @Test
@@ -77,7 +74,7 @@ class StopHandlerTest {
 
     underTest.handle(startArgs(task)).ignoreElement().blockingAwait()
 
-    assertThat(getUpdatedVersionOf(task).status()).isEqualTo(Task.Status.OPEN)
+    assertThat(getUpdatedVersionOf(task).status).isEqualTo(Task.Status.OPEN)
   }
 
   @Test

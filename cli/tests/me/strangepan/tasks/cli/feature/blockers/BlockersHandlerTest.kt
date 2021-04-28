@@ -78,13 +78,14 @@ class BlockersHandlerTest {
         .blockingAwait()
 
     assertThat(
-        taskStore.observe()
-            .firstOrError()
-            .blockingGet()
-            .lookUpById(targetTask.id())
-            .orElseThrow()
-            .blockingTasks()
-            .isPopulated)
+      taskStore.observe()
+        .firstOrError()
+        .blockingGet()
+        .lookUpById(targetTask.id)
+        .orElseThrow()
+        .blockingTasks
+        .isPopulated
+    )
         .isFalse()
   }
 
@@ -105,7 +106,7 @@ class BlockersHandlerTest {
         .blockingGet()
         .toString()
 
-    assertThat(output).contains(targetTask.label())
+    assertThat(output).contains(targetTask.label)
     assertOutputContainsGroupedTasks(
         output, "removed blockers:", existingTask1, existingTask2)
     assertThat(output).doesNotContain("current blockers")
@@ -126,13 +127,14 @@ class BlockersHandlerTest {
         .blockingAwait()
 
     assertThat(
-        taskStore.observe()
-            .firstOrError()
-            .blockingGet()
-            .lookUpById(targetTask.id())
-            .orElseThrow()
-            .blockingTasks()
-            .isPopulated)
+      taskStore.observe()
+        .firstOrError()
+        .blockingGet()
+        .lookUpById(targetTask.id)
+        .orElseThrow()
+        .blockingTasks
+        .isPopulated
+    )
         .isFalse()
   }
 
@@ -172,10 +174,10 @@ class BlockersHandlerTest {
     val updatedTask = taskStore.observe()
         .firstOrError()
         .blockingGet()
-        .lookUpById(targetTask.id())
+        .lookUpById(targetTask.id)
         .orElseThrow()
-    assertThat(updatedTask.blockingTasks().count()).isEqualTo(1)
-    assertThat(updatedTask.blockingTasks().iterator().next().id()).isEqualTo(existingTask.id())
+    assertThat(updatedTask.blockingTasks.count()).isEqualTo(1)
+    assertThat(updatedTask.blockingTasks.iterator().next().id).isEqualTo(existingTask.id)
   }
 
   @Test
@@ -197,9 +199,9 @@ class BlockersHandlerTest {
     val updatedTask1 = HandlerTestUtils.getUpdatedVersionOf(taskStore, targetTask1)
     val updatedTask2 = HandlerTestUtils.getUpdatedVersionOf(taskStore, targetTask2)
     val updatedTask3 = HandlerTestUtils.getUpdatedVersionOf(taskStore, targetTask3)
-    assertThat(updatedTask1.blockingTasks().map { it.id() }).containsExactly(blockedTask.id())
-    assertThat(updatedTask2.blockingTasks().map { it.id() }).containsExactly(blockedTask.id())
-    assertThat(updatedTask3.blockingTasks().map { it.id() }).containsExactly(blockedTask.id())
+    assertThat(updatedTask1.blockingTasks.map { it.id }).containsExactly(blockedTask.id)
+    assertThat(updatedTask2.blockingTasks.map { it.id }).containsExactly(blockedTask.id)
+    assertThat(updatedTask3.blockingTasks.map { it.id }).containsExactly(blockedTask.id)
   }
 
   @Test
@@ -239,10 +241,10 @@ class BlockersHandlerTest {
     val updatedTask = taskStore.observe()
         .firstOrError()
         .blockingGet()
-        .lookUpById(targetTask.id())
+        .lookUpById(targetTask.id)
         .orElseThrow()
-    assertThat(updatedTask.blockingTasks().count()).isEqualTo(1)
-    assertThat(updatedTask.blockingTasks().iterator().next().id()).isEqualTo(blockerToAdd.id())
+    assertThat(updatedTask.blockingTasks.count()).isEqualTo(1)
+    assertThat(updatedTask.blockingTasks.iterator().next().id).isEqualTo(blockerToAdd.id)
   }
 
   @Test
@@ -281,11 +283,11 @@ class BlockersHandlerTest {
     val unchangedTask = taskStore.observe()
         .firstOrError()
         .blockingGet()
-        .lookUpById(targetTask.id())
+        .lookUpById(targetTask.id)
         .orElseThrow()
-    assertThat(unchangedTask.blockingTasks().count()).isEqualTo(1)
-    assertThat(unchangedTask.blockingTasks().iterator().next().id())
-        .isEqualTo(existingBlocker.id())
+    assertThat(unchangedTask.blockingTasks.count()).isEqualTo(1)
+    assertThat(unchangedTask.blockingTasks.iterator().next().id)
+        .isEqualTo(existingBlocker.id)
   }
 
   @Test

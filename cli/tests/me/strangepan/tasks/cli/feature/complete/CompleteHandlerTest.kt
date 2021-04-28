@@ -4,7 +4,6 @@ import com.google.common.truth.Truth.assertThat
 import java.util.function.Function
 import java.util.regex.Pattern
 import omnia.data.cache.Memoized.Companion.just
-import omnia.data.structure.immutable.ImmutableList
 import omnia.data.structure.immutable.ImmutableList.Companion.copyOf
 import org.junit.Test
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -40,12 +39,13 @@ class CompleteHandlerTest {
     underTest.handle(completeArgs(task)).ignoreElement().blockingAwait()
 
     assertThat(
-        taskStore.observe()
-            .firstOrError()
-            .blockingGet()
-            .lookUpById(task.id())
-            .orElseThrow()
-            .status())
+      taskStore.observe()
+        .firstOrError()
+        .blockingGet()
+        .lookUpById(task.id)
+        .orElseThrow()
+        .status
+    )
         .isEqualTo(COMPLETED)
   }
 
@@ -65,12 +65,13 @@ class CompleteHandlerTest {
     underTest.handle(completeArgs(task)).ignoreElement().blockingAwait()
 
     assertThat(
-        taskStore.observe()
-            .firstOrError()
-            .blockingGet()
-            .lookUpById(task.id())
-            .orElseThrow()
-            .status())
+      taskStore.observe()
+        .firstOrError()
+        .blockingGet()
+        .lookUpById(task.id)
+        .orElseThrow()
+        .status
+    )
         .isEqualTo(COMPLETED)
   }
 
@@ -92,12 +93,13 @@ class CompleteHandlerTest {
     underTest.handle(completeArgs(task)).ignoreElement().blockingAwait()
 
     assertThat(
-        taskStore.observe()
-            .firstOrError()
-            .blockingGet()
-            .lookUpById(task.id())
-            .orElseThrow()
-            .status())
+      taskStore.observe()
+        .firstOrError()
+        .blockingGet()
+        .lookUpById(task.id)
+        .orElseThrow()
+        .status
+    )
         .isEqualTo(COMPLETED)
   }
 
@@ -123,7 +125,7 @@ class CompleteHandlerTest {
         taskStore.observe()
             .firstOrError()
             .blockingGet()
-            .lookUpById(blockedTask.id())
+            .lookUpById(blockedTask.id)
             .orElseThrow()
             .isUnblocked)
         .isTrue()

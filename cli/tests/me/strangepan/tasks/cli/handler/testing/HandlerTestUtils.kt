@@ -80,6 +80,6 @@ object HandlerTestUtils {
    * latest immutable version of the task.
    */
   fun getUpdatedVersionOf(taskStore: ObservableTaskStore, task: Task): Task {
-    return taskStore.observe().blockingFirst().lookUpById(task.id()).orElseThrow()
+    return taskStore.observe().blockingFirst().lookUpById(task.id).orElseThrow()
   }
 }

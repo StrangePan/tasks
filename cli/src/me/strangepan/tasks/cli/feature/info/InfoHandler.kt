@@ -30,8 +30,8 @@ class InfoHandler : ArgumentHandler<InfoArguments> {
     private fun stringify(task: Task): Output {
       return builder()
           .appendLine(task.render())
-          .appendLine(stringifyIfPopulated("tasks blocking this:", task.blockingTasks()))
-          .appendLine(stringifyIfPopulated("tasks blocked by this:", task.blockedTasks()))
+          .appendLine(stringifyIfPopulated("tasks blocking this:", task.blockingTasks))
+          .appendLine(stringifyIfPopulated("tasks blocked by this:", task.blockedTasks))
           .build()
     }
 

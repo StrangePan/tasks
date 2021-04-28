@@ -28,9 +28,9 @@ object HandlerUtil {
   private fun stringify(tasks: Iterable<Task>): Output {
     return Observable.fromIterable(tasks)
         .sorted(
-            Comparator.comparingInt<Task> { task -> if (task.status().isStarted) 0 else 1 }
-                .thenComparing { task -> task.label().toLowerCase(Locale.ROOT) }
-                .thenComparing { task -> task.id().toString() })
+            Comparator.comparingInt<Task> { task -> if (task.status.isStarted) 0 else 1 }
+                .thenComparing { task -> task.label.toLowerCase(Locale.ROOT) }
+                .thenComparing { task -> task.id.toString() })
         .map(Task::render)
         .collect(Output.Companion::builder, Output.Builder::appendLine)
         .map(Output.Builder::build)

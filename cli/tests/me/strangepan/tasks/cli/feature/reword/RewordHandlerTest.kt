@@ -26,7 +26,7 @@ class RewordHandlerTest {
     val task = createTask("example task")
 
     assertThrows(HandlerException::class.java) { underTest.handle(rewordArgs(task, "  ")) }
-    assertThat(getUpdatedVersionOf(task).label()).isEqualTo("example task")
+    assertThat(getUpdatedVersionOf(task).label).isEqualTo("example task")
   }
 
   @Test
@@ -35,7 +35,7 @@ class RewordHandlerTest {
 
     underTest.handle(rewordArgs(task, "reworded task")).ignoreElement().blockingAwait()
 
-    assertThat(getUpdatedVersionOf(task).label()).isEqualTo("reworded task")
+    assertThat(getUpdatedVersionOf(task).label).isEqualTo("reworded task")
   }
 
   @Test

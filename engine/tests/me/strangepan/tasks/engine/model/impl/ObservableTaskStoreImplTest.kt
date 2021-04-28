@@ -44,24 +44,24 @@ class ObservableTaskStoreImplTest {
   fun createTask_whenOpen_isOpen() {
     val task = underTest.createTask("example task") { it.setStatus(Task.Status.OPEN) }
         .blockingGet().third()
-    Truth.assertThat(task.status().isOpen).isTrue()
-    underTest.observe().test().assertValue { it.lookUpById(task.id()).orElseThrow().status().isOpen }
+    Truth.assertThat(task.status.isOpen).isTrue()
+    underTest.observe().test().assertValue { it.lookUpById(task.id).orElseThrow().status.isOpen }
   }
 
   @Test
   fun createTask_whenCompleted_isCompleted() {
     val task = underTest.createTask("example task") { it.setStatus(Task.Status.COMPLETED) }
         .blockingGet().third()
-    Truth.assertThat(task.status().isCompleted).isTrue()
-    underTest.observe().test().assertValue { it.lookUpById(task.id()).orElseThrow().status().isCompleted }
+    Truth.assertThat(task.status.isCompleted).isTrue()
+    underTest.observe().test().assertValue { it.lookUpById(task.id).orElseThrow().status.isCompleted }
   }
 
   @Test
   fun createTask_whenStarted_isStarted() {
     val task = underTest.createTask("example task") { it.setStatus(Task.Status.STARTED) }
         .blockingGet().third()
-    Truth.assertThat(task.status().isStarted).isTrue()
-    underTest.observe().test().assertValue { it.lookUpById(task.id()).orElseThrow().status().isStarted }
+    Truth.assertThat(task.status.isStarted).isTrue()
+    underTest.observe().test().assertValue { it.lookUpById(task.id).orElseThrow().status.isStarted }
   }
 
   @Test
@@ -83,7 +83,7 @@ class ObservableTaskStoreImplTest {
   fun mutateTask_whenReword_rewordsTask() {
     val task: Task = underTest.createTask("example task") { it }.blockingGet().third()
     val mutatedTask: Task = underTest.mutateTask(task) { it.setLabel("modified task") }.blockingGet().third()
-    Truth.assertThat(mutatedTask.label()).isEqualTo("modified task")
+    Truth.assertThat(mutatedTask.label).isEqualTo("modified task")
   }
 
   @Test
@@ -92,7 +92,7 @@ class ObservableTaskStoreImplTest {
     val observer = underTest.observe().test()
     val mutatedTask: Task = underTest.mutateTask(task) { it.setLabel("modified task") }.blockingGet().third()
     observer.assertValueCount(2)
-        .assertValueAt(1) { it.lookUpById(mutatedTask.id()).orElseThrow().label() == "modified task" }
+        .assertValueAt(1) { it.lookUpById(mutatedTask.id).orElseThrow().label == "modified task" }
   }
 
   @Test

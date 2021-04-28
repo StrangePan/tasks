@@ -4,7 +4,6 @@ import io.reactivex.rxjava3.core.Observable
 import java.util.Comparator
 import java.util.Objects
 import java.util.Optional
-import java.util.function.Supplier
 import omnia.algorithm.SetAlgorithms.differenceBetween
 import omnia.data.cache.Memoized
 import omnia.data.cache.Memoized.Companion.memoize
@@ -69,7 +68,7 @@ class TaskStoreImpl(val graph: ImmutableDirectedGraph<TaskIdImpl>, val data: Imm
     Objects.requireNonNull(prefix)
     return graph.contents()
         .stream()
-        .filter { id -> id.toString().regionMatches(0, prefix, 0, prefix.length) }
+        .filter { it.toString().regionMatches(0, prefix, 0, prefix.length) }
         .map(this::toTask)
         .collect(toImmutableSet())
   }
@@ -95,56 +94,53 @@ class TaskStoreImpl(val graph: ImmutableDirectedGraph<TaskIdImpl>, val data: Imm
 
   fun allTasksBlocking(id: TaskIdImpl): ImmutableSet<TaskImpl> {
     return graph.nodeOf(id)
-        .map { node -> node.predecessors() }
+        .map { it.predecessors() }
         .orElse(ImmutableSet.empty())
         .stream()
-        .map { node -> node.item() }
+        .map { it.item() }
         .map(this::toTask)
         .collect(toImmutableSet())
   }
 
   fun allTasksBlockedBy(id: TaskIdImpl): ImmutableSet<TaskImpl> {
     return graph.nodeOf(id)
-        .map { node -> node.successors() }
+        .map { it.successors() }
         .orElse(ImmutableSet.empty())
         .stream()
-        .map { node -> node.item() }
+        .map { it.item() }
         .map(this::toTask)
         .collect(toImmutableSet())
   }
 
   fun allOpenTasksBlocking(id: TaskIdImpl): ImmutableSet<TaskImpl> {
     return graph.nodeOf(id)
-        .map { node -> node.predecessors() }
+        .map { it.predecessors() }
         .orElse(ImmutableSet.empty())
         .stream()
-        .map(ImmutableDirectedGraph<TaskIdImpl>.DirectedNode::item)
+        .map { it.item() }
         .map(this::toTask)
-        .filter { task -> !task.status().isCompleted }
+        .filter { !it.status.isCompleted }
         .collect(toImmutableSet())
   }
 
   fun toTask(id: TaskIdImpl): TaskImpl {
-    return cache.getOrCache(
-        id
-    ) {
+    return cache.getOrCache(id) {
       TaskImpl(
           this,
           id,
-          data.valueOf(id)
-              .orElseThrow { IllegalArgumentException("unrecognized TaskIdImpl $id") })
+          data.valueOf(id).orElseThrow { IllegalArgumentException("unrecognized TaskIdImpl $id") })
     }
   }
 
   fun validateTask(task: Task): TaskImpl {
     require(task is TaskImpl) { "unrecognized task type: $task" }
-    val id = task.id()
+    val id = task.id
     require(graph.contents().contains(id)) { "unrecognized TaskIdImpl: $id" }
     return task
   }
 
   private fun isOpen(id: TaskIdImpl): Boolean {
-    return data.valueOf(id).map { taskData -> !taskData.status().isCompleted }.orElse(false)
+    return data.valueOf(id).map { !it.status().isCompleted }.orElse(false)
   }
 
   private fun isUnblocked(id: TaskIdImpl): Boolean {
@@ -153,57 +149,63 @@ class TaskStoreImpl(val graph: ImmutableDirectedGraph<TaskIdImpl>, val data: Imm
 
   private fun isBlocked(id: TaskIdImpl): Boolean {
     return graph.nodeOf(id)
-        .map { node -> node.predecessors() }
+        .map { it.predecessors() }
         .orElse(ImmutableSet.empty())
         .stream()
-        .map { node -> node.item() }
-        .map { key -> data.valueOf(key) }
-        .anyMatch { taskDataOptional -> taskDataOptional.map { taskData: TaskData -> !taskData.status().isCompleted }.orElse(false) }
+        .map { it.item() }
+        .map(data::valueOf)
+        .anyMatch {
+            taskDataOptional -> taskDataOptional.map { !it.status().isCompleted }.orElse(false)
+        }
   }
 
   init {
-    require(graph.contents().count() == data.keys().count()) { "task graph and task data sizes don't match. " }
-    require(!differenceBetween(graph.contents(), data.keys()).isPopulated) { "tasks in graph do not match tasks in data set" }
+    require(graph.contents().count() == data.keys().count()) {
+      "task graph and task data sizes don't match. "
+    }
+    require(!differenceBetween(graph.contents(), data.keys()).isPopulated) {
+      "tasks in graph do not match tasks in data set"
+    }
     allTaskIds = memoize {
       Observable.fromIterable(data.keys())
           .to(Observables.toImmutableSet())
-          .map { set -> copyOf(Comparator.comparingLong { obj: TaskIdImpl -> obj.asLong() }, set) }
+          .map { copyOf(Comparator.comparingLong(TaskIdImpl::asLong), it) }
           .blockingGet()
     }
-    allTasks = memoize { data.keys().stream().map { id: TaskIdImpl -> toTask(id) }.collect(toImmutableSet()) }
+    allTasks = memoize { data.keys().stream().map(this::toTask).collect(toImmutableSet()) }
     allUnblockedOpenTasks = memoize {
       graph.contents()
           .stream()
-          .filter { id: TaskIdImpl -> isOpen(id) }
-          .filter { id: TaskIdImpl -> isUnblocked(id) }
-          .map { id: TaskIdImpl -> toTask(id) }
+          .filter(this::isOpen)
+          .filter(this::isUnblocked)
+          .map(this::toTask)
           .collect(toImmutableSet())
     }
     allBlockedOpenTasks = memoize {
       graph.contents()
           .stream()
-          .filter { id: TaskIdImpl -> isOpen(id) }
-          .filter { id: TaskIdImpl -> isBlocked(id) }
-          .map { id: TaskIdImpl -> toTask(id) }
+          .filter(this::isOpen)
+          .filter(this::isBlocked)
+          .map(this::toTask)
           .collect(toImmutableSet())
     }
     allCompletedTasks = memoize {
       data.entries()
           .stream()
-          .filter { entry -> entry.value().status().isCompleted }
-          .map { entry -> entry.key() }
-          .map { id -> toTask(id) }
+          .filter { it.value().status().isCompleted }
+          .map { it.key() }
+          .map(this::toTask)
           .collect(toImmutableSet())
     }
     allOpenTasks = memoize {
       data.entries()
           .stream()
-          .filter { entry -> !entry.value().status().isCompleted }
-          .map { entry -> entry.key() }
-          .map { id -> toTask(id) }
+          .filter { !it.value().status().isCompleted }
+          .map { it.key() }
+          .map(this::toTask)
           .collect(toImmutableSet())
     }
-    taskGraph = memoize(Supplier { copyOf(graph) { id: TaskIdImpl -> toTask(id) } })
+    taskGraph = memoize { copyOf(graph, this::toTask) }
     hash = MemoizedInt.memoize { Objects.hash(graph, data) }
   }
 }

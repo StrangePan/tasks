@@ -1,7 +1,6 @@
 package me.strangepan.tasks.engine.model.impl
 
 import java.util.Objects
-import java.util.function.Supplier
 import kotlin.math.max
 import omnia.cli.out.Output
 import omnia.cli.out.Output.Companion.builder
@@ -12,33 +11,28 @@ import omnia.data.structure.SortedSet
 import omnia.data.structure.immutable.ImmutableSet
 import me.strangepan.tasks.engine.model.Task
 
-class TaskImpl(private val store: TaskStoreImpl, private val id: TaskIdImpl, private val data: TaskData) : Task {
-  private val blockingTasks: Memoized<ImmutableSet<TaskImpl>> = memoize(Supplier { store.allTasksBlocking(id) })
-  private val blockedTasks: Memoized<ImmutableSet<TaskImpl>> = memoize(Supplier { store.allTasksBlockedBy(id) })
-  private val openBlockingTasks: Memoized<ImmutableSet<TaskImpl>> = memoize(Supplier { store.allOpenTasksBlocking(id) })
+class TaskImpl(private val store: TaskStoreImpl, override val id: TaskIdImpl, private val data: TaskData) : Task {
+  private val memoizedBlockingTasks: Memoized<ImmutableSet<TaskImpl>> =
+    memoize { store.allTasksBlocking(id) }
+  private val memoizedBlockedTasks: Memoized<ImmutableSet<TaskImpl>> =
+    memoize { store.allTasksBlockedBy(id) }
+  private val openBlockingTasks: Memoized<ImmutableSet<TaskImpl>> =
+    memoize { store.allOpenTasksBlocking(id) }
 
-  override fun id(): TaskIdImpl {
-    return id
-  }
+  override val label: String
+    get() = data.label()
 
-  override fun label(): String {
-    return data.label()
-  }
-
-  override fun status(): Task.Status {
-    return data.status()
-  }
+  override val status: Task.Status
+    get() = data.status()
 
   override val isUnblocked: Boolean
     get() = !openBlockingTasks.value().isPopulated
 
-  override fun blockingTasks(): ImmutableSet<TaskImpl> {
-    return blockingTasks.value()
-  }
+  override val blockingTasks: ImmutableSet<TaskImpl>
+    get() = memoizedBlockingTasks.value()
 
-  override fun blockedTasks(): ImmutableSet<TaskImpl> {
-    return blockedTasks.value()
-  }
+  override val blockedTasks: ImmutableSet<TaskImpl>
+    get() = memoizedBlockedTasks.value()
 
   override fun equals(other: Any?): Boolean {
     return (other === this
@@ -62,8 +56,8 @@ class TaskImpl(private val store: TaskStoreImpl, private val id: TaskIdImpl, pri
     val followingId = allIds.itemFollowing(id)
     val stringId = id.toString()
     val longestCommonPrefix = max(
-        precedingId.map { other -> longestCommonPrefix(other.toString(), stringId) }.orElse(0),
-        followingId.map { other -> longestCommonPrefix(other.toString(), stringId) }.orElse(0)) + 1
+        precedingId.map { longestCommonPrefix(it.toString(), stringId) }.orElse(0),
+        followingId.map { longestCommonPrefix(it.toString(), stringId) }.orElse(0)) + 1
     return builder()
         .underlined()
         .color(Output.Color16.LIGHT_GREEN)
@@ -71,10 +65,10 @@ class TaskImpl(private val store: TaskStoreImpl, private val id: TaskIdImpl, pri
         .defaultUnderline()
         .append(stringId.substring(longestCommonPrefix))
         .defaultColor()
-        .append(render(status()))
+        .append(render(status))
         .append(": ")
         .defaultColor()
-        .append(label())
+        .append(label)
         .build()
   }
 

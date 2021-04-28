@@ -39,7 +39,7 @@ class StartHandlerTest {
 
     underTest.handle(startArgs(task)).ignoreElement().blockingAwait()
 
-    assertThat(getUpdatedVersionOf(task).status()).isEqualTo(STARTED)
+    assertThat(getUpdatedVersionOf(task).status).isEqualTo(STARTED)
   }
 
   @Test
@@ -58,7 +58,7 @@ class StartHandlerTest {
 
     underTest.handle(startArgs(task)).ignoreElement().blockingAwait()
 
-    assertThat(getUpdatedVersionOf(task).status()).isEqualTo(STARTED)
+    assertThat(getUpdatedVersionOf(task).status).isEqualTo(STARTED)
   }
 
   @Test
@@ -78,7 +78,7 @@ class StartHandlerTest {
 
     underTest.handle(startArgs(task)).ignoreElement().blockingAwait()
 
-    assertThat(getUpdatedVersionOf(task).status()).isEqualTo(STARTED)
+    assertThat(getUpdatedVersionOf(task).status).isEqualTo(STARTED)
   }
 
   @Test

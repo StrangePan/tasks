@@ -56,7 +56,7 @@ class TaskMutatorImpl internal constructor(private val taskStore: ObservableTask
     val taskIds: Iterable<TaskIdImpl> = ImmutableList.copyOf(
         Observable.fromIterable(tasks)
             .map { store().validateTask(it) }
-            .map { it.id() }
+            .map { it.id }
             .blockingIterable())
     overwriteBlockingTasks = true
     blockingTasksToAdd.clear()
@@ -67,17 +67,17 @@ class TaskMutatorImpl internal constructor(private val taskStore: ObservableTask
 
   override fun addBlockingTask(task: Task): TaskMutatorImpl {
     val taskImpl = store().validateTask(task)
-    blockingTasksToAdd.add(taskImpl.id())
-    blockingTasksToRemove.remove(taskImpl.id())
+    blockingTasksToAdd.add(taskImpl.id)
+    blockingTasksToRemove.remove(taskImpl.id)
     return this
   }
 
   override fun removeBlockingTask(task: Task): TaskMutatorImpl {
     val taskImpl = store().validateTask(task)
     if (!overwriteBlockingTasks) {
-      blockingTasksToRemove.add(taskImpl.id())
+      blockingTasksToRemove.add(taskImpl.id)
     }
-    blockingTasksToAdd.remove(taskImpl.id())
+    blockingTasksToAdd.remove(taskImpl.id)
     return this
   }
 
@@ -85,7 +85,7 @@ class TaskMutatorImpl internal constructor(private val taskStore: ObservableTask
     val taskIds: Iterable<TaskIdImpl> = ImmutableList.copyOf(
         Observable.fromIterable(tasks)
             .map { store().validateTask(it) }
-            .map { it.id() }
+            .map { it.id }
             .blockingIterable())
     overwriteBlockedTasks = true
     blockedTasksToAdd.clear()
@@ -96,17 +96,17 @@ class TaskMutatorImpl internal constructor(private val taskStore: ObservableTask
 
   override fun addBlockedTask(task: Task): TaskMutatorImpl {
     val taskImpl = store().validateTask(task)
-    blockedTasksToAdd.add(taskImpl.id())
-    blockedTasksToRemove.remove(taskImpl.id())
+    blockedTasksToAdd.add(taskImpl.id)
+    blockedTasksToRemove.remove(taskImpl.id)
     return this
   }
 
   override fun removeBlockedTask(task: Task): TaskMutatorImpl {
     val taskImpl = store().validateTask(task)
     if (!overwriteBlockedTasks) {
-      blockedTasksToRemove.add(taskImpl.id())
+      blockedTasksToRemove.add(taskImpl.id)
     }
-    blockedTasksToAdd.remove(taskImpl.id())
+    blockedTasksToAdd.remove(taskImpl.id)
     return this
   }
 

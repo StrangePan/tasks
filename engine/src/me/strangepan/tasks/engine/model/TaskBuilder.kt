@@ -1,5 +1,6 @@
 package me.strangepan.tasks.engine.model
 
+/** A builder for creating new tasks that require the bare minimum values. */
 interface TaskBuilder {
   fun setStatus(status: Task.Status): TaskBuilder
   fun setBlockingTasks(tasks: Iterable<Task>): TaskBuilder

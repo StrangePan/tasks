@@ -39,10 +39,10 @@ class AddHandlerTest {
     val allTasks = taskStore.observe().blockingFirst().allTasks()
     Truth.assertThat(allTasks.count()).isEqualTo(1)
     val addedTask = allTasks.iterator().next()
-    Truth.assertThat(addedTask.label()).isEqualTo("example task")
-    Truth.assertThat(addedTask.blockingTasks()).isEmpty()
-    Truth.assertThat(addedTask.blockedTasks()).isEmpty()
-    Truth.assertThat(addedTask.status()).isEqualTo(Task.Status.OPEN)
+    Truth.assertThat(addedTask.label).isEqualTo("example task")
+    Truth.assertThat(addedTask.blockingTasks).isEmpty()
+    Truth.assertThat(addedTask.blockedTasks).isEmpty()
+    Truth.assertThat(addedTask.status).isEqualTo(Task.Status.OPEN)
   }
 
   @Test
@@ -64,11 +64,11 @@ class AddHandlerTest {
     val tasksWithBlockers = taskStoreState.allOpenTasksWithOpenBlockers()
     Truth.assertThat(tasksWithBlockers.count()).isEqualTo(1)
     val addedTask = tasksWithBlockers.iterator().next()
-    Truth.assertThat(addedTask.label()).isEqualTo("new task")
-    Truth.assertThat(addedTask.blockingTasks().count()).isEqualTo(1)
-    Truth.assertThat(addedTask.blockingTasks().iterator().next().id()).isEqualTo(blockingTask.id())
-    Truth.assertThat(addedTask.blockedTasks()).isEmpty()
-    Truth.assertThat(addedTask.status()).isEqualTo(Task.Status.OPEN)
+    Truth.assertThat(addedTask.label).isEqualTo("new task")
+    Truth.assertThat(addedTask.blockingTasks.count()).isEqualTo(1)
+    Truth.assertThat(addedTask.blockingTasks.iterator().next().id).isEqualTo(blockingTask.id)
+    Truth.assertThat(addedTask.blockedTasks).isEmpty()
+    Truth.assertThat(addedTask.status).isEqualTo(Task.Status.OPEN)
   }
 
   @Test
@@ -83,11 +83,11 @@ class AddHandlerTest {
     val tasksWithoutBlockers = taskStoreState.allOpenTasksWithoutOpenBlockers()
     Truth.assertThat(tasksWithoutBlockers.count()).isEqualTo(1)
     val addedTask = tasksWithoutBlockers.iterator().next()
-    Truth.assertThat(addedTask.label()).isEqualTo("new task")
-    Truth.assertThat(addedTask.blockingTasks()).isEmpty()
-    Truth.assertThat(addedTask.blockedTasks().count()).isEqualTo(1)
-    Truth.assertThat(addedTask.blockedTasks().iterator().next().id()).isEqualTo(blockedTask.id())
-    Truth.assertThat(addedTask.status()).isEqualTo(Task.Status.OPEN)
+    Truth.assertThat(addedTask.label).isEqualTo("new task")
+    Truth.assertThat(addedTask.blockingTasks).isEmpty()
+    Truth.assertThat(addedTask.blockedTasks.count()).isEqualTo(1)
+    Truth.assertThat(addedTask.blockedTasks.iterator().next().id).isEqualTo(blockedTask.id)
+    Truth.assertThat(addedTask.status).isEqualTo(Task.Status.OPEN)
   }
 
   @Test
@@ -105,14 +105,14 @@ class AddHandlerTest {
     val tasksWithoutBlockers = taskStoreState.allOpenTasksWithoutOpenBlockers()
     Truth.assertThat(tasksWithoutBlockers.count()).isEqualTo(1)
     val firstTask = tasksWithoutBlockers.iterator().next()
-    Truth.assertThat(firstTask.id()).isEqualTo(blockingTask.id())
-    val addedTask = firstTask.blockedTasks().iterator().next()
-    Truth.assertThat(addedTask.label()).isEqualTo("new task")
-    Truth.assertThat(addedTask.blockingTasks().count()).isEqualTo(1)
-    Truth.assertThat(addedTask.blockedTasks().count()).isEqualTo(1)
-    Truth.assertThat(addedTask.status()).isEqualTo(Task.Status.OPEN)
-    val thirdTask = addedTask.blockedTasks().iterator().next()
-    Truth.assertThat(thirdTask.id()).isEqualTo(blockedTask.id())
+    Truth.assertThat(firstTask.id).isEqualTo(blockingTask.id)
+    val addedTask = firstTask.blockedTasks.iterator().next()
+    Truth.assertThat(addedTask.label).isEqualTo("new task")
+    Truth.assertThat(addedTask.blockingTasks.count()).isEqualTo(1)
+    Truth.assertThat(addedTask.blockedTasks.count()).isEqualTo(1)
+    Truth.assertThat(addedTask.status).isEqualTo(Task.Status.OPEN)
+    val thirdTask = addedTask.blockedTasks.iterator().next()
+    Truth.assertThat(thirdTask.id).isEqualTo(blockedTask.id)
   }
 
   @Test

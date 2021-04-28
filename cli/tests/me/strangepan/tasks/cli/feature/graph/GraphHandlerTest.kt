@@ -236,7 +236,7 @@ class GraphHandlerTest {
     val builder = currentGraph.toBuilder()
     currentGraph.contents()
         .stream()
-        .filter { it.status().isCompleted }.forEach(builder::removeUnknownTypedNode)
+        .filter { it.status.isCompleted }.forEach(builder::removeUnknownTypedNode)
     return builder.build()
   }
 
@@ -434,7 +434,7 @@ class GraphHandlerTest {
                 }
                 assertWithMessage("mismatch at row ${cursor.row()} col ${cursor.col()}${lineSeparator()}$output")
                     .that(codePoint)
-                    .isEqualTo(if (unfinishedEdges.keys().contains(c)) GraphHandler.CONTINUATION_UP_DOWN else if (c == colOfNode) if (taskAtCurrentRow.status().isCompleted) GraphHandler.NODE_COMPLETED else GraphHandler.NODE_OPEN else GraphHandler.GAP)
+                    .isEqualTo(if (unfinishedEdges.keys().contains(c)) GraphHandler.CONTINUATION_UP_DOWN else if (c == colOfNode) if (taskAtCurrentRow.status.isCompleted) GraphHandler.NODE_COMPLETED else GraphHandler.NODE_OPEN else GraphHandler.GAP)
               }
             }
         ) {

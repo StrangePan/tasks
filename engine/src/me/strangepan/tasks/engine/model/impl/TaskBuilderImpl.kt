@@ -23,7 +23,7 @@ class TaskBuilderImpl(private val taskStore: ObservableTaskStoreImpl, private va
   override fun setBlockingTasks(tasks: Iterable<Task>): TaskBuilderImpl {
     val taskIds = Observable.fromIterable(tasks)
         .map { task: Task -> store().validateTask(task) }
-        .map { obj: TaskImpl -> obj.id() }
+        .map { obj: TaskImpl -> obj.id }
         .blockingIterable()
     blockingTasksToAdd.clear()
     taskIds.forEach(Consumer { item: TaskIdImpl -> blockingTasksToAdd.add(item) })
@@ -32,14 +32,14 @@ class TaskBuilderImpl(private val taskStore: ObservableTaskStoreImpl, private va
 
   override fun addBlockingTask(task: Task): TaskBuilderImpl {
     val taskImpl = store().validateTask(task)
-    blockingTasksToAdd.add(taskImpl.id())
+    blockingTasksToAdd.add(taskImpl.id)
     return this
   }
 
   override fun setBlockedTasks(tasks: Iterable<Task>): TaskBuilderImpl {
     val taskIds = Observable.fromIterable(tasks)
         .map { task: Task -> store().validateTask(task) }
-        .map { obj: TaskImpl -> obj.id() }
+        .map { obj: TaskImpl -> obj.id }
         .blockingIterable()
     blockedTasksToAdd.clear()
     taskIds.forEach(Consumer { item: TaskIdImpl -> blockedTasksToAdd.add(item) })
@@ -48,7 +48,7 @@ class TaskBuilderImpl(private val taskStore: ObservableTaskStoreImpl, private va
 
   override fun addBlockedTask(task: Task): TaskBuilderImpl {
     val taskImpl = store().validateTask(task)
-    blockedTasksToAdd.add(taskImpl.id())
+    blockedTasksToAdd.add(taskImpl.id)
     return this
   }
 

@@ -218,7 +218,7 @@ class RemoveHandlerTest {
   private fun assertThatEachTask(optionalAssertions: Consumer<OptionalSubject>, vararg tasks: Task) {
     val taskStoreState = taskStore.observe().blockingFirst()
     for (task in tasks) {
-      optionalAssertions.accept(assertThat(taskStoreState.lookUpById(task.id())))
+      optionalAssertions.accept(assertThat(taskStoreState.lookUpById(task.id)))
     }
   }
 

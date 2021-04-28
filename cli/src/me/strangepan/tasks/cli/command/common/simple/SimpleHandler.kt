@@ -55,26 +55,26 @@ abstract class SimpleHandler<T : SimpleArguments> protected constructor(
                   ImmutableSet.builder(),
                   ImmutableSet.builder())
             },
-            { builders, mutationResult ->
-              val taskId = mutationResult.third().id()
-              val taskBefore = mutationResult.first().lookUpById(taskId).orElseThrow()
-              val taskAfter = mutationResult.second().lookUpById(taskId).orElseThrow()
-              val didChange = diffDetector.compare(taskBefore, taskAfter) != 0
-              (if (didChange) builders.second() else builders.first()).add(taskId)
-              if (didChange) {
-                taskAfter.blockedTasks().forEach { successorAfter ->
-                  val id = successorAfter.id()
-                  val isUnblocked = successorAfter.isUnblocked
-                  val wasUnblocked = mutationResult.first().lookUpById(id).orElseThrow().isUnblocked
-                  (when {
-                    isUnblocked && !wasUnblocked -> builders.third()
-                    !isUnblocked && wasUnblocked -> builders.fourth()
-                    else -> null
-                  })?.add(id)
-                }
+          { builders, mutationResult ->
+            val taskId = mutationResult.third().id
+            val taskBefore = mutationResult.first().lookUpById(taskId).orElseThrow()
+            val taskAfter = mutationResult.second().lookUpById(taskId).orElseThrow()
+            val didChange = diffDetector.compare(taskBefore, taskAfter) != 0
+            (if (didChange) builders.second() else builders.first()).add(taskId)
+            if (didChange) {
+              taskAfter.blockedTasks.forEach { successorAfter ->
+                val id = successorAfter.id
+                val isUnblocked = successorAfter.isUnblocked
+                val wasUnblocked = mutationResult.first().lookUpById(id).orElseThrow().isUnblocked
+                (when {
+                  isUnblocked && !wasUnblocked -> builders.third()
+                  !isUnblocked && wasUnblocked -> builders.fourth()
+                  else -> null
+                })?.add(id)
               }
-              builders
-            })
+            }
+            builders
+          })
         .map { groupedTasks -> groupedTasks.map(Function { it.build() }) }
         .map {
           val firstAndSecond = SetAlgorithms.unionOf(it.first(), it.second())

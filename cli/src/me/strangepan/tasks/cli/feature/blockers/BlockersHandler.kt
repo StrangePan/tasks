@@ -56,7 +56,7 @@ class BlockersHandler(private val taskStore: Memoized<out ObservableTaskStore>) 
           Observable.fromIterable(arguments.targetTasks())
               .map { task ->
                 val blockingTasksBeforeAfter = couplet.map(Function { store ->
-                  store.lookUpById(task.id())
+                  store.lookUpById(task.id)
                       .map(Task::blockingTasks)
                       .orElse(ImmutableSet.empty())
                 })
@@ -99,7 +99,7 @@ class BlockersHandler(private val taskStore: Memoized<out ObservableTaskStore>) 
 
     private fun getRemovedBlockers(before: Set<out Task>, after: Set<out Task>): Set<out Task> {
       val afterIds = after.stream().map(Task::id).collect(toImmutableSet())
-      return before.stream().filter { !afterIds.contains(it.id()) }.collect(toImmutableSet())
+      return before.stream().filter { !afterIds.contains(it.id) }.collect(toImmutableSet())
     }
   }
 }

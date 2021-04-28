@@ -40,12 +40,13 @@ class ReopenHandlerTest {
     underTest.handle(reopenArgs(task)).ignoreElement().blockingAwait()
 
     assertThat(
-        taskStore.observe()
-            .firstOrError()
-            .blockingGet()
-            .lookUpById(task.id())
-            .orElseThrow()
-            .status())
+      taskStore.observe()
+        .firstOrError()
+        .blockingGet()
+        .lookUpById(task.id)
+        .orElseThrow()
+        .status
+    )
         .isEqualTo(OPEN)
   }
 
@@ -67,12 +68,13 @@ class ReopenHandlerTest {
     underTest.handle(reopenArgs(task)).ignoreElement().blockingAwait()
 
     assertThat(
-        taskStore.observe()
-            .firstOrError()
-            .blockingGet()
-            .lookUpById(task.id())
-            .orElseThrow()
-            .status())
+      taskStore.observe()
+        .firstOrError()
+        .blockingGet()
+        .lookUpById(task.id)
+        .orElseThrow()
+        .status
+    )
         .isEqualTo(OPEN)
   }
 
@@ -94,12 +96,13 @@ class ReopenHandlerTest {
     underTest.handle(reopenArgs(task)).ignoreElement().blockingAwait()
 
     assertThat(
-        taskStore.observe()
-            .firstOrError()
-            .blockingGet()
-            .lookUpById(task.id())
-            .orElseThrow()
-            .status())
+      taskStore.observe()
+        .firstOrError()
+        .blockingGet()
+        .lookUpById(task.id)
+        .orElseThrow()
+        .status
+    )
         .isEqualTo(STARTED)
   }
 
@@ -125,7 +128,7 @@ class ReopenHandlerTest {
         taskStore.observe()
             .firstOrError()
             .blockingGet()
-            .lookUpById(blockedTask.id())
+            .lookUpById(blockedTask.id)
             .orElseThrow()
             .isUnblocked)
         .isFalse()
