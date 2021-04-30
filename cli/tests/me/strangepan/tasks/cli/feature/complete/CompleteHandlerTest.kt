@@ -39,13 +39,11 @@ class CompleteHandlerTest {
     underTest.handle(completeArgs(task)).ignoreElement().blockingAwait()
 
     assertThat(
-      taskStore.observe()
-        .firstOrError()
-        .blockingGet()
-        .lookUpById(task.id)
-        .orElseThrow()
-        .status
-    )
+        taskStore.observe()
+          .firstOrError()
+          .blockingGet()
+          .lookUpById(task.id)!!
+          .status)
         .isEqualTo(COMPLETED)
   }
 
@@ -65,13 +63,11 @@ class CompleteHandlerTest {
     underTest.handle(completeArgs(task)).ignoreElement().blockingAwait()
 
     assertThat(
-      taskStore.observe()
-        .firstOrError()
-        .blockingGet()
-        .lookUpById(task.id)
-        .orElseThrow()
-        .status
-    )
+        taskStore.observe()
+          .firstOrError()
+          .blockingGet()
+          .lookUpById(task.id)!!
+          .status)
         .isEqualTo(COMPLETED)
   }
 
@@ -93,13 +89,11 @@ class CompleteHandlerTest {
     underTest.handle(completeArgs(task)).ignoreElement().blockingAwait()
 
     assertThat(
-      taskStore.observe()
-        .firstOrError()
-        .blockingGet()
-        .lookUpById(task.id)
-        .orElseThrow()
-        .status
-    )
+        taskStore.observe()
+          .firstOrError()
+          .blockingGet()
+          .lookUpById(task.id)!!
+          .status)
         .isEqualTo(COMPLETED)
   }
 
@@ -125,8 +119,7 @@ class CompleteHandlerTest {
         taskStore.observe()
             .firstOrError()
             .blockingGet()
-            .lookUpById(blockedTask.id)
-            .orElseThrow()
+            .lookUpById(blockedTask.id)!!
             .isUnblocked)
         .isTrue()
   }

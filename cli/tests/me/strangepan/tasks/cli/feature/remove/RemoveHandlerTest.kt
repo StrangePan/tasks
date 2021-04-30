@@ -1,8 +1,7 @@
 package me.strangepan.tasks.cli.feature.remove
 
-import com.google.common.truth.OptionalSubject
+import com.google.common.truth.Subject
 import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.Truth8.assertThat
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.util.function.Consumer
@@ -208,17 +207,17 @@ class RemoveHandlerTest {
   }
 
   private fun assertTasksNotDeleted(vararg tasks: Task) {
-    assertThatEachTask(OptionalSubject::isPresent, *tasks)
+    assertThatEachTask(Subject::isNotNull, *tasks)
   }
 
   private fun assertTasksDeleted(vararg tasks: Task) {
-    assertThatEachTask(OptionalSubject::isEmpty, *tasks)
+    assertThatEachTask(Subject::isNull, *tasks)
   }
 
-  private fun assertThatEachTask(optionalAssertions: Consumer<OptionalSubject>, vararg tasks: Task) {
+  private fun assertThatEachTask(assertion: Consumer<in Subject>, vararg tasks: Task) {
     val taskStoreState = taskStore.observe().blockingFirst()
     for (task in tasks) {
-      optionalAssertions.accept(assertThat(taskStoreState.lookUpById(task.id)))
+      assertion.accept(assertThat(taskStoreState.lookUpById(task.id)))
     }
   }
 

@@ -21,7 +21,9 @@ import me.strangepan.tasks.engine.model.TaskId
 import me.strangepan.tasks.engine.model.TaskStore
 import me.strangepan.tasks.engine.util.rx.Observables
 
-class TaskStoreImpl(val graph: ImmutableDirectedGraph<TaskIdImpl>, val data: ImmutableMap<TaskIdImpl, TaskData>) : TaskStore {
+class TaskStoreImpl(
+    val graph: ImmutableDirectedGraph<TaskIdImpl>, val data: ImmutableMap<TaskIdImpl, TaskData>) :
+    TaskStore {
   private val cache = WeakCache<TaskIdImpl, TaskImpl>()
   private val allTaskIds: Memoized<ImmutableSortedSet<TaskIdImpl>>
   private val allTasks: Memoized<ImmutableSet<TaskImpl>>
@@ -32,16 +34,16 @@ class TaskStoreImpl(val graph: ImmutableDirectedGraph<TaskIdImpl>, val data: Imm
   private val taskGraph: Memoized<ImmutableDirectedGraph<TaskImpl>>
   private val hash: MemoizedInt
 
-  override fun lookUpById(id: Long): Optional<TaskImpl> {
+  override fun lookUpById(id: Long): TaskImpl? {
     return lookUpById(TaskIdImpl(id))
   }
 
-  override fun lookUpById(id: TaskId): Optional<TaskImpl> {
-    return if (id is TaskIdImpl) lookUpById(id) else Optional.empty()
+  override fun lookUpById(id: TaskId): TaskImpl? {
+    return if (id is TaskIdImpl) lookUpById(id) else null;
   }
 
-  private fun lookUpById(id: TaskIdImpl): Optional<TaskImpl> {
-    return if (graph.contents().contains(id)) Optional.of(toTask(id)) else Optional.empty()
+  private fun lookUpById(id: TaskIdImpl): TaskImpl? {
+    return if (graph.contents().contains(id)) toTask(id) else null;
   }
 
   override fun allTasks(): ImmutableSet<TaskImpl> {
@@ -130,13 +132,6 @@ class TaskStoreImpl(val graph: ImmutableDirectedGraph<TaskIdImpl>, val data: Imm
           id,
           data.valueOf(id).orElseThrow { IllegalArgumentException("unrecognized TaskIdImpl $id") })
     }
-  }
-
-  fun validateTask(task: Task): TaskImpl {
-    require(task is TaskImpl) { "unrecognized task type: $task" }
-    val id = task.id
-    require(graph.contents().contains(id)) { "unrecognized TaskIdImpl: $id" }
-    return task
   }
 
   private fun isOpen(id: TaskIdImpl): Boolean {

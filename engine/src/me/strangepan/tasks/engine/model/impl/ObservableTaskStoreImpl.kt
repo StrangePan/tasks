@@ -124,16 +124,17 @@ class ObservableTaskStoreImpl private constructor(private val taskStorage: TaskS
     return store.mutateAndReturn { oldTaskStore ->
       val taskToRemove = oldTaskStore.lookUpById(task.id)
       Tuple.of(
-          taskToRemove.map {
-            TaskStoreImpl(
-                oldTaskStore.graph.toBuilder().removeNode(it.id).build(),
-                oldTaskStore.data.toBuilder().removeKey(it.id).build())
-          }
-              .orElse(oldTaskStore),
+          if (taskToRemove != null) {
+              TaskStoreImpl(
+                  oldTaskStore.graph.toBuilder().removeNode(taskToRemove.id).build(),
+                  oldTaskStore.data.toBuilder().removeKey(taskToRemove.id).build())
+          } else {
+            oldTaskStore
+          },
           taskToRemove)
     }
         .map { it.second() }
-        .flatMapMaybe(Maybes::fromOptional)
+        .flatMapMaybe(Maybes::fromNullable)
   }
 
   override fun writeToDisk(): Completable {

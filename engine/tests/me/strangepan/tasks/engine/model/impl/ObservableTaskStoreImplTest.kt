@@ -45,7 +45,7 @@ class ObservableTaskStoreImplTest {
     val task = underTest.createTask("example task") { it.setStatus(Task.Status.OPEN) }
         .blockingGet().third()
     Truth.assertThat(task.status.isOpen).isTrue()
-    underTest.observe().test().assertValue { it.lookUpById(task.id).orElseThrow().status.isOpen }
+    underTest.observe().test().assertValue { it.lookUpById(task.id)!!.status.isOpen }
   }
 
   @Test
@@ -53,7 +53,7 @@ class ObservableTaskStoreImplTest {
     val task = underTest.createTask("example task") { it.setStatus(Task.Status.COMPLETED) }
         .blockingGet().third()
     Truth.assertThat(task.status.isCompleted).isTrue()
-    underTest.observe().test().assertValue { it.lookUpById(task.id).orElseThrow().status.isCompleted }
+    underTest.observe().test().assertValue { it.lookUpById(task.id)!!.status.isCompleted }
   }
 
   @Test
@@ -61,7 +61,7 @@ class ObservableTaskStoreImplTest {
     val task = underTest.createTask("example task") { it.setStatus(Task.Status.STARTED) }
         .blockingGet().third()
     Truth.assertThat(task.status.isStarted).isTrue()
-    underTest.observe().test().assertValue { it.lookUpById(task.id).orElseThrow().status.isStarted }
+    underTest.observe().test().assertValue { it.lookUpById(task.id)!!.status.isStarted }
   }
 
   @Test
@@ -92,7 +92,7 @@ class ObservableTaskStoreImplTest {
     val observer = underTest.observe().test()
     val mutatedTask: Task = underTest.mutateTask(task) { it.setLabel("modified task") }.blockingGet().third()
     observer.assertValueCount(2)
-        .assertValueAt(1) { it.lookUpById(mutatedTask.id).orElseThrow().label == "modified task" }
+        .assertValueAt(1) { it.lookUpById(mutatedTask.id)!!.label == "modified task" }
   }
 
   @Test

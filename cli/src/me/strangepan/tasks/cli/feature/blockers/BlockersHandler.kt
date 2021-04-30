@@ -55,10 +55,8 @@ class BlockersHandler(private val taskStore: Memoized<out ObservableTaskStore>) 
         .flatMapObservable { couplet ->
           Observable.fromIterable(arguments.targetTasks())
               .map { task ->
-                val blockingTasksBeforeAfter = couplet.map(Function { store ->
-                  store.lookUpById(task.id)
-                      .map(Task::blockingTasks)
-                      .orElse(ImmutableSet.empty())
+                val blockingTasksBeforeAfter = couplet.map(Function {
+                  it.lookUpById(task.id)?.blockingTasks?:ImmutableSet.empty()
                 })
                 Tuple.of(task, blockingTasksBeforeAfter.first(), blockingTasksBeforeAfter.second())
               }

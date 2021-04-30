@@ -78,14 +78,12 @@ class BlockersHandlerTest {
         .blockingAwait()
 
     assertThat(
-      taskStore.observe()
-        .firstOrError()
-        .blockingGet()
-        .lookUpById(targetTask.id)
-        .orElseThrow()
-        .blockingTasks
-        .isPopulated
-    )
+        taskStore.observe()
+          .firstOrError()
+          .blockingGet()
+          .lookUpById(targetTask.id)!!
+          .blockingTasks
+          .isPopulated)
         .isFalse()
   }
 
@@ -127,14 +125,12 @@ class BlockersHandlerTest {
         .blockingAwait()
 
     assertThat(
-      taskStore.observe()
-        .firstOrError()
-        .blockingGet()
-        .lookUpById(targetTask.id)
-        .orElseThrow()
-        .blockingTasks
-        .isPopulated
-    )
+        taskStore.observe()
+          .firstOrError()
+          .blockingGet()
+          .lookUpById(targetTask.id)!!
+          .blockingTasks
+          .isPopulated)
         .isFalse()
   }
 
@@ -171,11 +167,7 @@ class BlockersHandlerTest {
         .ignoreElement()
         .blockingAwait()
 
-    val updatedTask = taskStore.observe()
-        .firstOrError()
-        .blockingGet()
-        .lookUpById(targetTask.id)
-        .orElseThrow()
+    val updatedTask = taskStore.observe().firstOrError().blockingGet().lookUpById(targetTask.id)!!
     assertThat(updatedTask.blockingTasks.count()).isEqualTo(1)
     assertThat(updatedTask.blockingTasks.iterator().next().id).isEqualTo(existingTask.id)
   }
@@ -238,11 +230,7 @@ class BlockersHandlerTest {
         .ignoreElement()
         .blockingAwait()
 
-    val updatedTask = taskStore.observe()
-        .firstOrError()
-        .blockingGet()
-        .lookUpById(targetTask.id)
-        .orElseThrow()
+    val updatedTask = taskStore.observe().firstOrError().blockingGet().lookUpById(targetTask.id)!!
     assertThat(updatedTask.blockingTasks.count()).isEqualTo(1)
     assertThat(updatedTask.blockingTasks.iterator().next().id).isEqualTo(blockerToAdd.id)
   }
@@ -280,11 +268,7 @@ class BlockersHandlerTest {
             ImmutableList.of(existingBlocker),
             /* clearAllBlockers= */ false)))
 
-    val unchangedTask = taskStore.observe()
-        .firstOrError()
-        .blockingGet()
-        .lookUpById(targetTask.id)
-        .orElseThrow()
+    val unchangedTask = taskStore.observe().firstOrError().blockingGet().lookUpById(targetTask.id)!!
     assertThat(unchangedTask.blockingTasks.count()).isEqualTo(1)
     assertThat(unchangedTask.blockingTasks.iterator().next().id)
         .isEqualTo(existingBlocker.id)

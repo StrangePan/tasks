@@ -8,4 +8,9 @@ object Maybes {
   fun <T> fromOptional(optional: Optional<T>): Maybe<T> {
     return optional.map { item: T -> Maybe.just(item) }.orElse(Maybe.empty())
   }
+
+  @JvmStatic
+  fun <T> fromNullable(nullable: T?): Maybe<T> {
+    return if (nullable != null) Maybe.just(nullable) else Maybe.empty()
+  }
 }

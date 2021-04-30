@@ -57,15 +57,15 @@ abstract class SimpleHandler<T : SimpleArguments> protected constructor(
             },
           { builders, mutationResult ->
             val taskId = mutationResult.third().id
-            val taskBefore = mutationResult.first().lookUpById(taskId).orElseThrow()
-            val taskAfter = mutationResult.second().lookUpById(taskId).orElseThrow()
+            val taskBefore = mutationResult.first().lookUpById(taskId)!!
+            val taskAfter = mutationResult.second().lookUpById(taskId)!!
             val didChange = diffDetector.compare(taskBefore, taskAfter) != 0
             (if (didChange) builders.second() else builders.first()).add(taskId)
             if (didChange) {
               taskAfter.blockedTasks.forEach { successorAfter ->
                 val id = successorAfter.id
                 val isUnblocked = successorAfter.isUnblocked
-                val wasUnblocked = mutationResult.first().lookUpById(id).orElseThrow().isUnblocked
+                val wasUnblocked = mutationResult.first().lookUpById(id)!!.isUnblocked
                 (when {
                   isUnblocked && !wasUnblocked -> builders.third()
                   !isUnblocked && wasUnblocked -> builders.fourth()
@@ -91,7 +91,7 @@ abstract class SimpleHandler<T : SimpleArguments> protected constructor(
                 groupedTask.map(
                     Function { list ->
                       list.stream()
-                          .map { store.lookUpById(it).orElseThrow() }
+                          .map { store.lookUpById(it)!! }
                           .collect(toImmutableSet())
                     })
               }
