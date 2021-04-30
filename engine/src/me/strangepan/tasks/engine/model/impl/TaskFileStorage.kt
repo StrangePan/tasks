@@ -8,11 +8,9 @@ import java.io.BufferedWriter
 import java.io.Writer
 import java.util.Comparator
 import java.util.Optional
-import java.util.function.Supplier
 import java.util.regex.Pattern
 import java.util.stream.Collectors
 import java.util.stream.Stream
-import omnia.data.cache.Memoized
 import omnia.data.cache.Memoized.Companion.memoize
 import omnia.data.stream.Collectors.toImmutableMap
 import omnia.data.structure.DirectedGraph
@@ -33,14 +31,19 @@ import me.strangepan.tasks.engine.io.File
 import me.strangepan.tasks.engine.model.Task
 
 class TaskFileStorage(private val file: File) : TaskStorage {
-  override fun readFromStorage(): Single<Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>>> {
-    return Single.fromCallable { BufferedReader(file.openReader()).use { reader -> return@fromCallable parseTaskData(reader) } }
+  override fun readFromStorage():
+      Single<Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>>> {
+    return Single.fromCallable {
+      BufferedReader(file.openReader()).use { return@fromCallable parseTaskData(it) }
+    }
   }
 
   override fun writeToStorage(
       graph: DirectedGraph<out TaskIdImpl>,
       data: Map<out TaskIdImpl, out TaskData>): Completable {
-    return Completable.fromAction { BufferedWriter(file.openWriter()).use { writer -> serializeTaskData(graph, data, writer) } }
+    return Completable.fromAction {
+      BufferedWriter(file.openWriter()).use { serializeTaskData(graph, data, it) }
+    }
   }
 
   private class LineCollector {
@@ -54,22 +57,24 @@ class TaskFileStorage(private val file: File) : TaskStorage {
     }
 
     fun collect(line: String) {
-      maybeParseStateChange(line).ifPresentOrElse(
-          { newState: State -> state = newState }
-      ) { parseToCollection(line) }
+      maybeParseStateChange(line).ifPresentOrElse({ state = it }) { parseToCollection(line) }
     }
 
     private fun maybeParseStateChange(line: String): Optional<State> {
       val versionMatcher = VERSION_PATTERN.matcher(line)
-      if (versionMatcher.matches()) {
-        assertSupportedVersion(versionMatcher.group(1))
-        return Optional.of(State.PARSING_NOTHING)
-      } else if (line == "# tasks") {
-        return Optional.of(State.PARSING_TASKS)
-      } else if (line == "# dependencies") {
-        return Optional.of(State.PARSING_GRAPH)
+      return when {
+        versionMatcher.matches() -> {
+          assertSupportedVersion(versionMatcher.group(1))
+          Optional.of(State.PARSING_NOTHING)
+        }
+        line == "# tasks" -> {
+          Optional.of(State.PARSING_TASKS)
+        }
+        line == "# dependencies" -> {
+          Optional.of(State.PARSING_GRAPH)
+        }
+        else -> Optional.empty()
       }
-      return Optional.empty()
     }
 
     private fun parseToCollection(line: String) {
@@ -88,8 +93,8 @@ class TaskFileStorage(private val file: File) : TaskStorage {
       }
       try {
         Stream.of(*fields[1].split(TASK_ID_DELIMITER.toRegex()).toTypedArray())
-            .map { string: String -> parseId(string) }
-            .forEach { dependency: TaskIdImpl -> graph.addEdge(dependency, id) }
+            .map(::parseId)
+            .forEach { graph.addEdge(it, id) }
       } catch (e: UnknownNodeException) {
         throw TaskParseError("missing task data for: $id", e)
       }
@@ -117,7 +122,8 @@ class TaskFileStorage(private val file: File) : TaskStorage {
         try {
           val version = versionString.toInt()
           if (version > VERSION) {
-            throw IncompatibleVersionError("unsupported file version: $version. supported versions: $VERSION")
+            throw IncompatibleVersionError(
+              "unsupported file version: $version. supported versions: $VERSION")
           }
         } catch (ex: NumberFormatException) {
           throw TaskParseError("unable to parse file version code: $versionString", ex)
@@ -140,9 +146,9 @@ class TaskFileStorage(private val file: File) : TaskStorage {
         serialize(data),
         Observable.just("# dependencies"),
         serialize(graph))
-        .concatMap { o: Observable<String> -> o }
-        .concatMap { line: String -> Observable.just(line, END_OF_LINE) }
-        .blockingForEach { str: String -> writer.write(str) }
+        .concatMap { it }
+        .concatMap { Observable.just(it, END_OF_LINE) }
+        .blockingForEach(writer::write)
   }
 
   class IncompatibleVersionError(message: String) : ParseError(message) {
@@ -177,31 +183,31 @@ class TaskFileStorage(private val file: File) : TaskStorage {
     private const val TASK_ID_DELIMITER = ","
     private val VERSION_PATTERN = Pattern.compile("^# version (\\d+)$")
     private val STATUS_STRINGS = memoize {
-      ImmutableSet.of( // false = !isCompleted, legacy
-          Tuple.of(Task.Status.OPEN, ImmutableList.of("open", "false")),  // true = isCompleted, legacy
+      ImmutableSet.of(
+          // false = !isCompleted, legacy
+          Tuple.of(Task.Status.OPEN, ImmutableList.of("open", "false")),
+          // true = isCompleted, legacy
           Tuple.of(Task.Status.COMPLETED, ImmutableList.of("complete", "true")),
           Tuple.of(Task.Status.STARTED, ImmutableList.of("started")))
     }
-    private val STATUS_TO_STRING: Memoized<ImmutableMap<Task.Status, String>> = memoize(Supplier<ImmutableMap<Task.Status, String>> {
+    private val STATUS_TO_STRING = memoize {
       STATUS_STRINGS.value().stream()
-          .map { couple: Couple<Task.Status, ImmutableList<String>> -> couple.mapSecond { list: ImmutableList<String> -> list.itemAt(0) } }
+          .map { couple -> couple.mapSecond { it.itemAt(0) } }
           .collect(toImmutableMap())
-    })
+    }
     private val STRING_TO_STATUS = memoize {
       STATUS_STRINGS.value().stream()
-          .flatMap { couple: Couple<Task.Status, ImmutableList<String>> -> couple.second().stream().map { s: String -> Tuple.of(s, couple.first()) } }
+          .flatMap { couple -> couple.second().stream().map { Tuple.of(it, couple.first()) } }
           .collect(toImmutableMap())
     }
 
-    private fun parseTaskData(reader: BufferedReader): Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>> {
+    private fun parseTaskData(reader: BufferedReader):
+        Couple<ImmutableDirectedGraph<TaskIdImpl>, ImmutableMap<TaskIdImpl, TaskData>> {
       return Single.just(reader)
-          .map { obj: BufferedReader -> obj.lines() }
-          .map { obj: Stream<String> -> obj.iterator() }
-          .map { iterator: Iterator<String> -> Iterable { iterator } }
-          .flatMapObservable { source: Iterable<String> -> Observable.fromIterable(source) }
-          .filter { line: String -> line.isNotBlank() }
-          .collect({ LineCollector() }) { obj: LineCollector, line: String -> obj.collect(line) }
-          .map { obj: LineCollector -> obj.build() }
+          .flatMapObservable { Observable.fromIterable(it.readLines()) }
+          .filter(String::isNotBlank)
+          .collect(::LineCollector, LineCollector::collect)
+          .map(LineCollector::build)
           .blockingGet()
     }
 
@@ -215,11 +221,10 @@ class TaskFileStorage(private val file: File) : TaskStorage {
 
     private fun serialize(tasks: Map<out TaskIdImpl, out TaskData>): Observable<String> {
       return Single.just(tasks)
-          .map { obj -> obj.entries() }
-          .flatMapObservable { source -> Observable.fromIterable(source) }
-          .sorted(Comparator.comparing { entry -> entry.key().asLong() })
-          .map { entry -> Tuple.of(entry.key(), entry.value()) }
-          .map { task -> serialize(task) }
+          .flatMapObservable { Observable.fromIterable(it.entries()) }
+          .sorted(Comparator.comparing { it.key().asLong() })
+          .map { Tuple.of(it.key(), it.value()) }
+          .map(::serialize)
     }
 
     private fun serialize(task: Couple<out TaskIdImpl, out TaskData>): String {
@@ -299,11 +304,10 @@ class TaskFileStorage(private val file: File) : TaskStorage {
 
     private fun serialize(graph: DirectedGraph<out TaskIdImpl>): Observable<String> {
       return Single.just(graph)
-          .map { obj -> obj.nodes() }
-          .flatMapObservable { source -> Observable.fromIterable(source) }
-          .filter { node -> node.predecessors().isPopulated }
-          .sorted(Comparator.comparing { node -> node.item().asLong() })
-          .map { node -> serialize(node) }
+          .flatMapObservable { Observable.fromIterable(it.nodes()) }
+          .filter { it.predecessors().isPopulated }
+          .sorted(Comparator.comparing { it.item().asLong() })
+          .map(::serialize)
     }
 
     private fun serialize(node: DirectedGraph.DirectedNode<out TaskIdImpl>): String {
@@ -313,8 +317,8 @@ class TaskFileStorage(private val file: File) : TaskStorage {
           .append(
               node.predecessors().stream()
                   .map(DirectedGraph.DirectedNode<out TaskIdImpl>::item)
-                  .sorted(Comparator.comparing { obj -> obj.asLong() })
-                  .map { id -> serialize(id) }
+                  .sorted(Comparator.comparing(TaskIdImpl::asLong))
+                  .map(::serialize)
                   .collect(Collectors.joining(TASK_ID_DELIMITER)))
           .append(TASK_FIELD_DELIMITER)
           .toString()
