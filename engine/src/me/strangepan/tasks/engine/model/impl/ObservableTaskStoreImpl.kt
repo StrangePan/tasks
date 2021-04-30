@@ -6,7 +6,6 @@ import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.subjects.CompletableSubject
 import java.util.Optional
-import java.util.function.Consumer
 import omnia.algorithm.GraphAlgorithms.findAnyCycle
 import omnia.data.stream.Collectors.toImmutableList
 import omnia.data.structure.DirectedGraph
@@ -38,7 +37,8 @@ class ObservableTaskStoreImpl private constructor(private val taskStorage: TaskS
   }
 
   override fun createTask(
-      label: String, builder: java.util.function.Function<in TaskBuilder, out TaskBuilder>): Single<Triple<TaskStoreImpl, TaskStoreImpl, TaskImpl>> {
+      label: String, builder: java.util.function.Function<in TaskBuilder, out TaskBuilder>):
+      Single<Triple<TaskStoreImpl, TaskStoreImpl, TaskImpl>> {
     return Single.just(TaskBuilderImpl(this, label))
         .map(builder::apply)
         .flatMap(::maybeApplyBuilder)
@@ -69,11 +69,14 @@ class ObservableTaskStoreImpl private constructor(private val taskStorage: TaskS
   }
 
   override fun mutateTask(
-      task: Task, mutation: java.util.function.Function<in TaskMutator, out TaskMutator>): Single<Triple<TaskStoreImpl, TaskStoreImpl, TaskImpl>> {
+      task: Task, mutation: java.util.function.Function<in TaskMutator, out TaskMutator>):
+      Single<Triple<TaskStoreImpl, TaskStoreImpl, TaskImpl>> {
     return mutateTask(validateTask(task), mutation)
   }
 
-  private fun mutateTask(task: TaskImpl, mutation: java.util.function.Function<in TaskMutator, out TaskMutator>): Single<Triple<TaskStoreImpl, TaskStoreImpl, TaskImpl>> {
+  private fun mutateTask(
+      task: TaskImpl, mutation: java.util.function.Function<in TaskMutator, out TaskMutator>):
+      Single<Triple<TaskStoreImpl, TaskStoreImpl, TaskImpl>> {
     return Single.just(TaskMutatorImpl(this, task.id))
         .map { mutation.apply(it) }
         .flatMap(::maybeApplyMutator)
@@ -168,8 +171,8 @@ class ObservableTaskStoreImpl private constructor(private val taskStorage: TaskS
     private fun applyBuilderTo(builder: TaskBuilderImpl, oldStore: TaskStoreImpl): Couple<TaskStoreImpl, Triple<TaskStoreImpl, TaskStoreImpl, TaskImpl>> {
       val id: TaskIdImpl = TaskIdImpl.generate(oldStore.graph.contents())
       val newGraphBuilder = oldStore.graph.toBuilder().addNode(id)
-      builder.blockingTasks().forEach(Consumer { newGraphBuilder.addEdge(it, id) })
-      builder.blockedTasks().forEach(Consumer { newGraphBuilder.addEdge(id, it) })
+      builder.blockingTasks().forEach { newGraphBuilder.addEdge(it, id) }
+      builder.blockedTasks().forEach { newGraphBuilder.addEdge(id, it) }
       val newGraph = newGraphBuilder.build()
       val newData = oldStore.data.toBuilder()
           .putMapping(id, TaskData(builder.label(), builder.status()))
@@ -184,43 +187,41 @@ class ObservableTaskStoreImpl private constructor(private val taskStorage: TaskS
       findAnyCycle(taskGraph)
           .map { cycle ->
             cycle.stream()
-                .map { id ->
-                  (id.toString()
-                      + ": "
-                      + taskData.valueOf(id).map { obj: TaskData -> obj.label() }.orElse(""))
-                }
+                .map { "$it: ${taskData.valueOf(it).map(TaskData::label).orElse("")}" }
                 .collect(toImmutableList())
           }
-          .ifPresent { cycle -> throw CyclicalDependencyException("Cycle detected", cycle) }
+          .ifPresent { throw CyclicalDependencyException("Cycle detected", it) }
     }
 
     private fun applyMutatorTo(
-        taskData: ImmutableMap<TaskIdImpl, TaskData>, mutatorImpl: TaskMutatorImpl): ImmutableMap<TaskIdImpl, TaskData> {
+        taskData: ImmutableMap<TaskIdImpl, TaskData>, mutatorImpl: TaskMutatorImpl):
+        ImmutableMap<TaskIdImpl, TaskData> {
       return Optional.of(mutatorImpl)
-          .filter { mutator -> mutator.statusMutator().isPresent || mutator.label().isPresent }
-          .map { obj -> obj.id() }
-          .flatMap { taskData.valueOf(it) }
+          .filter { it.statusMutator().isPresent || it.label().isPresent }
+          .map(TaskMutatorImpl::id)
+          .flatMap(taskData::valueOf)
           .map { data ->
             TaskData(
                 mutatorImpl.label().orElse(data.label()),
                 mutatorImpl.statusMutator().map { it.apply(data) }.orElse(data.status()))
           }
-          .map { data -> taskData.toBuilder().putMapping(mutatorImpl.id(), data).build() }
+          .map { taskData.toBuilder().putMapping(mutatorImpl.id(), it).build() }
           .orElse(taskData)
     }
 
     private fun applyMutatorTo(
-        taskGraph: ImmutableDirectedGraph<TaskIdImpl>, mutatorImpl: TaskMutatorImpl): ImmutableDirectedGraph<TaskIdImpl> {
+        taskGraph: ImmutableDirectedGraph<TaskIdImpl>, mutatorImpl: TaskMutatorImpl):
+        ImmutableDirectedGraph<TaskIdImpl> {
       return Optional.of(mutatorImpl)
-          .filter { mutator ->
-            (mutator.overwriteBlockedTasks()
-                || mutator.blockedTasksToAdd().isPopulated
-                || mutator.blockedTasksToRemove().isPopulated
-                || mutator.overwriteBlockingTasks()
-                || mutator.blockingTasksToAdd().isPopulated
-                || mutator.blockingTasksToRemove().isPopulated)
+          .filter {
+            it.overwriteBlockedTasks()
+                || it.blockedTasksToAdd().isPopulated
+                || it.blockedTasksToRemove().isPopulated
+                || it.overwriteBlockingTasks()
+                || it.blockingTasksToAdd().isPopulated
+                || it.blockingTasksToRemove().isPopulated
           }
-          .map { mutator: TaskMutatorImpl ->
+          .map { mutator ->
             val id = mutator.id()
             val builder = taskGraph.toBuilder()
             if (mutator.overwriteBlockingTasks()) {
@@ -228,15 +229,13 @@ class ObservableTaskStoreImpl private constructor(private val taskStorage: TaskS
                   .map(ImmutableDirectedGraph<TaskIdImpl>.DirectedNode::incomingEdges)
                   .map(ImmutableSet.Companion::copyOf)
                   .orElse(ImmutableSet.empty())
-                  .forEach { edge -> builder.removeEdge(edge.start().item(), edge.end().item()) }
+                  .forEach { builder.removeEdge(it.start().item(), it.end().item()) }
             }
-            mutator.blockingTasksToAdd()
-                .forEach(Consumer { builder.addEdge(it, id) })
-            mutator.blockingTasksToRemove()
-                .forEach(Consumer { builder.removeEdge(it, id) })
+            mutator.blockingTasksToAdd().forEach { builder.addEdge(it, id) }
+            mutator.blockingTasksToRemove().forEach { builder.removeEdge(it, id) }
             if (mutator.overwriteBlockedTasks()) {
               taskGraph.nodeOf(id)
-                  .map { it.outgoingEdges() }
+                  .map(ImmutableDirectedGraph<TaskIdImpl>.DirectedNode::outgoingEdges)
                   .map(ImmutableSet.Companion::copyOf)
                   .orElse(ImmutableSet.empty())
                   .forEach { builder.removeEdge(it.start().item(), it.end().item()) }
@@ -251,10 +250,7 @@ class ObservableTaskStoreImpl private constructor(private val taskStorage: TaskS
 
   init {
     val loadedData = this.taskStorage.readFromStorage().blockingGet()
-    store = create(
-        TaskStoreImpl(
-            loadedData.first(),
-            loadedData.second()))
+    store = create(TaskStoreImpl(loadedData.first(), loadedData.second()))
     currentTaskStore = store.observe().takeUntil(isShutdown.andThen(Observable.just(Unit)))
     isShutdownComplete = isShutdown.hide().andThen(writeToDisk()).cache()
   }
