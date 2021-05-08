@@ -45,7 +45,6 @@ k84uyjn3n6kg;complete;Add ability to modify blockers of multiple tasks simultane
 ktcatxhrlfr4;complete;Update Omnia to RxJava 3;
 kz3kwaxll8n4;complete;Add reword command;
 lm3htv37dr7k;complete;Add test for "remove" command handler;
-lpi7osd2fojk;open;Move CLI output rendering to CLI package;
 lslf9tcu6io0;open;Build standalone Windows visual app;
 lxeye4wsb3sw;complete;Add feature: start / stop tasks;
 lzvv3qy4wa9s;complete;Move parsers out of arguments;
@@ -92,7 +91,6 @@ zog7380c1tkw;complete;Optimize 'shortest-unique-prefix' algorithm;
 5cmwts3lzchs;ro8c9pw9v3sw,vq9pe2u4tn28;
 7df5isx5njb4;n29r20yznj7k;
 86777kg3zdkw;ro8c9pw9v3sw,vq9pe2u4tn28;
-a1ordjem0zr4;lpi7osd2fojk;
 aiv2qznibj7k;kz3kwaxll8n4,19ywwqj6ys1ds;
 avp8zmi78a9s;px6fylhddrls;
 ay81g8h14tmo;a1ordjem0zr4,qviejw7b72m8,ro8c9pw9v3sw,vq9pe2u4tn28;
