@@ -36,6 +36,10 @@ class ObservableTaskStoreImpl private constructor(private val taskStorage: TaskS
     return currentTaskStore
   }
 
+  override fun createTask(label: String): Single<Triple<TaskStoreImpl, TaskStoreImpl, TaskImpl>> {
+    return createTask(label) { it }
+  }
+
   override fun createTask(
       label: String, builder: java.util.function.Function<in TaskBuilder, out TaskBuilder>):
       Single<Triple<TaskStoreImpl, TaskStoreImpl, TaskImpl>> {

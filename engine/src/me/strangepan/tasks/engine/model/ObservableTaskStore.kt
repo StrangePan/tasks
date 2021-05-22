@@ -18,6 +18,16 @@ interface ObservableTaskStore {
    * Attempts to create a new task and add it to the store.
    *
    * @param label the desired label for the new task
+   * @return A [Single] that emits the mutated task, as well as the before and after states
+   * of the store when the new task has been successfully applied to the store, or emits an
+   * error if the mutation would have put the store in an invalid state.
+   */
+  fun createTask(label: String): Single<out Triple<out TaskStore, out TaskStore, out Task>>
+
+  /**
+   * Attempts to create a new task and add it to the store.
+   *
+   * @param label the desired label for the new task
    * @param builder a function that configures and returns a [TaskBuilder] for the new task
    * @return A [Single] that emits the mutated task, as well as the before and after states
    * of the store when the new task has been successfully applied to the store, or emits an
