@@ -18,7 +18,7 @@
 9gmv5q5r2fwg;complete;Add test for "blockers" command handler;
 9wmh50nqjdhc;complete;Separate task engine from CLI;
 9xpzogu0xreo;complete;Add flag to list only started tasks;
-a1ordjem0zr4;started;Isolate CLI functionality from engine API;
+a1ordjem0zr4;complete;Isolate CLI functionality from engine API;
 abwb0ydc2gao;complete;Add test for "reopen" command handler;
 aiv2qznibj7k;complete;Remove amend command;
 avp8zmi78a9s;complete;Read iOS app programming tutorial;
