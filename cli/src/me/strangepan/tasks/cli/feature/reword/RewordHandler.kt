@@ -7,6 +7,7 @@ import omnia.data.cache.Memoized
 import me.strangepan.tasks.cli.command.common.CommonArguments
 import me.strangepan.tasks.cli.handler.ArgumentHandler
 import me.strangepan.tasks.cli.handler.HandlerException
+import me.strangepan.tasks.cli.model.render
 import me.strangepan.tasks.engine.model.ObservableTaskStore
 
 class RewordHandler(private val taskStore: Memoized<out ObservableTaskStore>) : ArgumentHandler<RewordArguments> {

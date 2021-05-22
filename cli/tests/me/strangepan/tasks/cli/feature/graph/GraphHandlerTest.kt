@@ -33,6 +33,7 @@ import org.junit.runners.JUnit4
 import me.strangepan.tasks.cli.command.common.CommonArguments
 import me.strangepan.tasks.cli.handler.testing.HandlerTestUtils
 import me.strangepan.tasks.cli.handler.testing.HandlerTestUtils.commonArgs
+import me.strangepan.tasks.cli.model.render
 import me.strangepan.tasks.engine.model.ObservableTaskStore
 import me.strangepan.tasks.engine.model.Task
 import me.strangepan.tasks.engine.model.TaskBuilder

@@ -1,5 +1,6 @@
 package me.strangepan.tasks.engine.model
 
+import omnia.data.structure.SortedSet
 import omnia.data.structure.immutable.ImmutableDirectedGraph
 import omnia.data.structure.immutable.ImmutableSet
 
@@ -11,6 +12,9 @@ interface TaskStore {
 
   /** Search for a task via [TaskId]. */
   fun lookUpById(id: TaskId): Task?
+
+  /** Retrieve the IDs of all tasks in the store sorted in numerical order. */
+  fun allTaskIds(): SortedSet<out TaskId>
 
   /** Retrieve all tasks in the store in no particular order. */
   fun allTasks(): ImmutableSet<out Task>

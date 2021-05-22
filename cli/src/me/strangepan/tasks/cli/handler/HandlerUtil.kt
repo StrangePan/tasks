@@ -5,6 +5,7 @@ import java.util.Comparator
 import java.util.Locale
 import java.util.Optional
 import java.util.stream.Collectors.joining
+import me.strangepan.tasks.cli.model.render
 import omnia.algorithm.SetAlgorithms.intersectionOf
 import omnia.cli.out.Output
 import omnia.cli.out.Output.Companion.empty

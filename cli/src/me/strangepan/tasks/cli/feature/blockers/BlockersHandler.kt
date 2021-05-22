@@ -18,6 +18,7 @@ import me.strangepan.tasks.cli.command.common.CommonArguments
 import me.strangepan.tasks.cli.handler.ArgumentHandler
 import me.strangepan.tasks.cli.handler.HandlerUtil
 import me.strangepan.tasks.cli.handler.HandlerUtil.stringifyIfPopulated
+import me.strangepan.tasks.cli.model.render
 import me.strangepan.tasks.engine.model.ObservableTaskStore
 import me.strangepan.tasks.engine.model.Task
 import me.strangepan.tasks.engine.model.TaskStore

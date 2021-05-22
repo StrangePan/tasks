@@ -18,6 +18,7 @@ import me.strangepan.tasks.cli.handler.testing.HandlerTestUtils
 import me.strangepan.tasks.cli.handler.testing.HandlerTestUtils.assertOutputContainsGroupedTasks
 import me.strangepan.tasks.cli.handler.testing.HandlerTestUtils.commonArgs
 import me.strangepan.tasks.cli.handler.testing.TestReader
+import me.strangepan.tasks.cli.model.render
 import me.strangepan.tasks.cli.output.Printer
 import me.strangepan.tasks.engine.model.ObservableTaskStore
 import me.strangepan.tasks.engine.model.Task

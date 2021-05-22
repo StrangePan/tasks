@@ -12,6 +12,7 @@ import me.strangepan.tasks.cli.handler.ArgumentHandler
 import me.strangepan.tasks.cli.handler.HandlerException
 import me.strangepan.tasks.cli.handler.HandlerUtil
 import me.strangepan.tasks.cli.input.Reader
+import me.strangepan.tasks.cli.model.render
 import me.strangepan.tasks.cli.output.Printer
 import me.strangepan.tasks.engine.model.ObservableTaskStore
 import me.strangepan.tasks.engine.model.Task

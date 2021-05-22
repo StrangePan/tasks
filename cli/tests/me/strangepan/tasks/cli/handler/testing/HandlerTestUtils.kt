@@ -11,12 +11,13 @@ import omnia.data.stream.Collectors.toImmutableList
 import omnia.data.structure.Collection
 import omnia.data.structure.immutable.ImmutableList
 import me.strangepan.tasks.cli.command.common.CommonArguments
+import me.strangepan.tasks.cli.model.render
 import me.strangepan.tasks.engine.model.ObservableTaskStore
 import me.strangepan.tasks.engine.model.Task
 import me.strangepan.tasks.engine.model.TaskBuilder
 
 /**
- * Utilities for [tasks.cli.handler.ArgumentHandler] unit tests.
+ * Utilities for [me.strangepan.tasks.cli.handler.ArgumentHandler] unit tests.
  */
 object HandlerTestUtils {
   /**

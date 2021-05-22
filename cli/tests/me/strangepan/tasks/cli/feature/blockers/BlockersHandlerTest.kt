@@ -12,6 +12,7 @@ import org.junit.runners.JUnit4
 import me.strangepan.tasks.cli.handler.HandlerException
 import me.strangepan.tasks.cli.handler.testing.HandlerTestUtils
 import me.strangepan.tasks.cli.handler.testing.HandlerTestUtils.assertOutputContainsGroupedTasks
+import me.strangepan.tasks.cli.model.render
 import me.strangepan.tasks.engine.model.ObservableTaskStore
 import me.strangepan.tasks.engine.model.Task
 import me.strangepan.tasks.engine.model.TaskBuilder

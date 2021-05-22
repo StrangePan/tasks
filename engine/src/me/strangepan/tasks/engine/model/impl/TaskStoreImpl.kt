@@ -90,7 +90,7 @@ class TaskStoreImpl(
         && data == other.data))
   }
 
-  fun allTaskIds(): ImmutableSortedSet<TaskIdImpl> {
+  override fun allTaskIds(): ImmutableSortedSet<TaskIdImpl> {
     return allTaskIds.value()
   }
 
