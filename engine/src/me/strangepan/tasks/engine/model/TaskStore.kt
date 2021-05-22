@@ -31,9 +31,6 @@ interface TaskStore {
   /** Retrieves all tasks that are open and not started. */
   fun allOpenTasks(): ImmutableSet<out Task>
 
-  /** Retrieves all tasks whose string representation of [TaskId] starts with [prefix]. */
-  fun allTasksMatchingCliPrefix(prefix: String): ImmutableSet<out Task>
-
   /**
    * Retrieves the graph representation of the dependency relationship between tasks.
    *

@@ -1,24 +1,22 @@
 package me.strangepan.tasks.cli.parser
 
-import io.reactivex.rxjava3.core.Observable
-import java.util.Optional
-import java.util.OptionalInt
 import java.util.stream.Collectors.joining
+import java.util.stream.Stream
 import omnia.data.cache.Memoized
 import omnia.data.stream.Collectors.toList
 import omnia.data.structure.Collection
 import omnia.data.structure.List
 import omnia.data.structure.List.Companion.masking
 import omnia.data.structure.immutable.ImmutableList
-import omnia.data.structure.tuple.Couple
-import omnia.data.structure.tuple.Tuple
 import org.apache.commons.cli.CommandLine
 import me.strangepan.tasks.cli.command.FlagOption
 import me.strangepan.tasks.cli.command.Option
 import me.strangepan.tasks.cli.command.Parameter
+import me.strangepan.tasks.cli.model.allTasksMatchingCliPrefix
 import me.strangepan.tasks.engine.model.ObservableTaskStore
 import me.strangepan.tasks.engine.model.Task
 import me.strangepan.tasks.engine.model.TaskStore
+import omnia.data.stream.Collectors.toImmutableList
 
 object ParserUtil {
   fun taskListParser(
@@ -34,8 +32,9 @@ object ParserUtil {
       userInputs: List<String>, observableTaskStore: ObservableTaskStore): List<ParseResult<out Task>> {
     return observableTaskStore.observe()
         .firstOrError()
-        .map { taskStore ->
-          userInputs.stream().map { parseTaskId(it, taskStore) }.collect(toList())
+        .map {
+            taskStore ->
+                userInputs.stream().map { parseTaskId(it, taskStore) }.collect(toList())
         }
         .blockingGet()
   }
@@ -56,28 +55,14 @@ object ParserUtil {
 
   fun <T : Any> extractSuccessfulResultsOrThrow(
       parseResults: Collection<out ParseResult<out T>>): ImmutableList<T> {
-    return Observable.fromIterable(parseResults)
-        .collect<Couple<ImmutableList.Builder<T>, ImmutableList.Builder<String>>>(
-            { Tuple.of(ImmutableList.builder(), ImmutableList.builder()) },
-            { couple, result ->
-              couple
-                  .mapFirst { maybeAdd(it, result.successResult) }
-                  .mapSecond { maybeAdd(it, result.failureMessage) }
-            })
-        .map { couple ->
-          couple
-              .mapFirst { it.build() }
-              .mapSecond { it.build() }
-        }
-        .doOnSuccess { throwIfPopulated(it.second()) }
-        .map { it.first() }
-        .blockingGet()
-  }
+    throwIfPopulated(
+      parseResults.stream()
+        .flatMap{ result -> result.failureMessage?.let { Stream.of(it) } ?: Stream.empty() }
+        .collect(toImmutableList()))
 
-  private fun <T> maybeAdd(
-      builder: ImmutableList.Builder<T>, item: Optional<out T>): ImmutableList.Builder<T> {
-    item.ifPresent { builder.add(it) }
-    return builder
+    return parseResults.stream()
+      .map { it.successResult!! }
+      .collect(toImmutableList())
   }
 
   private fun throwIfPopulated(failureMessages: List<out String>) {
@@ -96,20 +81,8 @@ object ParserUtil {
     return getOptionValues(commandLine, option.shortName().orElse(option.longName()))
   }
 
-  fun getOptionValues(commandLine: CommandLine, opt: String): List<String> {
-    return ImmutableList.copyOf(
-        Optional.ofNullable(commandLine.getOptionValues(opt)).orElse(arrayOfNulls(0)))
-  }
-
-  fun getSingleOptionValue(commandLine: CommandLine, option: Option): Optional<String> {
-    return getSingleOptionValue(commandLine, option.shortName().orElse(option.longName()))
-  }
-
-  fun getSingleOptionValue(commandLine: CommandLine, opt: String): Optional<String> {
-    if (Optional.ofNullable(commandLine.getOptionValues(opt)).orElse(arrayOfNulls(0)).size > 1) {
-      throw ParserException("Too many values provided for parameter '$opt'")
-    }
-    return Optional.ofNullable(commandLine.getOptionValue(opt))
+  private fun getOptionValues(commandLine: CommandLine, opt: String): List<String> {
+    return ImmutableList.copyOf(commandLine.getOptionValues(opt) ?: emptyArray())
   }
 
   fun assertNoExtraArgs(commandLine: CommandLine) {
@@ -121,9 +94,9 @@ object ParserUtil {
     assertNoExtraArgs(masking(commandLine.argList), parameters)
   }
 
-  fun assertNoExtraArgs(
+  private fun assertNoExtraArgs(
       args: List<out String>, parameters: Collection<Parameter>) {
-    computeMaxNumberOfCommandParameters(parameters).ifPresent { assertNoExtraArgs(args, it) }
+    computeMaxNumberOfCommandParameters(parameters)?.let { assertNoExtraArgs(args, it) }
   }
 
   private fun assertNoExtraArgs(
@@ -138,8 +111,7 @@ object ParserUtil {
     }
   }
 
-  fun computeMaxNumberOfCommandParameters(
-      parameters: Collection<Parameter>): OptionalInt {
-    return if (parameters.stream().anyMatch(Parameter::isRepeatable)) OptionalInt.empty() else OptionalInt.of(parameters.count())
+  private fun computeMaxNumberOfCommandParameters(parameters: Collection<Parameter>): Int? {
+    return if (parameters.stream().anyMatch(Parameter::isRepeatable)) null else parameters.count()
   }
 }

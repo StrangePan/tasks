@@ -1,9 +1,7 @@
 package me.strangepan.tasks.engine.model.impl
 
-import io.reactivex.rxjava3.core.Observable
 import java.util.Comparator
 import java.util.Objects
-import java.util.Optional
 import omnia.algorithm.SetAlgorithms.differenceBetween
 import omnia.data.cache.Memoized
 import omnia.data.cache.Memoized.Companion.memoize
@@ -15,15 +13,13 @@ import omnia.data.structure.immutable.ImmutableDirectedGraph.Companion.copyOf
 import omnia.data.structure.immutable.ImmutableMap
 import omnia.data.structure.immutable.ImmutableSet
 import omnia.data.structure.immutable.ImmutableSortedSet
-import omnia.data.structure.immutable.ImmutableSortedSet.Companion.copyOf
-import me.strangepan.tasks.engine.model.Task
 import me.strangepan.tasks.engine.model.TaskId
 import me.strangepan.tasks.engine.model.TaskStore
-import me.strangepan.tasks.engine.util.rx.Observables
 
 class TaskStoreImpl(
     val graph: ImmutableDirectedGraph<TaskIdImpl>, val data: ImmutableMap<TaskIdImpl, TaskData>) :
     TaskStore {
+
   private val cache = WeakCache<TaskIdImpl, TaskImpl>()
   private val allTaskIds: Memoized<ImmutableSortedSet<TaskIdImpl>>
   private val allTasks: Memoized<ImmutableSet<TaskImpl>>
@@ -39,11 +35,11 @@ class TaskStoreImpl(
   }
 
   override fun lookUpById(id: TaskId): TaskImpl? {
-    return if (id is TaskIdImpl) lookUpById(id) else null;
+    return if (id is TaskIdImpl) lookUpById(id) else null
   }
 
   private fun lookUpById(id: TaskIdImpl): TaskImpl? {
-    return if (graph.contents().contains(id)) toTask(id) else null;
+    return if (graph.contents().contains(id)) toTask(id) else null
   }
 
   override fun allTasks(): ImmutableSet<TaskImpl> {
@@ -64,15 +60,6 @@ class TaskStoreImpl(
 
   override fun allOpenTasks(): ImmutableSet<TaskImpl> {
     return allOpenTasks.value()
-  }
-
-  override fun allTasksMatchingCliPrefix(prefix: String): ImmutableSet<TaskImpl> {
-    Objects.requireNonNull(prefix)
-    return graph.contents()
-        .stream()
-        .filter { it.toString().regionMatches(0, prefix, 0, prefix.length) }
-        .map(this::toTask)
-        .collect(toImmutableSet())
   }
 
   override fun taskGraph(): ImmutableDirectedGraph<TaskImpl> {
@@ -162,10 +149,7 @@ class TaskStoreImpl(
       "tasks in graph do not match tasks in data set"
     }
     allTaskIds = memoize {
-      Observable.fromIterable(data.keys())
-          .to(Observables.toImmutableSet())
-          .map { copyOf(Comparator.comparingLong(TaskIdImpl::asLong), it) }
-          .blockingGet()
+      ImmutableSortedSet.copyOf(Comparator.comparingLong(TaskIdImpl::asLong), data.keys())
     }
     allTasks = memoize { data.keys().stream().map(this::toTask).collect(toImmutableSet()) }
     allUnblockedOpenTasks = memoize {
